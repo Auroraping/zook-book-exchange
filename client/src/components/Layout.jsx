@@ -22,59 +22,70 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f8fc]">
-      {/* 浙大蓝主题顶部导航栏 */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-[1400px] mx-auto px-6 h-[72px] flex items-center justify-between">
+      {/* 现代毛玻璃导航栏 */}
+      <header className="sticky top-0 z-50 glass-header">
+        <div className="max-w-[1440px] mx-auto px-8 h-[80px] flex items-center justify-between gap-4">
           
-          {/* Logo 区 */}
-          <Link to="/" className="flex items-center gap-3">
-            <BookOpen className="w-8 h-8 text-zju-blue" />
-            <div className="flex flex-col">
-              <span className="text-xl font-bold text-zju-blue tracking-wider font-serif">求书</span>
-              <span className="text-[10px] text-gray-400 tracking-widest mt-[-2px]">ZJU USED BOOK PLATFORM</span>
+          {/* 品牌 Logo 区 */}
+          <div className="flex items-center gap-6 flex-shrink-0">
+            <Link to="/" className="group flex items-center gap-3">
+              <div className="bg-zju-blue text-white p-2 rounded-xl shadow-lg shadow-zju-blue/20 group-hover:scale-110 transition-transform duration-300">
+                <BookOpen className="w-6 h-6" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-2xl font-serif font-black text-zju-blue tracking-tighter">求书</span>
+                <span className="text-[9px] text-gray-400 font-bold tracking-[0.2em] mt-[-2px] uppercase">ZJU Used Book</span>
+              </div>
+            </Link>
+            
+            <div className="hidden xl:block h-8 w-[1px] bg-gray-100 mx-2"></div>
+            
+            <div className="hidden xl:flex flex-col flex-shrink-0">
+              <span className="text-xs font-bold text-gray-500 tracking-wide whitespace-nowrap">浙江大学校园二手书系统</span>
+              <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">Academic Resource Hub for ZJUers</span>
             </div>
-            <div className="h-6 w-[1px] bg-gray-200 mx-4"></div>
-            <span className="text-sm font-semibold text-gray-500 tracking-wider">浙江大学校园二手书与教学资源平台</span>
-          </Link>
+          </div>
 
-          {/* 导航链路 */}
-          <nav className="hidden md:flex items-center gap-8 px-8 flex-shrink-0">
-            <Link to="/" className={`font-semibold hover:text-zju-blue transition-colors px-2 py-4 whitespace-nowrap ${location.pathname==='/' ? 'text-zju-blue border-b-2 border-zju-blue' : 'text-gray-600'}`}>首页大盘</Link>
-            <Link to="/books" className={`font-semibold hover:text-zju-blue transition-colors px-2 py-4 whitespace-nowrap ${location.pathname.startsWith('/book') ? 'text-zju-blue border-b-2 border-zju-blue' : 'text-gray-600'}`}>购书大厅</Link>
-            <Link to="/schedule" className={`font-semibold hover:text-zju-blue transition-colors px-2 py-4 whitespace-nowrap ${location.pathname==='/schedule' ? 'text-zju-blue border-b-2 border-zju-blue' : 'text-gray-600'}`}>课表指引</Link>
-            <Link to="/community" className={`font-semibold hover:text-zju-blue transition-colors px-2 py-4 whitespace-nowrap ${location.pathname==='/community' ? 'text-zju-blue border-b-2 border-zju-blue' : 'text-gray-600'}`}>共享笔记</Link>
-            <Link to="/profile" className={`font-semibold hover:text-zju-blue transition-colors px-2 py-4 whitespace-nowrap ${location.pathname==='/profile' ? 'text-zju-blue border-b-2 border-zju-blue' : 'text-gray-600'}`}>个人中心</Link>
+          {/* 核心导航区 */}
+          <nav className="hidden lg:flex items-center gap-2 flex-grow justify-center max-w-[500px]">
+            <Link to="/" className={`nav-link px-4 py-2 text-sm font-bold ${location.pathname==='/' ? 'nav-link-active' : ''}`}>首页</Link>
+            <Link to="/books" className={`nav-link px-4 py-2 text-sm font-bold ${location.pathname.startsWith('/book') ? 'nav-link-active' : ''}`}>购书</Link>
+            <Link to="/schedule" className={`nav-link px-4 py-2 text-sm font-bold ${location.pathname==='/schedule' ? 'nav-link-active' : ''}`}>课表</Link>
+            <Link to="/community" className={`nav-link px-4 py-2 text-sm font-bold ${location.pathname==='/community' ? 'nav-link-active' : ''}`}>笔记</Link>
+            <Link to="/profile" className={`nav-link px-4 py-2 text-sm font-bold ${location.pathname==='/profile' ? 'nav-link-active' : ''}`}>中心</Link>
           </nav>
 
-          {/* 全局交互区 */}
-          <div className="flex items-center gap-6">
-            <div className="relative group">
+          {/* 交互功能区 */}
+          <div className="flex items-center gap-4 flex-shrink-0">
+            <div className="relative group hidden sm:block">
               <input 
                 type="text" 
-                placeholder="搜索教材 / 课程名 / ISBN号" 
+                placeholder="搜索书籍/课程..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleSearch}
-                className="w-[300px] h-10 bg-gray-50 border border-gray-200 rounded-full pl-10 pr-4 text-sm focus:outline-none focus:border-zju-blue focus:ring-1 focus:ring-zju-blue transition-all" 
+                className="w-[220px] focus:w-[280px] h-11 bg-gray-50/50 border border-gray-100 rounded-2xl pl-11 pr-4 text-sm focus:outline-none focus:bg-white focus:ring-4 focus:ring-zju-blue/5 focus:border-zju-blue transition-all duration-500 shadow-inner" 
               />
-              <Search className="w-4 h-4 text-gray-400 absolute left-4 top-3 group-focus-within:text-zju-blue transition-colors" />
+              <Search className="w-5 h-5 text-gray-300 absolute left-4 top-3 group-focus-within:text-zju-blue transition-colors" />
             </div>
 
-            <Link to="/publish" className="flex items-center justify-center gap-2 bg-gradient-to-r from-zju-blue to-[#0050ab] text-white px-5 py-2 rounded-full font-semibold shadow-md shadow-zju-blue/20 hover:-translate-y-0.5 transition-transform text-sm whitespace-nowrap flex-shrink-0">
-              <PackagePlus className="w-4 h-4" /> 发闲置
+            <Link to="/publish" className="flex items-center justify-center gap-2 bg-zju-blue text-white px-6 py-2.5 rounded-2xl font-bold shadow-xl shadow-zju-blue/10 hover:shadow-zju-blue/30 hover:-translate-y-0.5 transition-all duration-300 text-sm whitespace-nowrap">
+              <PackagePlus className="w-4 h-4" /> 卖书
             </Link>
 
-            <Link to="/messages" className="relative text-gray-500 hover:text-zju-blue transition-colors">
+            <Link to="/messages" className="relative group p-2 text-gray-400 hover:text-zju-blue hover:bg-zju-blue/5 rounded-xl transition-all">
               <Bell className="w-6 h-6" />
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white ring-1 ring-red-200"></span>
             </Link>
 
-            <Link to="/login" className="text-sm font-semibold text-gray-600 hover:text-zju-blue transition-colors whitespace-nowrap">
-              登录 / 注册
-            </Link>
+            <div className="h-8 w-[1px] bg-gray-100 mx-1 hidden md:block"></div>
 
-            <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <img src="/avatar_user_1776602211333.png" alt="Avatar" className="w-10 h-10 rounded-full border-2 border-zju-light shadow-sm bg-white object-cover" />
+            <Link to="/login" className="text-sm font-bold text-gray-500 hover:text-zju-blue px-2 transition-colors">登录</Link>
+
+            <Link to="/profile" className="flex items-center group relative">
+              <div className="p-0.5 rounded-full border-2 border-transparent group-hover:border-zju-blue/30 transition-all duration-500">
+                <img src="/avatar_user_1776602211333.png" alt="Avatar" className="w-10 h-10 rounded-full bg-white object-cover shadow-sm ring-1 ring-gray-100" />
+              </div>
             </Link>
           </div>
         </div>
