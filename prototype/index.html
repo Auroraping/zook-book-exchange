@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知书校园 - PC端桌面体验</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+    <div class="desktop-bg"></div>
+    
+    <!-- 桌面顶通导航栏 -->
+    <header class="top-nav glass-panel">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="ph-fill ph-book-open-text"></i>
+                <span>知书校园</span>
+            </div>
+            
+            <div class="nav-links">
+                <a href="#" class="active">首页</a>
+                <a href="#">找书</a>
+                <a href="#">官方区</a>
+                <a href="#">知识社区</a>
+            </div>
+
+            <div class="search-box">
+                <i class="ph ph-magnifying-glass"></i>
+                <input type="text" placeholder="搜索教材、学科、ISBN或笔记...">
+                <div class="scan-btn" title="扫码录入"><i class="ph ph-scan"></i></div>
+            </div>
+
+            <div class="user-actions">
+                <button class="publish-btn primary-gradient">
+                    <i class="ph ph-paper-plane-tilt"></i> 发布闲置
+                </button>
+                <div class="icon-action">
+                    <i class="ph ph-bell"></i>
+                    <span class="badge-dot"></span>
+                </div>
+                <div class="profile-avatar">
+                    <img src="assets/avatar_user.png" alt="User">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主体宽屏内容区 -->
+    <main class="desktop-container">
+        <!-- 左侧主内容流 -->
+        <section class="main-content">
+            
+            <!-- 课程绑定与问候横幅 -->
+            <div class="hero-banner glass-panel">
+                <div class="hero-text">
+                    <h2>下午好，李雷同学 👋</h2>
+                    <p>信息与电子工程学院 · 大二</p>
+                    <div class="stats-row">
+                        <span><i class="ph ph-books"></i> 本学期 必修6门</span>
+                        <span><i class="ph ph-wallet"></i> 累计省下 ¥640.0</span>
+                    </div>
+                </div>
+                <div class="hero-actions">
+                    <button class="btn-outline">修改专业页 / 年级</button>
+                    <button class="btn-solid primary-gradient">一站式采购本季教材</button>
+                </div>
+            </div>
+
+            <!-- 我的课程清单 / 教材推荐 -->
+            <div class="section-container">
+                <div class="section-header">
+                    <h3>本学期我的课程教材</h3>
+                    <a href="#" class="view-more">查看全部课程 <i class="ph ph-caret-right"></i></a>
+                </div>
+                <div class="courses-grid">
+                    <div class="course-card glass-panel border-math">
+                        <div class="c-head">
+                            <span class="c-tag">必修</span>
+                            <i class="ph ph-function icon-math"></i>
+                        </div>
+                        <h4>高等数学 (上)</h4>
+                        <p class="c-status">当前有 12 本在售</p>
+                        <button class="c-btn primary-gradient">查看推荐教材</button>
+                    </div>
+                    <div class="course-card glass-panel border-econ">
+                        <div class="c-head">
+                            <span class="c-tag tag-elective">选修</span>
+                            <i class="ph ph-chart-line-up icon-econ"></i>
+                        </div>
+                        <h4>宏观经济学</h4>
+                        <p class="c-status clr-warn">暂时缺货</p>
+                        <button class="c-btn btn-ghost">设置到货提醒</button>
+                    </div>
+                    <div class="course-card glass-panel border-cs">
+                        <div class="c-head">
+                            <span class="c-tag">必修</span>
+                            <i class="ph ph-code icon-cs"></i>
+                        </div>
+                        <h4>C语言程序设计</h4>
+                        <p class="c-status">当前有 8 本在售</p>
+                        <button class="c-btn btn-ghost">缺货登记</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 综合信息流 -->
+            <div class="section-container">
+                <div class="section-header">
+                    <h3>为您推荐的闲置教材</h3>
+                    <div class="tabs">
+                        <span class="active">最新上架</span>
+                        <span>同校区优先</span>
+                        <span>价格从低到高</span>
+                    </div>
+                </div>
+                
+                <div class="books-grid">
+                    <!-- Book Item 1 -->
+                    <div class="book-card glass-panel">
+                        <div class="cover-box">
+                            <img src="assets/book_math.png" alt="高等数学">
+                            <span class="quality-badge">9.5新</span>
+                        </div>
+                        <div class="book-info">
+                            <h4 class="title">同济大学 高等数学 第七版 上册</h4>
+                            <div class="b-tags">
+                                <span>紫金港版</span>
+                                <span>带满分笔记</span>
+                            </div>
+                            <div class="b-foot">
+                                <div class="prices">
+                                    <span class="current">¥ 15.0</span>
+                                    <span class="origin">¥45.0</span>
+                                </div>
+                                <i class="ph-fill ph-shopping-cart-simple btn-cart"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Book Item 2 -->
+                    <div class="book-card glass-panel">
+                        <div class="cover-box">
+                            <img src="assets/book_econ.png" alt="宏观经济学">
+                            <span class="quality-badge official">官方九成新</span>
+                        </div>
+                        <div class="book-info">
+                            <h4 class="title">曼昆 宏观经济学 第九版 中文版</h4>
+                            <div class="b-tags">
+                                <span>几乎全新</span>
+                                <span>官方消毒</span>
+                            </div>
+                            <div class="b-foot">
+                                <div class="prices">
+                                    <span class="current">¥ 28.5</span>
+                                    <span class="origin">¥88.0</span>
+                                </div>
+                                <i class="ph-fill ph-shopping-cart-simple btn-cart"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Book Item 3 (Placeholder) -->
+                    <div class="book-card glass-panel">
+                        <div class="cover-box">
+                             <div class="placeholder-cover"><i class="ph ph-books"></i></div>
+                            <span class="quality-badge">8新</span>
+                        </div>
+                        <div class="book-info">
+                            <h4 class="title">线性代数 同济第六版 附习题全解</h4>
+                            <div class="b-tags">
+                                <span>玉泉校区</span>
+                            </div>
+                            <div class="b-foot">
+                                <div class="prices">
+                                    <span class="current">¥ 12.0</span>
+                                    <span class="origin">¥30.0</span>
+                                </div>
+                                <i class="ph-fill ph-shopping-cart-simple btn-cart"></i>
+                            </div>
+                        </div>
+                    </div>
+                     <!-- Book Item 4 (Placeholder) -->
+                     <div class="book-card glass-panel">
+                        <div class="cover-box">
+                             <div class="placeholder-cover"><i class="ph ph-notebook"></i></div>
+                            <span class="quality-badge">全新未拆</span>
+                        </div>
+                        <div class="book-info">
+                            <h4 class="title">大学英语四级真题备考资料大全套</h4>
+                            <div class="b-tags">
+                                <span>急出包邮</span>
+                            </div>
+                            <div class="b-foot">
+                                <div class="prices">
+                                    <span class="current">¥ 35.0</span>
+                                    <span class="origin">¥100.0</span>
+                                </div>
+                                <i class="ph-fill ph-shopping-cart-simple btn-cart"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- 右侧边栏聚合区 -->
+        <aside class="sidebar">
+            
+            <div class="user-widget glass-panel">
+                <div class="u-header">
+                    <img src="assets/avatar_user.png" alt="Lilei">
+                    <div class="u-info">
+                        <h4>李雷</h4>
+                        <span class="u-level">LV4 • 图书分享达人</span>
+                    </div>
+                </div>
+                <div class="u-datas">
+                    <div class="data-item">
+                        <strong>12</strong>
+                        <span>我发布的</span>
+                    </div>
+                    <div class="data-item">
+                        <strong>5</strong>
+                        <span>我卖出的</span>
+                    </div>
+                    <div class="data-item">
+                        <strong>35</strong>
+                        <span>我的收藏</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="shortcut-grid">
+                <div class="sc-item glass-panel">
+                    <i class="ph ph-shield-check color-blue"></i>
+                    <span>官方回收</span>
+                </div>
+                <div class="sc-item glass-panel">
+                    <i class="ph ph-leaf color-green"></i>
+                    <span>环保树</span>
+                </div>
+            </div>
+
+            <!-- 知识流通社 -->
+            <div class="community-widget glass-panel">
+                <div class="c-header">
+                    <h3>知识流通社</h3>
+                    <a href="#">去逛逛</a>
+                </div>
+                <div class="note-list">
+                    <div class="note-item">
+                        <div class="n-tag hot">🔥爆款</div>
+                        <p class="n-title">高数期中期末必背公式总结+易错真题</p>
+                        <div class="n-meta"><i class="ph-fill ph-heart"></i> 1.2w 赞同</div>
+                    </div>
+                    <div class="note-item">
+                        <div class="n-tag">笔记</div>
+                        <p class="n-title">宏观经济学曼昆版：前五章思维导图</p>
+                        <div class="n-meta"><i class="ph-fill ph-heart"></i> 3.4k 赞同</div>
+                    </div>
+                    <div class="note-item">
+                        <div class="n-tag new">最新</div>
+                        <p class="n-title">C语言指针完全脱壳指南，学弟点进来</p>
+                        <div class="n-meta"><i class="ph-fill ph-heart"></i> 891 赞同</div>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+    </main>
+
+    <!-- 全局交互反馈：Toast 容器 -->
+    <div id="toast-container"></div>
+
+    <!-- 全局交互反馈：定制化高级弹窗 -->
+    <div class="modal-overlay" id="app-modal">
+        <div class="modal-box glass-panel">
+            <div class="modal-header">
+                <h3 id="modal-title">操作提示</h3>
+                <i class="ph ph-x modal-close"></i>
+            </div>
+            <div class="modal-body" id="modal-body">
+                这是内容。
+            </div>
+            <div class="modal-footer">
+                <button class="btn-ghost modal-close-btn">取消离开</button>
+                <button class="btn-solid primary-gradient" id="modal-confirm-btn">确认执行</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

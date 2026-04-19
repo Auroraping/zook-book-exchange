@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>求书 - 浙江大学校园二手书与学术资源平台</title>
+  </head>
+  <body class="bg-gray-50 text-gray-800 font-sans antialiased">
+    <div id="root"></div>
+    <script>
+      window.addEventListener('error', function(e) {
+        document.body.innerHTML += '<div style="color:red; background:white; padding:20px; z-index:9999; position:fixed; top:0; left:0; width:100%;"><h3 style="font-size:20px;">运行崩溃捕获:</h3><pre style="white-space:pre-wrap;">' + e.message + '\n\n' + e.error.stack + '</pre></div>';
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        document.body.innerHTML += '<div style="color:red; background:white; padding:20px; z-index:9999; position:fixed; top:0; left:0; width:100%;"><h3 style="font-size:20px;">Promise崩溃捕获:</h3><pre style="white-space:pre-wrap;">' + e.reason + '</pre></div>';
+      });
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
