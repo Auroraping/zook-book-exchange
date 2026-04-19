@@ -1,16 +1,23 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, BookOpen, MessageSquare, User, Bell, PackagePlus } from 'lucide-react';
+import { Search, BookOpen, MessageSquare, User, Bell, PackagePlus, LogOut } from 'lucide-react';
+import { useAuth } from './AuthContext';
 
 const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { isLoggedIn, logout } = useAuth();
   
   const handleSearch = (e) => {
     if (e.key === 'Enter' && searchQuery.trim()) {
       navigate(`/books?q=${encodeURIComponent(searchQuery)}`);
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
   
   // 模拟判断是否处在登录页，若是则全屏隐藏 Layout Nav（根据业务逻辑，登录页不需要顶部导航栏）
@@ -80,13 +87,20 @@ const Layout = () => {
 
             <div className="h-8 w-[1px] bg-gray-100 mx-1 hidden md:block"></div>
 
-            <Link to="/login" className="text-sm font-bold text-gray-500 hover:text-zju-blue px-2 transition-colors">登录</Link>
-
-            <Link to="/profile" className="flex items-center group relative">
-              <div className="p-0.5 rounded-full border-2 border-transparent group-hover:border-zju-blue/30 transition-all duration-500">
-                <img src="/user_avatar.png" alt="Avatar" className="w-10 h-10 rounded-full bg-white object-cover shadow-sm ring-1 ring-gray-100" />
+            {!isLoggedIn ? (
+              <Link to="/login" className="text-sm font-bold text-gray-500 hover:text-zju-blue px-2 transition-colors">登录</Link>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Link to="/profile" className="flex items-center group relative">
+                  <div className="p-0.5 rounded-full border-2 border-transparent group-hover:border-zju-blue/30 transition-all duration-500">
+                    <img src="/user_avatar.png" alt="Avatar" className="w-10 h-10 rounded-full bg-white object-cover shadow-sm ring-1 ring-gray-100" />
+                  </div>
+                </Link>
+                <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="退出登录">
+                  <LogOut className="w-5 h-5" />
+                </button>
               </div>
-            </Link>
+            )}
           </div>
         </div>
       </header>

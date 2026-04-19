@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
+import { AuthProvider } from './components/AuthContext';
 
 // 引入所有真实业务体系下的页面组件
 import Home from './pages/Home';
@@ -18,24 +19,26 @@ import Evaluate from './pages/Evaluate';
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        {/* React Router 页面挂载主线 */}
-        <Route index element={<Home />} />
-        <Route path="login" element={<Login />} />
-        <Route path="books" element={<SearchBooks />} />
-        <Route path="book/:id" element={<BookDetail />} />
-        <Route path="publish" element={<Publish />} />
-        <Route path="messages" element={<Messages />} />
-        <Route path="orders" element={<Orders />} />
-        <Route path="evaluate/:id" element={<Evaluate />} />
-        <Route path="profile" element={<Profile />} />
-        <Route path="schedule" element={<Schedule />} />
-        <Route path="ai-analysis" element={<AIAnalysis />} />
-        <Route path="community" element={<Community />} />
-        <Route path="achievements" element={<Achievements />} />
-      </Route>
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          {/* React Router 页面挂载主线 */}
+          <Route index element={<Home />} />
+          <Route path="login" element={<Login />} />
+          <Route path="books" element={<SearchBooks />} />
+          <Route path="book/:id" element={<BookDetail />} />
+          <Route path="publish" element={<Publish />} />
+          <Route path="messages" element={<Messages />} />
+          <Route path="orders" element={<Orders />} />
+          <Route path="evaluate/:id" element={<Evaluate />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="schedule" element={<Schedule />} />
+          <Route path="ai-analysis" element={<AIAnalysis />} />
+          <Route path="community" element={<Community />} />
+          <Route path="achievements" element={<Achievements />} />
+        </Route>
+      </Routes>
+    </AuthProvider>
   );
 }
 

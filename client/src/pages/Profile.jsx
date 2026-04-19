@@ -1,7 +1,24 @@
 import { Link } from 'react-router-dom';
-import { Package, Heart, BookMarked, Award, CreditCard, ChevronRight, Settings, ShieldCheck } from 'lucide-react';
+import { Package, Heart, BookMarked, Award, CreditCard, ChevronRight, Settings, ShieldCheck, Lock } from 'lucide-react';
+import { useAuth } from '../components/AuthContext';
 
 const Profile = () => {
+  const { isLoggedIn } = useAuth();
+
+  if (!isLoggedIn) {
+     return (
+        <div className="max-w-[1000px] mx-auto py-12 flex flex-col items-center justify-center text-center">
+            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6 text-gray-300">
+                <Lock className="w-12 h-12" />
+            </div>
+            <h2 className="text-2xl font-black text-gray-800 mb-2">欢迎来到求书个人中心</h2>
+            <p className="text-gray-500 mb-8 max-w-md">登录后即可查看您的买卖订单、学期省钱指数以及您收藏的心仪书籍。</p>
+            <Link to="/login" className="bg-zju-blue text-white px-12 py-3 rounded-2xl font-bold shadow-xl shadow-zju-blue/20 hover:shadow-zju-blue/40 transition-all hover:-translate-y-1">
+                立即极速登录
+            </Link>
+        </div>
+     );
+  }
   return (
     <div className="max-w-[1000px] mx-auto flex gap-8">
         {/* 左侧资产菜单 */}

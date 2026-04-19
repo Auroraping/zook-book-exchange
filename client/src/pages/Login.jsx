@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../components/AuthContext';
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // 模拟身份跳转至主页
+    login(); // 更新全局模拟状态
     setTimeout(() => {
       navigate('/');
     }, 600);
