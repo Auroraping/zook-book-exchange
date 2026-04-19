@@ -90,7 +90,7 @@ const SearchBooks = () => {
                 <img src={book.cover} alt={book.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 {book.aiScore && (
                   <div className="absolute top-2 left-2 bg-gradient-to-r from-zju-blue to-[#0050ab] text-white text-[11px] px-2 py-1 flex items-center gap-1 rounded-md shadow-md font-bold">
-                    <Star className="w-3 h-3 fill-white" /> AI 分析指数 {book.aiScore}
+                    <Star className="w-3 h-3 fill-white" /> AI 推荐指数 {book.aiScore}
                   </div>
                 )}
               </div>

@@ -8,10 +8,10 @@ export const MOCK_BOOKS = [
 ];
 
 export const MOCK_COURSES = [
-  { id: 'c1', name: '高等数学 I', term: '大一秋冬学期', type: '公共必修' },
+  { id: 'c1', name: '高等数学 I', term: '大二春夏学期', type: '公共必修' },
   { id: 'c2', name: '微观经济学', term: '大二春夏学期', type: '大类必修' },
-  { id: 'c3', name: '数据结构基础', term: '大二秋冬学期', type: '专业必修' },
-  { id: 'c4', name: '管理信息系统', term: '大三秋冬学期', type: '专业选修' },
+  { id: 'c3', name: '数据结构基础', term: '大二春夏学期', type: '专业必修' },
+  { id: 'c4', name: '管理信息系统', term: '大二春夏学期', type: '专业选修' },
 ];
 
 export const MOCK_NOTES = [
