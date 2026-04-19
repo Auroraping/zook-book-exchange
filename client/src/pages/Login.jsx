@@ -5,7 +5,6 @@ import { useAuth } from '../components/AuthContext';
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [role, setRole] = useState('buyer'); // 添加角色状态
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -13,12 +12,7 @@ const Login = () => {
     e.preventDefault();
     login(); // 更新全局模拟状态
     setTimeout(() => {
-      // 根据角色分流
-      if (role === 'seller') {
-        navigate('/publish');
-      } else {
-        navigate('/');
-      }
+      navigate('/');
     }, 600);
   };
 
@@ -52,23 +46,7 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             
-            {/* 角色选项卡 */}
-            <div className="flex bg-gray-100 p-1 rounded-lg mb-2">
-              <button 
-                type="button"
-                onClick={() => setRole('buyer')}
-                className={`flex-1 py-1.5 text-sm font-bold rounded-md transition-all ${role === 'buyer' ? 'bg-white text-zju-blue shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                我是买家 (淘学长教材)
-              </button>
-              <button 
-                type="button"
-                onClick={() => setRole('seller')}
-                className={`flex-1 py-1.5 text-sm font-bold rounded-md transition-all ${role === 'seller' ? 'bg-white text-zju-blue shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                我是卖家 (清期末闲置)
-              </button>
-            </div>
+            {/* 删除了角色选项卡 */}
 
             {!isLogin && (
               <div>
@@ -86,7 +64,7 @@ const Login = () => {
             </div>
             
             <button type="submit" className="mt-2 w-full h-11 bg-zju-blue text-white rounded-lg font-bold hover:bg-zju-hover hover:shadow-lg hover:shadow-zju-blue/30 transition-all flex items-center justify-center gap-2">
-               {isLogin ? `登录系统 (${role === 'buyer' ? '买家版' : '卖家版'})` : '完成高校身份验证并注册'}
+               {isLogin ? '登录系统' : '完成高校身份验证并注册'}
             </button>
             
             <button type="button" onClick={handleSubmit} className="w-full h-12 bg-[#f8fafc] text-gray-700 border border-gray-200 rounded-lg font-semibold hover:bg-gray-100 transition-all flex items-center justify-center gap-2">
