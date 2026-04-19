@@ -84,7 +84,7 @@ const Layout = () => {
 
             <Link to="/profile" className="flex items-center group relative">
               <div className="p-0.5 rounded-full border-2 border-transparent group-hover:border-zju-blue/30 transition-all duration-500">
-                <img src="/avatar_user_1776602211333.png" alt="Avatar" className="w-10 h-10 rounded-full bg-white object-cover shadow-sm ring-1 ring-gray-100" />
+                <img src="/user_avatar.png" alt="Avatar" className="w-10 h-10 rounded-full bg-white object-cover shadow-sm ring-1 ring-gray-100" />
               </div>
             </Link>
           </div>

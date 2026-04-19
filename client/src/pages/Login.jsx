@@ -24,7 +24,7 @@ const Login = () => {
         
         {/* 左侧形象区 */}
         <div className="w-5/12 bg-zju-blue text-white p-12 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('https://via.placeholder.com/600x800/002d63/ffffff?text=ZJU+Campus')] mix-blend-overlay opacity-30 bg-cover bg-center"></div>
+          <div className="absolute inset-0 bg-[url('/zju_campus_bg.png')] mix-blend-overlay opacity-30 bg-cover bg-center"></div>
           <div className="relative z-10 flex items-center gap-3">
             <BookOpen className="w-10 h-10" />
             <h1 className="text-3xl font-serif font-bold tracking-widest">求书</h1>

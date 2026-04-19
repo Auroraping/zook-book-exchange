@@ -8,7 +8,7 @@ const Profile = () => {
         <div className="w-[280px] shrink-0 flex flex-col gap-6">
              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col items-center">
                  <div className="relative mb-4">
-                     <img src="/avatar_user_1776602211333.png" className="w-20 h-20 rounded-full border-4 border-zju-light shadow-md bg-white object-cover" />
+                <img src="/user_avatar.png" className="w-20 h-20 rounded-full border-4 border-zju-light shadow-md bg-white object-cover" />
                      <div className="absolute bottom-0 right-0 bg-white rounded-full p-1 shadow-sm border border-gray-100">
                          <ShieldCheck className="w-4 h-4 text-green-500" />
                      </div>
@@ -98,7 +98,7 @@ const Profile = () => {
                 <div className="p-6 flex flex-col gap-4">
                     {/* 假数据渲染单行状态 */}
                      <div className="flex items-center gap-6 p-4 rounded-xl border border-gray-100 bg-gray-50/50">
-                        <img src="https://via.placeholder.com/600x800/003F88/ffffff?text=Economics" className="w-10 h-14 object-cover rounded shadow-sm" />
+                         <img src="/book_economics.png" className="w-10 h-14 object-cover rounded shadow-sm" />
                         <div className="flex-1">
                             <h4 className="font-bold text-gray-800 text-sm mb-1">微观经济学：现代观点</h4>
                             <p className="text-[10px] text-gray-400">西溪校区面交单 | 交易编号: #TRD-08221</p>
