@@ -69,6 +69,10 @@ const Layout = () => {
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
             </Link>
 
+            <Link to="/login" className="text-sm font-semibold text-gray-600 hover:text-zju-blue transition-colors whitespace-nowrap">
+              登录 / 注册
+            </Link>
+
             <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <img src="/avatar_user_1776602211333.png" alt="Avatar" className="w-10 h-10 rounded-full border-2 border-zju-light shadow-sm bg-white object-cover" />
             </Link>
