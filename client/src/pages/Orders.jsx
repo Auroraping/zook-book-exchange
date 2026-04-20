@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Package, User, MapPin, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { MOCK_BOOKS } from '../mockData';
 
 const Orders = () => {
+    const navigate = useNavigate();
     const tabs = ['全部状态', '待对方确认', '玉泉当面交付中', '待收货', '待评价'];
     const [activeTab, setActiveTab] = useState('全部状态');
 
@@ -44,8 +46,16 @@ const Orders = () => {
                         <div className="flex flex-col items-end gap-3 min-w-[200px]">
                             <div className="text-2xl font-black text-red-500">¥ {MOCK_BOOKS[1].price}</div>
                             <div className="flex gap-2">
-                                <button className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-50 transition-colors shadow-sm">联系卖家</button>
-                                <button className="bg-zju-blue text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md shadow-zju-blue/20 hover:bg-zju-hover transition-colors flex gap-1 items-center">
+                                <button 
+                                    onClick={() => navigate('/messages')}
+                                    className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-50 transition-colors shadow-sm"
+                                >
+                                    联系卖家
+                                </button>
+                                <button 
+                                    onClick={() => alert('确认收货成功！')}
+                                    className="bg-zju-blue text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md shadow-zju-blue/20 hover:bg-zju-hover transition-colors flex gap-1 items-center"
+                                >
                                     <CheckCircle2 className="w-4 h-4" /> 确认已当面收货
                                 </button>
                             </div>
@@ -76,7 +86,10 @@ const Orders = () => {
                         
                         <div className="flex flex-col items-end gap-3 min-w-[200px]">
                             <div className="text-xl font-bold text-gray-800">¥ {MOCK_BOOKS[0].price}</div>
-                            <button className="bg-white border border-zju-blue text-zju-blue px-4 py-1.5 rounded-lg font-bold text-xs hover:bg-zju-light transition-colors shadow-sm">
+                            <button 
+                                onClick={() => navigate('/evaluate/0')}
+                                className="bg-white border border-zju-blue text-zju-blue px-4 py-1.5 rounded-lg font-bold text-xs hover:bg-zju-light transition-colors shadow-sm"
+                            >
                                 评价并获取积分
                             </button>
                         </div>
