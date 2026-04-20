@@ -81,7 +81,7 @@ const Home = () => {
         </div>
 
         <div className="grid grid-cols-4 gap-6">
-          {MOCK_BOOKS.slice(0, 4).map(book => (
+          {MOCK_BOOKS.slice(0, 8).map(book => (
             <Link to={`/book/${book.id}`} key={book.id} className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group">
               <div className="relative h-[240px] overflow-hidden">
                 <img src={book.cover} alt={book.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
