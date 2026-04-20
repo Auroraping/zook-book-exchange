@@ -9,7 +9,7 @@ const SearchBooks = () => {
   const query = searchParams.get('q') || '';
 
   const filteredBooks = useMemo(() => {
-    let list = [...MOCK_BOOKS, ...MOCK_BOOKS, ...MOCK_BOOKS]; // 模拟大量数据
+    let list = [...MOCK_BOOKS]; // 仅使用原始 mock 数据
     if (query) {
       list = list.filter(book => 
         book.title.toLowerCase().includes(query.toLowerCase()) || 
