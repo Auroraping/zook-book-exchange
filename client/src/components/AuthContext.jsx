@@ -3,26 +3,29 @@ import { createContext, useContext, useState, useEffect } from 'react';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     // 检查本地存储
-    const savedStatus = localStorage.getItem('isLoggedIn') === 'true';
-    setIsLoggedIn(savedStatus);
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
   }, []);
 
-  const login = () => {
-    setIsLoggedIn(true);
-    localStorage.setItem('isLoggedIn', 'true');
+  const login = (role = 'user') => {
+    const newUser = { id: 'me', name: '浙大同学', role };
+    setUser(newUser);
+    localStorage.setItem('user', JSON.stringify(newUser));
   };
 
   const logout = () => {
-    setIsLoggedIn(false);
-    localStorage.setItem('isLoggedIn', 'false');
+    setUser(null);
+    localStorage.removeItem('user');
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoggedIn: !!user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

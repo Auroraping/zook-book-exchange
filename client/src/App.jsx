@@ -16,6 +16,8 @@ import AIAnalysis from './pages/AIAnalysis';
 import Community from './pages/Community';
 import Achievements from './pages/Achievements';
 import Evaluate from './pages/Evaluate';
+import Admin from './pages/Admin';
+
 
 function App() {
   return (
@@ -32,10 +34,14 @@ function App() {
           <Route path="orders" element={<Orders />} />
           <Route path="evaluate/:id" element={<Evaluate />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="profile/:id" element={<Profile />} />
+
           <Route path="schedule" element={<Schedule />} />
           <Route path="ai-analysis" element={<AIAnalysis />} />
           <Route path="community" element={<Community />} />
           <Route path="achievements" element={<Achievements />} />
+          <Route path="admin" element={<Admin />} />
+
         </Route>
       </Routes>
     </AuthProvider>

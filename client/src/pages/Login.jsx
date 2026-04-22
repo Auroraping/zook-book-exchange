@@ -8,12 +8,16 @@ const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    login(); // 更新全局模拟状态
+  const handleLogin = (role = 'user') => {
+    login(role); // 更新全局模拟状态
     setTimeout(() => {
       navigate('/');
     }, 600);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    handleLogin('user');
   };
 
   return (
@@ -67,9 +71,9 @@ const Login = () => {
                {isLogin ? '登录系统' : '完成高校身份验证并注册'}
             </button>
             
-            <button type="button" onClick={handleSubmit} className="w-full h-12 bg-[#f8fafc] text-gray-700 border border-gray-200 rounded-lg font-semibold hover:bg-gray-100 transition-all flex items-center justify-center gap-2">
-               <ShieldCheck className="w-5 h-5 text-green-600" />
-               CAS 统一身份一键登录 (模拟)
+            <button type="button" onClick={() => handleLogin('admin')} className="w-full h-12 bg-gray-800 text-white border border-gray-900 rounded-lg font-semibold hover:bg-black transition-all flex items-center justify-center gap-2">
+               <ShieldCheck className="w-5 h-5 text-yellow-400" />
+               管理员后台登录 (测试用)
             </button>
           </form>
 

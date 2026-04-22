@@ -38,7 +38,7 @@ const Home = () => {
             <Link to="/achievements" className="text-sm font-bold text-zju-blue flex items-center hover:underline">查看我的回收额度 &rarr;</Link>
           </div>
           <div className="flex-1 bg-zju-light rounded-2xl p-6 border border-blue-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-             <div>
+            <div>
               <div className="flex items-center gap-2 mb-2">
                 <Cpu className="text-zju-blue w-5 h-5"/>
                 <h3 className="font-bold text-zju-blue text-lg">AI 选书智囊</h3>
@@ -71,17 +71,20 @@ const Home = () => {
       </section>
 
       {/* 本周热门推荐 */}
-      <section>
-        <div className="flex justify-between items-end mb-6">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="text-zju-blue" />
+      <section className="mb-16">
+        <div className="flex justify-between items-end mb-8">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-8 h-1 bg-zju-blue rounded-full"></span>
+              <span className="text-xs font-bold text-zju-blue tracking-widest uppercase">Hot Items</span>
+            </div>
             <h2 className="text-2xl font-bold text-gray-800">平台捡漏热榜</h2>
           </div>
           <Link to="/books" className="text-sm text-gray-500 hover:text-zju-blue font-medium">查看所有好书 &rarr;</Link>
         </div>
 
         <div className="grid grid-cols-4 gap-6">
-          {MOCK_BOOKS.slice(0, 8).map(book => (
+          {MOCK_BOOKS.filter(b => b.status === 'approved').slice(0, 8).map(book => (
             <Link to={`/book/${book.id}`} key={book.id} className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group">
               <div className="relative h-[240px] overflow-hidden">
                 <img src={book.cover} alt={book.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -97,6 +100,26 @@ const Home = () => {
                 )}
               </div>
               <div className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                    <object>
+                      <Link 
+                        to={`/profile/${book.sellerId || 'u1'}`}
+                        className="w-5 h-5 rounded-full bg-zju-light flex items-center justify-center text-[8px] font-bold text-zju-blue hover:bg-zju-blue hover:text-white transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {book.seller[0]}
+                      </Link>
+                    </object>
+                    <object>
+                      <Link 
+                        to={`/profile/${book.sellerId || 'u1'}`} 
+                        className="text-[10px] text-gray-500 font-medium hover:text-zju-blue transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {book.seller}
+                      </Link>
+                    </object>
+                </div>
                 <h3 className="font-bold text-gray-800 mb-1 truncate">{book.title}</h3>
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">{book.campus}</span>

@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, BookOpen, MessageSquare, User, Bell, PackagePlus, LogOut } from 'lucide-react';
+import { Search, BookOpen, MessageSquare, User, Bell, PackagePlus, LogOut, ShieldCheck } from 'lucide-react';
+
 import { useAuth } from './AuthContext';
 
 const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const { isLoggedIn, logout } = useAuth();
+  const { user, isLoggedIn, logout } = useAuth();
+
   
   const handleSearch = (e) => {
     if (e.key === 'Enter' && searchQuery.trim()) {
@@ -60,6 +62,12 @@ const Layout = () => {
             <Link to="/schedule" className={`nav-link px-4 py-2 text-sm font-bold ${location.pathname==='/schedule' ? 'nav-link-active' : ''}`}>课表</Link>
             <Link to="/community" className={`nav-link px-4 py-2 text-sm font-bold ${location.pathname==='/community' ? 'nav-link-active' : ''}`}>笔记</Link>
             <Link to="/profile" className={`nav-link px-4 py-2 text-sm font-bold ${location.pathname==='/profile' ? 'nav-link-active' : ''}`}>中心</Link>
+            {user?.role === 'admin' && (
+              <Link to="/admin" className={`nav-link px-4 py-2 text-sm font-bold flex items-center gap-1 ${location.pathname==='/admin' ? 'nav-link-active text-yellow-600' : 'text-gray-600'}`}>
+                <ShieldCheck className="w-4 h-4" /> 管理
+              </Link>
+            )}
+
           </nav>
 
           {/* 交互功能区 */}

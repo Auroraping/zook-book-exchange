@@ -9,7 +9,7 @@ const SearchBooks = () => {
   const query = searchParams.get('q') || '';
 
   const filteredBooks = useMemo(() => {
-    let list = [...MOCK_BOOKS]; // 仅使用原始 mock 数据
+    let list = MOCK_BOOKS.filter(book => book.status === 'approved');
     if (query) {
       list = list.filter(book => 
         book.title.toLowerCase().includes(query.toLowerCase()) || 
@@ -102,14 +102,18 @@ const SearchBooks = () => {
                   <span className="text-[10px] bg-blue-50 text-zju-blue px-1.5 py-0.5 rounded border border-blue-100">{book.campus}面交</span>
                   {idx % 3 === 0 && <span className="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded border border-green-100">可刀仪价</span>}
                 </div>
-                <div className="mt-auto flex justify-between items-end border-t border-gray-50 pt-3">
-                  <div>
-                    <span className="text-xl font-extrabold text-red-500">¥{book.price}</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] text-gray-400">{book.seller}</div>
-                    <div className="text-[10px] text-yellow-500 font-bold">★ {book.credit} 信誉分</div>
-                  </div>
+                <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
+                  <Link 
+                    to={`/profile/${book.sellerId || 'u1'}`}
+                    className="flex items-center gap-2 group/seller"
+                    onClick={(e) => e.stopPropagation()} 
+                  >
+                    <div className="w-6 h-6 rounded-full bg-zju-light flex items-center justify-center text-[10px] font-bold text-zju-blue group-hover/seller:bg-zju-blue group-hover/seller:text-white transition-colors">
+                      {book.seller[0]}
+                    </div>
+                    <span className="text-xs text-gray-500 group-hover/seller:text-zju-blue transition-colors">{book.seller}</span>
+                  </Link>
+                  <span className="text-[10px] text-gray-400 font-medium bg-gray-50 px-2 py-0.5 rounded">{book.credit} 信誉分</span>
                 </div>
               </div>
             </Link>

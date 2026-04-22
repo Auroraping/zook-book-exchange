@@ -1,21 +1,22 @@
 // 提供各系统的模拟数据支持
 
 export const MOCK_BOOKS = [
-  { id: 'b1', title: '高等数学（第七版）上册', author: '同济大学数学系', condition: '9成新，有少量铅笔勾画', price: 15.5, originalPrice: 42.0, campus: '紫金港校区', seller: '计科王学长', credit: 4.8, hasNotes: true, courseId: 'c1', aiScore: 92, aiSummary: "该书为考研通用教辅，考研学生必备，流通率极高。", cover: "/book_calculus.png" },
-  { id: 'b2', title: '微观经济学：现代观点', author: '哈尔·R·范里安', condition: '全新未拆封', price: 45.0, originalPrice: 88.0, campus: '西溪校区', seller: '经管李学姐', credit: 4.9, hasNotes: false, courseId: 'c2', aiScore: 88, aiSummary: "教师授课依据，内容艰深，建议购买以配合老师PPT阅读。", cover: "/book_economics.png" },
-  { id: 'b3', title: '数据结构与算法分析 (C语言描述)', author: 'Mark Allen Weiss', condition: '7成新，边角有磨损', price: 20.0, originalPrice: 65.0, campus: '玉泉校区', seller: '软件小哥', credit: 4.5, hasNotes: true, courseId: 'c3', aiScore: 98, aiSummary: "核心硬课！这门课期末考试难度极大，含高分学长笔记的这本绝对物超所值。", cover: "/book_ds.png" },
-  { id: 'b4', title: '管理信息系统 (第七版)', author: '薛华成', condition: '8成新', price: 12.0, originalPrice: 45.0, campus: '紫金港校区', seller: '管院小张', credit: 4.2, hasNotes: false, courseId: 'c4', aiScore: 45, aiSummary: "往届同学反馈该书主要用于应付开卷考试，借阅即可，非考研方向不需要买。", cover: "/book_mis.png" },
-  { id: 'b5', title: '线性代数及其应用 (原书第5版)', author: 'David C. Lay', condition: '9.5成新，无涂划', price: 35.0, originalPrice: 79.0, campus: '紫金港校区', seller: '数学系学霸', credit: 5.0, hasNotes: true, courseId: 'c5', aiScore: 95, aiSummary: "浙大理工科必修课教材，版本较新，内附期末总结思维导图。", cover: "/book_linear_algebra.png" },
-  { id: 'b6', title: '大学物理学 (第三版)', author: '马文蔚', condition: '8成新，有笔记', price: 18.0, originalPrice: 52.0, campus: '紫金港校区', seller: '物理系小王', credit: 4.6, hasNotes: true, courseId: 'c6', aiScore: 89, aiSummary: "大物必修教材，包含大量课后习题解析，省去买辅导书的钱。", cover: "/book_physics.png" },
-  { id: 'b7', title: '现代操作系统 (第4版)', author: 'Andrew S. Tanenbaum', condition: '全新', price: 55.0, originalPrice: 99.0, campus: '玉泉校区', seller: '研一学长', credit: 4.9, hasNotes: false, courseId: 'c7', aiScore: 91, aiSummary: "计算机专业硬核必修，翻译质量极高，这本全新未拆封。", cover: "/book_os.png" },
-  { id: 'b8', title: '电路原理 (第5版)', author: '邱关源', condition: '7成新', price: 15.0, originalPrice: 48.0, campus: '玉泉校区', seller: '电院老哥', credit: 4.3, hasNotes: true, courseId: 'c8', aiScore: 85, aiSummary: "电院四大天书之一，建议配合附带的学霸手写纠错笔记阅读。", cover: "/book_circuits.png" },
-  { id: 'b9', title: '机器学习 (西瓜书)', author: '周志华', condition: '9.9成新', price: 48.0, originalPrice: 88.0, campus: '紫金港校区', seller: 'AI实验室小李', credit: 4.8, hasNotes: false, courseId: 'c9', aiScore: 99, aiSummary: "AI领域入门必学！几乎全新，性价比极高。", cover: "/book_ml.png" },
-  { id: 'b10', title: '离散数学及其应用', author: 'Kenneth H. Rosen', condition: '8.5成新', price: 40.0, originalPrice: 95.0, campus: '紫金港校区', seller: '计科小赵', credit: 4.7, hasNotes: true, courseId: 'c10', aiScore: 93, aiSummary: "包含所有课后习题答案解析，期末考试刷题必备。", cover: "/book_discrete_math.png" },
-  { id: 'b11', title: '计算机网络：自顶向下方法', author: 'James F. Kurose', condition: '9成新', price: 42.0, originalPrice: 89.0, campus: '玉泉校区', seller: '网安大神', credit: 4.9, hasNotes: false, courseId: 'c11', aiScore: 96, aiSummary: "计网经典教材，内容通俗易懂，考研党最爱。", cover: "/book_networks.png" },
-  { id: 'b12', title: '新标准大学英语 综合教程', author: '文秋芳', condition: '全新', price: 25.0, originalPrice: 65.0, campus: '紫金港校区', seller: '外语系小美', credit: 5.0, hasNotes: false, courseId: 'c12', aiScore: 70, aiSummary: "大学英语必修，建议购买全新，方便课堂记录。", cover: "/book_english.png" },
-  { id: 'b13', title: '信号与系统 (第2版)', author: 'Alan V. Oppenheim', condition: '7.5成新', price: 28.0, originalPrice: 72.0, campus: '西溪校区', seller: '信通小陈', credit: 4.4, hasNotes: true, courseId: 'c13', aiScore: 87, aiSummary: "奥本海姆经典，课程难度大，带重点勾画和习题解析。", cover: "/book_signals.png" },
-  { id: 'b14', title: '程序设计专题学习指导', author: '陈越', condition: '9.5成新', price: 15.0, originalPrice: 35.0, campus: '紫金港校区', seller: 'PAT高分选手', credit: 4.9, hasNotes: true, courseId: 'c14', aiScore: 94, aiSummary: "浙大著名FOP课教材，陈越姥姥亲编，PAT备考神器。", cover: "/book_programming.png" }
+  { id: 'b1', title: '高等数学（第七版）上册', author: '同济大学数学系', condition: '9成新，有少量铅笔勾画', price: 15.5, originalPrice: 42.0, campus: '紫金港校区', seller: '计科王学长', sellerId: 'u1', credit: 4.8, hasNotes: true, courseId: 'c1', aiScore: 92, aiSummary: "该书为考研通用教辅，考研学生必备，流通率极高。", cover: "/book_calculus.png", status: "approved" },
+  { id: 'b2', title: '微观经济学：现代观点', author: '哈尔·R·范里安', condition: '全新未拆封', price: 45.0, originalPrice: 88.0, campus: '西溪校区', seller: '经管李学姐', sellerId: 'u2', credit: 4.9, hasNotes: false, courseId: 'c2', aiScore: 88, aiSummary: "教师授课依据，内容艰深，建议购买以配合老师PPT阅读。", cover: "/book_economics.png", status: "approved" },
+  { id: 'b3', title: '数据结构与算法分析 (C语言描述)', author: 'Mark Allen Weiss', condition: '7成新，边角有磨损', price: 20.0, originalPrice: 65.0, campus: '玉泉校区', seller: '软件小哥', sellerId: 'u3', credit: 4.5, hasNotes: true, courseId: 'c3', aiScore: 98, aiSummary: "核心硬课！这门课期末考试难度极大，含高分学长笔记的这本绝对物超所值。", cover: "/book_ds.png", status: "approved" },
+  { id: 'b4', title: '管理信息系统 (第七版)', author: '薛华成', condition: '8成新', price: 12.0, originalPrice: 45.0, campus: '紫金港校区', seller: '管院小张', sellerId: 'u2', credit: 4.2, hasNotes: false, courseId: 'c4', aiScore: 45, aiSummary: "往届同学反馈该书主要用于应付开卷考试，借阅即可，非考研方向不需要买。", cover: "/book_mis.png", status: "approved" },
+  { id: 'b5', title: '线性代数及其应用 (原书第5版)', author: 'David C. Lay', condition: '9.5成新，无涂划', price: 35.0, originalPrice: 79.0, campus: '紫金港校区', seller: '数学系学霸', sellerId: 'u1', credit: 5.0, hasNotes: true, courseId: 'c5', aiScore: 95, aiSummary: "浙大理工科必修课教材，版本较新，内附期末总结思维导图。", cover: "/book_linear_algebra.png", status: "approved" },
+  { id: 'b6', title: '大学物理学 (第三版)', author: '马文蔚', condition: '8成新，有笔记', price: 18.0, originalPrice: 52.0, campus: '紫金港校区', seller: '物理系小王', sellerId: 'u3', credit: 4.6, hasNotes: true, courseId: 'c6', aiScore: 89, aiSummary: "大物必修教材，包含大量课后习题解析，省去买辅导书的钱。", cover: "/book_physics.png", status: "approved" },
+  { id: 'b7', title: '现代操作系统 (第4版)', author: 'Andrew S. Tanenbaum', condition: '全新', price: 55.0, originalPrice: 99.0, campus: '玉泉校区', seller: '研一学长', sellerId: 'u1', credit: 4.9, hasNotes: false, courseId: 'c7', aiScore: 91, aiSummary: "计算机专业硬核必修，翻译质量极高，这本全新未拆封。", cover: "/book_os.png", status: "approved" },
+  { id: 'b8', title: '电路原理 (第5版)', author: '邱关源', condition: '7成新', price: 15.0, originalPrice: 48.0, campus: '玉泉校区', seller: '电院老哥', sellerId: 'u2', credit: 4.3, hasNotes: true, courseId: 'c8', aiScore: 85, aiSummary: "电院四大天书之一，建议配合附带的学霸手写纠错笔记阅读。", cover: "/book_circuits.png", status: "approved" },
+  { id: 'b9', title: '机器学习 (西瓜书)', author: '周志华', condition: '9.9成新', price: 48.0, originalPrice: 88.0, campus: '紫金港校区', seller: 'AI实验室小李', sellerId: 'u3', credit: 4.8, hasNotes: false, courseId: 'c9', aiScore: 99, aiSummary: "AI领域入门必学！几乎全新，性价比极高。", cover: "/book_ml.png", status: "approved" },
+  { id: 'b10', title: '离散数学及其应用', author: 'Kenneth H. Rosen', condition: '8.5成新', price: 40.0, originalPrice: 95.0, campus: '紫金港校区', seller: '计科小赵', sellerId: 'u1', credit: 4.7, hasNotes: true, courseId: 'c10', aiScore: 93, aiSummary: "包含所有课后习题答案解析，期末考试刷题必备。", cover: "/book_discrete_math.png", status: "approved" },
+  { id: 'b11', title: '计算机网络：自顶向下方法', author: 'James F. Kurose', condition: '9成新', price: 42.0, originalPrice: 89.0, campus: '玉泉校区', seller: '网安大神', sellerId: 'u3', credit: 4.9, hasNotes: false, courseId: 'c11', aiScore: 96, aiSummary: "计网经典教材，内容通俗易懂，考研党最爱。", cover: "/book_networks.png", status: "approved" },
+  { id: 'b12', title: '新标准大学英语 综合教程', author: '文秋芳', condition: '全新', price: 25.0, originalPrice: 65.0, campus: '紫金港校区', seller: '外语系小美', sellerId: 'u2', credit: 5.0, hasNotes: false, courseId: 'c12', aiScore: 70, aiSummary: "大学英语必修，建议购买全新，方便课堂记录。", cover: "/book_english.png", status: "approved" },
+  { id: 'b13', title: '信号与系统 (第2版)', author: 'Alan V. Oppenheim', condition: '7.5成新', price: 28.0, originalPrice: 72.0, campus: '西溪校区', seller: '信通小陈', sellerId: 'u1', credit: 4.4, hasNotes: true, courseId: 'c13', aiScore: 87, aiSummary: "奥本海姆经典，课程难度大，带重点勾画和习题解析。", cover: "/book_signals.png", status: "approved" },
+  { id: 'b14', title: '程序设计专题学习指导', author: '陈越', condition: '9.5成新', price: 15.0, originalPrice: 35.0, campus: '紫金港校区', seller: 'PAT高分选手', sellerId: 'u3', credit: 4.9, hasNotes: true, courseId: 'c14', aiScore: 94, aiSummary: "浙大著名FOP课教材，陈越姥姥亲编，PAT备考神器。", cover: "/book_programming.png", status: "approved" }
 ];
+
 
 export const MOCK_COURSES = [
   { id: 'c1', name: '高等数学 I', term: '大二春夏学期', type: '公共必修' },
@@ -29,3 +30,14 @@ export const MOCK_NOTES = [
   { id: 'n2', title: '数据结构历年PAT过题代码解析与避坑', course: '数据结构基础', author: '玉泉ACM大牛', likes: 899, isPaid: true },
   { id: 'n3', title: '微观经济学全本名词解释汇总（考试必背）', course: '微观经济学', author: '经济1901_张同学', likes: 342, isPaid: false },
 ];
+
+export const MOCK_REPORTS = [
+  { id: 'r1', bookId: 'b4', reason: '价格虚高', status: 'pending', timestamp: '2026-04-22 10:00' },
+];
+
+export const MOCK_USERS = [
+  { id: 'u1', name: '计科王学长', credit: 4.8, tradeCount: 18, level: 'Lv.4 资深买卖手', avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=u1', bio: '专注计科专业课教材，诚信交易。', joinDate: '2025-09-01' },
+  { id: 'u2', name: '经管李学姐', credit: 4.9, tradeCount: 25, level: 'Lv.5 金牌卖家', avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=u2', bio: '经管学院大四毕业生，全套教材打包优惠。', joinDate: '2024-03-15' },
+  { id: 'u3', name: '软件小哥', credit: 4.5, tradeCount: 12, level: 'Lv.3 活跃买家', avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=u3', bio: '软院老铁，求各种编程书籍。', joinDate: '2025-11-20' }
+];
+
