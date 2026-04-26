@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, ShieldCheck } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { useAuth } from '../components/AuthContext';
 
 const Login = () => {
@@ -9,7 +9,7 @@ const Login = () => {
   const { login } = useAuth();
 
   const handleLogin = (role = 'user') => {
-    login(role); // 更新全局模拟状态
+    login(role);
     setTimeout(() => {
       navigate('/');
     }, 600);
@@ -21,69 +21,84 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-white">
-      {/* 浙大蓝色装饰大圆背景 */}
-      <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-zju-light rounded-full opacity-50 blur-3xl mix-blend-multiply"></div>
-      <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-blue-100/50 rounded-full opacity-50 blur-3xl mix-blend-multiply"></div>
-
-      <div className="relative z-10 flex w-[900px] h-[550px] bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
-        
-        {/* 左侧形象区 */}
-        <div className="w-5/12 bg-zju-blue text-white p-12 flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('/zju_campus_bg.png')] mix-blend-overlay opacity-30 bg-cover bg-center"></div>
-          <div className="relative z-10 flex items-center gap-3">
+    <div className="min-h-screen flex items-center justify-center bg-white p-6">
+      <div className="w-full max-w-[440px] flex flex-col items-center">
+        {/* Logo */}
+        <div className="mb-8 flex flex-col items-center gap-2">
+          <div className="text-google-blue p-2">
             <BookOpen className="w-10 h-10" />
-            <h1 className="text-3xl font-serif font-bold tracking-widest">求书</h1>
           </div>
-          <div className="relative z-10">
-            <h2 className="text-2xl font-semibold mb-4 leading-snug">连接全校知识，<br/>让教材新生。</h2>
-            <p className="text-blue-200 text-sm leading-relaxed">
-              这是属于浙江大学师生自己的二手交易与知识共享中枢。每一本书的流转，都是对环保与学术传承的致敬。
-            </p>
-          </div>
+          <h1 className="text-2xl font-normal text-google-gray tracking-tight">求是书缘</h1>
+          <h2 className="text-xl font-normal text-google-gray mt-2">
+            {isLogin ? '登录' : '创建账号'}
+          </h2>
+          <p className="text-sm text-google-gray/70 mt-1">
+            {isLogin ? '使用您的校园账号继续' : '加入浙大专属学术资源共享社区'}
+          </p>
         </div>
 
-        {/* 右侧表单区 */}
-        <div className="w-7/12 p-14 flex flex-col justify-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">{isLogin ? '欢迎回到求书平台' : '注册浙大校园新账号'}</h2>
-          <p className="text-sm text-gray-500 mb-6">{isLogin ? '请使用统一身份认证或绑定邮箱登录' : '为保证社区纯净，仅限 *.zju.edu.cn 邮箱'}</p>
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            
-            {/* 删除了角色选项卡 */}
-
+        {/* 表单卡片 */}
+        <div className="google-card w-full p-8 border-google-border/60">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             {!isLogin && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">学号 / 教工号</label>
-                <input type="text" required className="w-full h-10 border border-gray-300 rounded-lg px-4 text-sm focus:outline-none focus:ring-2 focus:ring-zju-blue/50 focus:border-zju-blue transition-all" placeholder="如：320010XXXX" />
+              <div className="relative">
+                <input 
+                  type="text" 
+                  required 
+                  className="peer w-full h-12 border border-google-border rounded-google-sm px-4 pt-2 text-google-gray focus:outline-none focus:ring-2 focus:ring-google-blue/20 focus:border-google-blue transition-all bg-transparent"
+                  placeholder=" "
+                />
+                <label className="absolute left-4 top-1/2 -translate-y-1/2 text-google-gray/50 text-sm transition-all peer-focus:top-2 peer-focus:text-[10px] peer-focus:text-google-blue peer-[:not(:placeholder-shown)]:top-2 peer-[:not(:placeholder-shown)]:text-[10px]">
+                  学号 / 教工号
+                </label>
               </div>
             )}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{isLogin ? '学号 / 浙大邮箱' : '浙大专属认证邮箱'}</label>
-              <input type="text" required className="w-full h-10 border border-gray-300 rounded-lg px-4 text-sm focus:outline-none focus:ring-2 focus:ring-zju-blue/50 focus:border-zju-blue transition-all" placeholder={isLogin ? '请输入账号' : 'example@zju.edu.cn'} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">密码</label>
-              <input type="password" required className="w-full h-10 border border-gray-300 rounded-lg px-4 text-sm focus:outline-none focus:ring-2 focus:ring-zju-blue/50 focus:border-zju-blue transition-all" placeholder="••••••••" />
-            </div>
             
-            <button type="submit" className="mt-2 w-full h-11 bg-zju-blue text-white rounded-lg font-bold hover:bg-zju-hover hover:shadow-lg hover:shadow-zju-blue/30 transition-all flex items-center justify-center gap-2">
-               {isLogin ? '登录系统' : '完成高校身份验证并注册'}
-            </button>
-            
-            <button type="button" onClick={() => handleLogin('admin')} className="w-full h-12 bg-gray-800 text-white border border-gray-900 rounded-lg font-semibold hover:bg-black transition-all flex items-center justify-center gap-2">
-               <ShieldCheck className="w-5 h-5 text-yellow-400" />
-               管理员后台登录 (测试用)
-            </button>
+            <div className="relative">
+              <input 
+                type="text" 
+                required 
+                className="peer w-full h-12 border border-google-border rounded-google-sm px-4 pt-2 text-google-gray focus:outline-none focus:ring-2 focus:ring-google-blue/20 focus:border-google-blue transition-all bg-transparent"
+                placeholder=" "
+              />
+              <label className="absolute left-4 top-1/2 -translate-y-1/2 text-google-gray/50 text-sm transition-all peer-focus:top-2 peer-focus:text-[10px] peer-focus:text-google-blue peer-[:not(:placeholder-shown)]:top-2 peer-[:not(:placeholder-shown)]:text-[10px]">
+                {isLogin ? '学号 / 浙大邮箱' : '浙大专属认证邮箱'}
+              </label>
+            </div>
+
+            <div className="relative">
+              <input 
+                type="password" 
+                required 
+                className="peer w-full h-12 border border-google-border rounded-google-sm px-4 pt-2 text-google-gray focus:outline-none focus:ring-2 focus:ring-google-blue/20 focus:border-google-blue transition-all bg-transparent"
+                placeholder=" "
+              />
+              <label className="absolute left-4 top-1/2 -translate-y-1/2 text-google-gray/50 text-sm transition-all peer-focus:top-2 peer-focus:text-[10px] peer-focus:text-google-blue peer-[:not(:placeholder-shown)]:top-2 peer-[:not(:placeholder-shown)]:text-[10px]">
+                密码
+              </label>
+            </div>
+
+            <div className="flex justify-between items-center mt-2">
+              <button 
+                type="button" 
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-sm text-google-blue font-medium hover:underline"
+              >
+                {isLogin ? '创建账号' : '已有账号？登录'}
+              </button>
+              <button type="submit" className="google-btn-primary">
+                {isLogin ? '登录' : '注册'}
+              </button>
+            </div>
           </form>
+        </div>
 
-          <div className="mt-8 text-center text-sm font-medium">
-            <span className="text-gray-500">{isLogin ? "还没有校园账号？" : "已有求书账号？"} </span>
-            <span onClick={() => setIsLogin(!isLogin)} className="text-zju-blue cursor-pointer hover:underline">
-              {isLogin ? "立即实名注册" : "返回密码登录"}
-            </span>
-          </div>
-
+        {/* 底部信息 */}
+        <div className="mt-12 text-center">
+            <p className="text-xs text-google-gray/40">
+                本系统仅限浙江大学在校师生使用<br/>
+                登录即代表您同意《求是书缘服务协议》
+            </p>
         </div>
       </div>
     </div>

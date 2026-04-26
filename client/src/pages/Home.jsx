@@ -1,136 +1,100 @@
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Upload, FileText, Gift, Sparkles, TrendingUp, Cpu } from 'lucide-react';
+import { ShoppingCart, Upload, FileText, Gift, ArrowRight, Sparkles, Zap, ShieldCheck } from 'lucide-react';
 import { MOCK_BOOKS } from '../mockData';
+import { useAuth } from '../components/AuthContext';
 
 const Home = () => {
+  const { isLoggedIn } = useAuth();
+  
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col min-h-screen bg-mesh">
       
-      {/* 顶部主横幅与官方展位 */}
-      <section className="grid grid-cols-12 gap-8 h-[360px]">
-        {/* 左侧巨大的英雄横幅 */}
-        <div className="col-span-8 bg-gradient-to-br from-[#003F88] to-[#0050ab] rounded-2xl relative overflow-hidden shadow-xl shadow-zju-blue/10 flex flex-col justify-center px-12 text-white">
-          <div className="absolute right-[-100px] top-[-50px] opacity-10">
-            <Sparkles className="w-[400px] h-[400px]" />
+      {/* 极简 M3 Hero 区域 - 注入灵魂的设计 */}
+      <section className="relative px-6 pt-20 pb-32 overflow-hidden">
+        <div className="max-w-7xl mx-auto flex flex-col items-center text-center relative z-10">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-google-blue/5 text-google-blue text-xs font-bold mb-8 animate-fade-in">
+            <Zap className="w-3 h-3 fill-current" />
+            <span>浙江大学专属学术流转平台</span>
           </div>
-          <div className="relative z-10">
-            <h1 className="text-4xl font-extrabold mb-4 font-serif tracking-wide text-white">让旧知焕发新生</h1>
-            <p className="text-lg text-blue-100 mb-8 max-w-lg leading-relaxed">
-              学期末不再为成堆的教科书发愁，新学期一键购买全套课表必修书。<br/>专为浙大学子打造的课表智能驱动二手交易网络。
-            </p>
-            <div className="flex gap-4">
-              <Link to="/books" className="bg-white text-zju-blue px-8 py-3 rounded-full font-bold hover:shadow-lg hover:scale-105 transition-all text-sm">去市场淘书</Link>
-              <Link to="/publish" className="bg-zju-blue border-2 border-white/30 text-white px-8 py-3 rounded-full font-bold hover:bg-white/10 transition-all text-sm">发布我的闲置</Link>
-            </div>
+          
+          <h1 className="text-7xl font-normal text-[#202124] mb-8 tracking-tight leading-[1.1]">
+            让知识在校园里<br/>
+            <span className="m3-gradient-text font-medium">自由流转</span>
+          </h1>
+          
+          <p className="text-xl text-gray-500 mb-12 max-w-2xl leading-relaxed">
+            不再让珍贵的教材在书架蒙尘。通过“求是书缘”，<br/>
+            让每一本旧书在新的学期找到它的下一个主人。
+          </p>
+          
+          <div className="flex items-center gap-6">
+            <Link to="/books" className="m3-btn-filled flex items-center gap-2">
+              立即探索购书 <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link to="/publish" className="m3-btn-tonal">
+              发布我的闲置
+            </Link>
           </div>
         </div>
 
-        {/* 右侧快捷活动墙 */}
-        <div className="col-span-4 flex flex-col gap-4">
-          <div className="flex-1 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between hover:border-zju-blue/40 transition-colors">
-            <div>
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-gray-800 text-lg">🎓 期末官方兜底回收计划</h3>
-                <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded-md">HOT</span>
+        {/* 装饰性背景元素 - 模拟 Google 设计稿 */}
+        <div className="absolute top-1/4 left-10 w-64 h-64 bg-google-blue/5 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-google-red/5 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
+      </section>
+
+      {/* 核心功能区 - 高级卡片网格 */}
+      <section className="max-w-7xl mx-auto px-6 -mt-16 relative z-20 w-full mb-32">
+        <div className="grid grid-cols-4 gap-8">
+          {[
+            { icon: <ShoppingCart className="w-6 h-6" />, title: "购书广场", desc: "按专业、课程极速筛选", link: "/books", color: "text-google-blue", bg: "bg-blue-50/50" },
+            { icon: <Upload className="w-6 h-6" />, title: "发布闲置", desc: "一键拍照，智能估价", link: "/publish", color: "text-google-green", bg: "bg-green-50/50" },
+            { icon: <FileText className="w-6 h-6" />, title: "课表同步", desc: "自动匹配下学期教材", link: "/schedule", color: "text-google-yellow", bg: "bg-yellow-50/50" },
+            { icon: <Gift className="w-6 h-6" />, title: "笔记社区", desc: "学霸笔记，高分指南", link: "/community", color: "text-google-red", bg: "bg-red-50/50" }
+          ].map((item, idx) => (
+            <Link to={item.link} key={idx} className="m3-card group">
+              <div className={`w-14 h-14 rounded-2xl ${item.bg} ${item.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500`}>
+                {item.icon}
               </div>
-              <p className="text-sm text-gray-500">免预约，宿管阿姨代收，按书重直接折现到校园卡！</p>
-            </div>
-            <Link to="/achievements" className="text-sm font-bold text-zju-blue flex items-center hover:underline">查看我的回收额度 &rarr;</Link>
-          </div>
-          <div className="flex-1 bg-zju-light rounded-2xl p-6 border border-blue-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Cpu className="text-zju-blue w-5 h-5"/>
-                <h3 className="font-bold text-zju-blue text-lg">AI 选书智囊</h3>
-              </div>
-              <p className="text-sm text-zju-hover">不知道这课要不要买教材？让历届学长留下的十万条弹幕帮你做决策。</p>
-            </div>
-            <Link to="/ai-analysis" className="text-sm font-bold text-zju-hover flex items-center hover:underline">体验超能力 &rarr;</Link>
-          </div>
+              <h3 className="text-xl font-medium text-gray-800 mb-2">{item.title}</h3>
+              <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
+            </Link>
+          ))}
         </div>
       </section>
 
-      {/* 快捷金刚区入口 */}
-      <section className="grid grid-cols-4 gap-6">
-        {[
-          { icon: <ShoppingCart />, title: "淘教材辅导", desc: "快速按专业筛选", link: "/books", color: "bg-blue-50 text-blue-600" },
-          { icon: <Upload />, title: "传闲置回血", desc: "扫底码极速录入", link: "/publish", color: "bg-emerald-50 text-emerald-600" },
-          { icon: <FileText />, title: "绑定我的课表", desc: "自动匹配下学期用书", link: "/schedule", color: "bg-purple-50 text-purple-600" },
-          { icon: <Gift />, title: "高分笔记社区", desc: "历届学霸的手写资料", link: "/community", color: "bg-orange-50 text-orange-600" }
-        ].map((item, idx) => (
-          <Link to={item.link} key={idx} className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all flex items-center gap-4">
-            <div className={`p-4 rounded-xl ${item.color}`}>
-              {item.icon}
-            </div>
-            <div>
-              <h4 className="font-bold text-gray-800">{item.title}</h4>
-              <p className="text-xs text-gray-500 mt-1">{item.desc}</p>
-            </div>
-          </Link>
-        ))}
-      </section>
-
-      {/* 本周热门推荐 */}
-      <section className="mb-16">
-        <div className="flex justify-between items-end mb-8">
+      {/* 热门推荐 - 瀑布流/平滑滚动感 */}
+      <section className="max-w-7xl mx-auto px-6 w-full mb-32">
+        <div className="flex justify-between items-end mb-12">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-8 h-1 bg-zju-blue rounded-full"></span>
-              <span className="text-xs font-bold text-zju-blue tracking-widest uppercase">Hot Items</span>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800">平台捡漏热榜</h2>
+            <h2 className="text-3xl font-medium text-gray-900 mb-2">正在热卖</h2>
+            <p className="text-gray-400">来自 34,210 位浙大校友的真实分享</p>
           </div>
-          <Link to="/books" className="text-sm text-gray-500 hover:text-zju-blue font-medium">查看所有好书 &rarr;</Link>
+          <Link to="/books" className="text-google-blue font-medium hover:underline flex items-center gap-1">
+            查看全部广场 <ChevronRight className="w-4 h-4" />
+          </Link>
         </div>
 
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-4 gap-8">
           {MOCK_BOOKS.filter(b => b.status === 'approved').slice(0, 8).map(book => (
-            <Link to={`/book/${book.id}`} key={book.id} className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group">
-              <div className="relative h-[240px] overflow-hidden">
-                <img src={book.cover} alt={book.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                {book.aiScore > 90 && (
-                  <div className="absolute top-2 left-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-md">
-                    AI 强推必买
-                  </div>
-                )}
-                {book.hasNotes && (
-                   <div className="absolute top-2 right-2 bg-white/90 backdrop-blur text-zju-blue border border-zju-blue/20 text-[10px] font-bold px-2 py-1 rounded shadow-md">
-                   带学霸笔记
-                 </div>
-                )}
-              </div>
-              <div className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                    <object>
-                      <Link 
-                        to={`/profile/${book.sellerId || 'u1'}`}
-                        className="w-5 h-5 rounded-full bg-zju-light flex items-center justify-center text-[8px] font-bold text-zju-blue hover:bg-zju-blue hover:text-white transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {book.seller[0]}
-                      </Link>
-                    </object>
-                    <object>
-                      <Link 
-                        to={`/profile/${book.sellerId || 'u1'}`} 
-                        className="text-[10px] text-gray-500 font-medium hover:text-zju-blue transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {book.seller}
-                      </Link>
-                    </object>
+            <Link to={`/book/${book.id}`} key={book.id} className="group">
+              <div className="m3-card !p-0 overflow-hidden border-none shadow-none group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] transition-all duration-500">
+                <div className="relative aspect-[3/4] overflow-hidden bg-gray-50">
+                  <img src={book.cover} alt={book.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  {book.aiScore > 90 && (
+                    <div className="absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur text-google-red text-[10px] font-bold rounded-full shadow-sm">
+                      AI 强力推荐
+                    </div>
+                  )}
                 </div>
-                <h3 className="font-bold text-gray-800 mb-1 truncate">{book.title}</h3>
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">{book.campus}</span>
-                  <span className="text-xs text-gray-500">{book.condition}</span>
-                </div>
-                <div className="flex justify-between items-end">
-                  <div>
-                    <span className="text-xl font-extrabold text-red-500">¥{book.price}</span>
-                    <span className="text-xs text-gray-400 line-through ml-2">原 ¥{book.originalPrice}</span>
+                <div className="p-6">
+                  <h3 className="text-lg font-medium text-gray-800 mb-1 truncate">{book.title}</h3>
+                  <p className="text-xs text-gray-400 mb-4">{book.campus}校区 · {book.condition}</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-2xl font-normal text-[#202124]">¥{book.price}</span>
+                    <div className="w-8 h-8 rounded-full bg-google-blue/5 text-google-blue flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ArrowRight className="w-4 h-4" />
+                    </div>
                   </div>
-                  <span className="text-xs font-semibold text-zju-blue bg-zju-light px-2 py-1 rounded">详情 &rarr;</span>
                 </div>
               </div>
             </Link>
@@ -138,8 +102,30 @@ const Home = () => {
         </div>
       </section>
 
+      {/* 底部号召 - 现代极简风格 */}
+      {!isLoggedIn && (
+        <section className="px-6 pb-32">
+          <div className="max-w-7xl mx-auto bg-[#202124] rounded-[48px] p-24 text-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-google-blue/10 rounded-full blur-[120px] -mr-64 -mt-64"></div>
+            <div className="relative z-10">
+              <h2 className="text-5xl font-normal text-white mb-6">加入求是园的知识网络</h2>
+              <p className="text-gray-400 mb-12 max-w-md mx-auto text-lg">
+                数万名师生已经在这里开始了他们的学术分享之旅。
+              </p>
+              <Link to="/login" className="m3-btn-filled !bg-white !text-black !px-12 hover:shadow-[0_8px_24px_rgba(255,255,255,0.2)]">
+                立即极速登录
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
     </div>
   );
 };
+
+const ChevronRight = ({className}) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+);
 
 export default Home;

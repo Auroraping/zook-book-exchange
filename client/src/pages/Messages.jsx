@@ -1,9 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Send, Image as ImageIcon, CheckCheck, MessageSquareText } from 'lucide-react';
 import { MOCK_BOOKS } from '../mockData';
 
 const Messages = () => {
-    const [activeTab, setActiveTab] = useState('chat'); // 'chat' | 'system'
+    const location = useLocation();
+    const [activeTab, setActiveTab] = useState(location.pathname === '/notifications' ? 'system' : 'chat'); // 'chat' | 'system'
+
+    useEffect(() => {
+        if (location.pathname === '/notifications') {
+            setActiveTab('system');
+        } else if (location.pathname === '/messages') {
+            setActiveTab('chat');
+        }
+    }, [location.pathname]);
     const [chats] = useState([
         { id: 1, name: '计科王学长', lastMsg: '这本高数我确实笔记拉满了，可以再给你便宜 2 块钱。', time: '10分钟前', unread: 1, book: MOCK_BOOKS[0] },
         { id: 2, name: '管院小张', lastMsg: '还在吗？你要的话我就下楼了，紫金港二餐见。', time: '1小时前', unread: 0, book: MOCK_BOOKS[3] },

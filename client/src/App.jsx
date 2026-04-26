@@ -17,6 +17,7 @@ import Community from './pages/Community';
 import Achievements from './pages/Achievements';
 import Evaluate from './pages/Evaluate';
 import Admin from './pages/Admin';
+import Cart from './pages/Cart';
 
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
           <Route path="book/:id" element={<BookDetail />} />
           <Route path="publish" element={<Publish />} />
           <Route path="messages" element={<Messages />} />
+          <Route path="notifications" element={<Messages />} />
           <Route path="orders" element={<Orders />} />
           <Route path="evaluate/:id" element={<Evaluate />} />
           <Route path="profile" element={<Profile />} />
@@ -41,6 +43,7 @@ function App() {
           <Route path="community" element={<Community />} />
           <Route path="achievements" element={<Achievements />} />
           <Route path="admin" element={<Admin />} />
+          <Route path="cart" element={<Cart />} />
 
         </Route>
       </Routes>

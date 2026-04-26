@@ -1,100 +1,154 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, User, MapPin, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { MOCK_BOOKS } from '../mockData';
+import { Package, User, MapPin, AlertCircle, CheckCircle2, Clock, XCircle, CreditCard, Star } from 'lucide-react';
+import { MOCK_ORDERS } from '../mockData';
 
 const Orders = () => {
     const navigate = useNavigate();
-    const tabs = ['全部状态', '待对方确认', '玉泉当面交付中', '待收货', '待评价'];
-    const [activeTab, setActiveTab] = useState('全部状态');
+    const tabs = [
+      { id: 'all', label: '全部订单' },
+      { id: 'unpaid', label: '待支付', icon: <Clock className="w-4 h-4" /> },
+      { id: 'pending', label: '待收货', icon: <MapPin className="w-4 h-4" /> },
+      { id: 'completed', label: '已完成', icon: <CheckCircle2 className="w-4 h-4" /> },
+      { id: 'cancelled', label: '已取消', icon: <XCircle className="w-4 h-4" /> }
+    ];
+    const [activeTab, setActiveTab] = useState('all');
+
+    const filteredOrders = useMemo(() => {
+      if (activeTab === 'all') return MOCK_ORDERS;
+      return MOCK_ORDERS.filter(o => o.status === activeTab);
+    }, [activeTab]);
+
+    const getStatusInfo = (status) => {
+      switch (status) {
+        case 'unpaid': return { label: '待支付', color: 'text-orange-500', bg: 'bg-orange-50', border: 'border-orange-100' };
+        case 'pending': return { label: '待收货', color: 'text-zju-blue', bg: 'bg-zju-light/50', border: 'border-zju-blue/20' };
+        case 'completed': return { label: '交易完成', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100' };
+        case 'cancelled': return { label: '已关闭', color: 'text-gray-400', bg: 'bg-gray-50', border: 'border-gray-100' };
+        default: return { label: '未知', color: 'text-gray-500', bg: 'bg-gray-50', border: 'border-gray-100' };
+      }
+    };
 
     return (
-        <div className="max-w-[1000px] mx-auto flex flex-col gap-6">
-            <h1 className="text-2xl font-extrabold text-gray-800 mb-2">我的履约订单</h1>
+        <div className="max-w-[1000px] mx-auto flex flex-col gap-8 py-8">
+            <div className="flex justify-between items-end">
+              <div>
+                <h1 className="text-3xl font-black text-gray-800 mb-2">我的履约中心</h1>
+                <p className="text-sm text-gray-500 font-medium">管理你在浙大二手的每一笔知识流转</p>
+              </div>
+              <div className="bg-white px-6 py-3 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-6">
+                <div className="text-center">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">正在进行</p>
+                  <p className="text-xl font-black text-zju-blue">{MOCK_ORDERS.filter(o => ['unpaid', 'pending'].includes(o.status)).length}</p>
+                </div>
+                <div className="w-px h-8 bg-gray-100"></div>
+                <div className="text-center">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">累计成交</p>
+                  <p className="text-xl font-black text-gray-800">{MOCK_ORDERS.filter(o => o.status === 'completed').length}</p>
+                </div>
+              </div>
+            </div>
             
-            <div className="flex gap-4 border-b border-gray-200 pb-px">
+            <div className="flex gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-fit">
                 {tabs.map(tab => (
-                    <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${activeTab === tab ? 'text-zju-blue border-zju-blue' : 'text-gray-400 border-transparent hover:text-gray-600'}`}>
-                        {tab} {tab === '玉泉当面交付中' && <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full ml-1">1</span>}
+                    <button 
+                      key={tab.id} 
+                      onClick={() => setActiveTab(tab.id)} 
+                      className={`flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-xl transition-all ${activeTab === tab.id ? 'bg-zju-blue text-white shadow-lg shadow-zju-blue/20' : 'text-gray-500 hover:bg-gray-50'}`}
+                    >
+                        {tab.label}
+                        {MOCK_ORDERS.filter(o => o.status === tab.id).length > 0 && (
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === tab.id ? 'bg-white text-zju-blue' : 'bg-gray-100 text-gray-400'}`}>
+                            {MOCK_ORDERS.filter(o => o.status === tab.id).length}
+                          </span>
+                        )}
                     </button>
                 ))}
             </div>
 
-            <div className="flex flex-col gap-6 mt-4">
-                {/* 活跃的进行中订单演示 */}
-                <div className="bg-white rounded-2xl border border-zju-blue/20 shadow-md shadow-zju-blue/5 overflow-hidden">
-                    <div className="bg-zju-light/50 px-6 py-4 flex justify-between items-center border-b border-zju-blue/10">
-                        <div className="flex items-center gap-4 text-xs">
-                            <span className="font-bold text-gray-800">2026-04-19 19:30</span>
-                            <span className="text-gray-400">订单号: ZJU-TRD-491023</span>
-                        </div>
-                        <div className="text-sm font-extrabold text-zju-blue flex items-center gap-1"><MapPin className="w-4 h-4"/> 等待线下约定面交</div>
-                    </div>
-                    
-                    <div className="p-6 flex flex-col md:flex-row gap-8 items-center">
-                        <div className="flex-1 flex gap-6">
-                            <img src={MOCK_BOOKS[1].cover} className="w-20 h-28 object-cover rounded-lg border border-gray-100 shadow-sm" />
-                            <div className="flex flex-col justify-center">
-                                <h3 className="font-bold text-gray-800 text-lg mb-2">{MOCK_BOOKS[1].title}</h3>
-                                <div className="text-sm text-gray-500 mb-1">卖家: <span className="font-semibold text-gray-700">{MOCK_BOOKS[1].seller}</span></div>
-                                <div className="text-sm text-gray-500">面交地址: <span className="font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100">西溪校区 北门罗森便利店</span></div>
+            <div className="flex flex-col gap-6">
+                {filteredOrders.length > 0 ? filteredOrders.map(order => {
+                  const statusInfo = getStatusInfo(order.status);
+                  return (
+                    <div key={order.id} className={`bg-white rounded-3xl border ${statusInfo.border} shadow-sm overflow-hidden hover:shadow-md transition-all`}>
+                        <div className={`${statusInfo.bg} px-8 py-4 flex justify-between items-center border-b ${statusInfo.border}`}>
+                            <div className="flex items-center gap-6 text-[11px] font-bold text-gray-400">
+                                <span className="text-gray-600">{order.date}</span>
+                                <span>订单号: TRD-{order.id.toUpperCase()}{Math.floor(Math.random()*10000)}</span>
+                            </div>
+                            <div className={`text-sm font-black ${statusInfo.color} flex items-center gap-1.5`}>
+                              {order.status === 'unpaid' && <Clock className="w-4 h-4" />}
+                              {order.status === 'pending' && <MapPin className="w-4 h-4" />}
+                              {order.status === 'completed' && <CheckCircle2 className="w-4 h-4" />}
+                              {order.status === 'cancelled' && <XCircle className="w-4 h-4" />}
+                              {statusInfo.label}
                             </div>
                         </div>
                         
-                        <div className="w-px h-20 bg-gray-100 mx-4 hidden md:block"></div>
-                        
-                        <div className="flex flex-col items-end gap-3 min-w-[200px]">
-                            <div className="text-2xl font-black text-red-500">¥ {MOCK_BOOKS[1].price}</div>
-                            <div className="flex gap-2">
-                                <button 
-                                    onClick={() => navigate('/messages')}
-                                    className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-50 transition-colors shadow-sm"
-                                >
-                                    联系卖家
-                                </button>
-                                <button 
-                                    onClick={() => alert('确认收货成功！')}
-                                    className="bg-zju-blue text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md shadow-zju-blue/20 hover:bg-zju-hover transition-colors flex gap-1 items-center"
-                                >
-                                    <CheckCircle2 className="w-4 h-4" /> 确认已当面收货
-                                </button>
+                        <div className="p-8 flex flex-col md:flex-row gap-8 items-center">
+                            <div className="flex-1 flex gap-6">
+                                <div className="relative group">
+                                  <img src={order.cover} className="w-24 h-32 object-cover rounded-2xl border border-gray-100 shadow-md group-hover:scale-105 transition-transform" />
+                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 rounded-2xl transition-all"></div>
+                                </div>
+                                <div className="flex flex-col justify-center">
+                                    <h3 className="font-bold text-gray-800 text-xl mb-2">{order.title}</h3>
+                                    <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+                                      <div className="w-6 h-6 rounded-full bg-zju-light flex items-center justify-center text-[10px] font-bold text-zju-blue">
+                                        {order.seller[0]}
+                                      </div>
+                                      卖家: <span className="font-bold text-gray-700">{order.seller}</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <span className="text-[10px] font-bold px-2 py-1 bg-gray-50 text-gray-500 rounded-lg border border-gray-100">紫金港校区</span>
+                                      <span className="text-[10px] font-bold px-2 py-1 bg-gray-50 text-gray-500 rounded-lg border border-gray-100">当面交接</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="hidden md:block w-px h-24 bg-gray-50"></div>
+                            
+                            <div className="flex flex-col items-end gap-4 min-w-[220px]">
+                                <div className="text-3xl font-black text-gray-800">¥ {order.price.toFixed(2)}</div>
+                                <div className="flex gap-3">
+                                    {order.status === 'unpaid' && (
+                                      <>
+                                        <button className="text-sm font-bold text-gray-400 hover:text-red-500 transition-colors">取消订单</button>
+                                        <button className="bg-zju-blue text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-xl shadow-zju-blue/20 hover:bg-zju-hover hover:-translate-y-0.5 transition-all flex items-center gap-2">
+                                          <CreditCard className="w-4 h-4" /> 立即支付
+                                        </button>
+                                      </>
+                                    )}
+                                    {order.status === 'pending' && (
+                                      <>
+                                        <button onClick={() => navigate('/messages')} className="bg-white border border-gray-200 text-gray-600 px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all">
+                                          联系卖家
+                                        </button>
+                                        <button className="bg-green-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-xl shadow-green-600/20 hover:bg-green-700 hover:-translate-y-0.5 transition-all flex items-center gap-2">
+                                          <CheckCircle2 className="w-4 h-4" /> 确认已收货
+                                        </button>
+                                      </>
+                                    )}
+                                    {order.status === 'completed' && (
+                                      <button className="bg-white border-2 border-zju-blue text-zju-blue px-8 py-2.5 rounded-xl font-bold text-sm hover:bg-zju-light transition-all flex items-center gap-2">
+                                        <Star className="w-4 h-4" /> 评价并获取积分
+                                      </button>
+                                    )}
+                                    {order.status === 'cancelled' && (
+                                      <button className="text-sm font-bold text-zju-blue hover:underline">重新购买</button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                {/* 已经完成等待评价的历史订单展示 */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden opacity-80 hover:opacity-100 transition-opacity">
-                    <div className="bg-gray-50 px-6 py-4 flex justify-between items-center border-b border-gray-100">
-                        <div className="flex items-center gap-4 text-xs">
-                            <span className="font-bold text-gray-800">2026-03-01 10:15</span>
-                            <span className="text-gray-400">订单号: ZJU-TRD-183922</span>
-                        </div>
-                        <div className="text-sm font-bold text-green-600 flex items-center gap-1">交易圆满完成</div>
-                    </div>
-                    
-                    <div className="p-6 flex flex-col md:flex-row gap-8 items-center">
-                        <div className="flex-1 flex gap-6">
-                            <img src={MOCK_BOOKS[0].cover} className="w-16 h-24 object-cover rounded-lg border border-gray-100 grayscale-[20%]" />
-                            <div className="flex flex-col justify-center">
-                                <h3 className="font-bold text-gray-800 mb-2">{MOCK_BOOKS[0].title}</h3>
-                                <div className="text-xs text-gray-500">交易方式: 紫金港菜鸟驿站极速达</div>
-                            </div>
-                        </div>
-                        
-                        <div className="w-px h-16 bg-gray-100 mx-4 hidden md:block"></div>
-                        
-                        <div className="flex flex-col items-end gap-3 min-w-[200px]">
-                            <div className="text-xl font-bold text-gray-800">¥ {MOCK_BOOKS[0].price}</div>
-                            <button 
-                                onClick={() => navigate('/evaluate/0')}
-                                className="bg-white border border-zju-blue text-zju-blue px-4 py-1.5 rounded-lg font-bold text-xs hover:bg-zju-light transition-colors shadow-sm"
-                            >
-                                评价并获取积分
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                  );
+                }) : (
+                  <div className="bg-white rounded-3xl border border-gray-100 p-20 text-center flex flex-col items-center">
+                    <Package className="w-16 h-16 text-gray-100 mb-4" />
+                    <p className="text-gray-400 font-bold text-lg">暂无相关订单信息</p>
+                    <button onClick={() => navigate('/books')} className="mt-4 text-zju-blue font-bold hover:underline">去购书大厅逛逛</button>
+                  </div>
+                )}
             </div>
         </div>
     );

@@ -12,7 +12,11 @@ const Publish = () => {
           <UploadCloud className="w-12 h-12" />
         </div>
         <h2 className="text-3xl font-bold text-gray-800 mb-4">教材上架成功！</h2>
-        <p className="text-gray-500 mb-10 w-2/3 mx-auto">我们已自动将本书的数据加入到了对应专业学科的“求书广场”推荐队列中。如果有同学心仪，您将会立刻收到学弟学妹的留言通知！</p>
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-8 flex items-center gap-3 justify-center">
+          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+          <p className="text-sm text-blue-700 font-bold">心愿速配：已成功通知 3 名正在求购本书的学弟学妹！</p>
+        </div>
+        <p className="text-gray-500 mb-10 w-2/3 mx-auto">我们已自动将本书的数据加入到了对应专业学科的“求书广场”推荐队列中。如果有同学感兴趣，您将会立刻收到他们的咨询消息！</p>
         <button onClick={() => window.location.href='/'} className="bg-zju-blue text-white px-8 py-3 rounded-full font-bold hover:bg-zju-hover transition-colors">
           返回主舞台
         </button>
@@ -27,14 +31,14 @@ const Publish = () => {
       
       <div className="p-8">
         <h1 className="text-2xl font-bold text-gray-800 mb-2">发布闲置闲书，回转知识价值</h1>
-        <p className="text-sm text-gray-500 mb-8">您可以通过直接扫描书背的条形码极其快速地填补所有出版数据，也可手动精确录题。</p>
+        <p className="text-sm text-gray-500 mb-8">您可以上传教材购买记录截图或书籍封面截图，系统将自动识别并填补数据，也可手动精确录题。</p>
 
         <div className="flex gap-4 mb-8 bg-gray-50 p-2 rounded-xl border border-gray-100 w-fit">
           <button 
             onClick={() => setPublishMode('scan')}
             className={`px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all ${publishMode === 'scan' ? 'bg-white shadow-sm text-zju-blue' : 'text-gray-500 hover:text-gray-800'}`}
           >
-            <ScanBarcode className="w-4 h-4"/> ISBN 极速扫码
+            <UploadCloud className="w-4 h-4"/> 截图自动识别
           </button>
           <button 
             onClick={() => setPublishMode('manual')}
@@ -47,14 +51,14 @@ const Publish = () => {
         {publishMode === 'scan' ? (
           <div className="border-2 border-dashed border-gray-300 rounded-2xl p-16 flex flex-col items-center justify-center bg-blue-50/30">
             <div className="relative">
-               <Camera className="w-16 h-16 text-zju-blue/50 mb-6" />
-               <div className="absolute top-0 left-0 w-full h-full border-t-2 border-zju-blue animate-[ping_2s_ease-in-out_infinite]"></div>
+               <UploadCloud className="w-16 h-16 text-zju-blue/50 mb-6" />
             </div>
-            <h3 className="font-bold text-gray-700 text-lg mb-2">准备对接摄像头权限</h3>
-            <p className="text-sm text-gray-400 max-w-sm text-center mb-8">请将摄像头对准教科书背面的 ISBN 13 位编码，系统将在 2 秒内为您填好所有的出版元数据信息。</p>
-            <button onClick={() => setPublishMode('manual')} className="bg-zju-blue text-white px-8 py-3 rounded-full font-bold shadow-md hover:bg-zju-hover transition-all">
-              模拟扫码成功，载入表单
-            </button>
+            <h3 className="font-bold text-gray-700 text-lg mb-2">上传书籍或购买记录截图</h3>
+            <p className="text-sm text-gray-400 max-w-sm text-center mb-8">请上传包含书籍信息的截图（如电商订单截图、书籍封面等），系统将利用 AI 自动为您填好出版元数据。</p>
+            <input type="file" id="screenshot-upload" className="hidden" onChange={() => setPublishMode('manual')} />
+            <label htmlFor="screenshot-upload" className="bg-zju-blue text-white px-8 py-3 rounded-full font-bold shadow-md hover:bg-zju-hover transition-all cursor-pointer">
+              选择截图文件
+            </label>
           </div>
         ) : (
           <form className="flex flex-col gap-6" onSubmit={(e) => { e.preventDefault(); setIsSuccess(true); }}>

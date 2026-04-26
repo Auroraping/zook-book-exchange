@@ -2,16 +2,113 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-    .glass-header {
-        @apply bg-white/70 backdrop-blur-xl border-b border-gray-100/30;
-    }
-    .nav-link-active {
-        @apply text-zju-blue after:w-full;
-    }
-    .nav-link {
-        @apply relative text-gray-600 hover:text-zju-blue transition-colors duration-300
-               after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 
-               after:h-[2px] after:bg-zju-blue after:transition-all after:duration-300;
-    }
+:root {
+  --m3-blue: #0b57d0;
+  --m3-blue-container: #d3e3fd;
+  --m3-surface: #f8f9fa;
+  --m3-surface-container: #f0f4f8;
+  --m3-on-surface: #1f1f1f;
+}
+
+body {
+    font-family: 'Google Sans', 'Product Sans', 'Roboto', system-ui, sans-serif;
+    background-color: var(--m3-surface);
+    color: var(--m3-on-surface);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+    background-color: #d3e3fd;
+    color: #041e49;
+}
+
+
+@layer components {
+  /* 极致 Material 3 按钮 (FAB/Tonal) */
+  .m3-fab {
+    background-color: #0b57d0;
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 20px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .m3-fab:hover {
+    box-shadow: 0 4px 12px rgba(11, 87, 208, 0.3);
+    transform: translateY(-2px);
+  }
+
+  .m3-btn-tonal {
+    background-color: #d3e3fd;
+    color: #041e49;
+    padding: 0.75rem 1.5rem;
+    border-radius: 100px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  .m3-btn-tonal:hover {
+    background-color: #c2d7f7;
+  }
+
+  /* M3 卡片系统 */
+  .m3-tile {
+    background-color: white;
+    border-radius: 28px;
+    padding: 1.5rem;
+    border: 1px solid transparent;
+    transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .m3-tile:hover {
+    background-color: #fdfdfd;
+    border-color: #e1e3e1;
+    box-shadow: 0 1px 3px 1px rgba(0,0,0,0.05);
+  }
+
+  /* 极致简约的 M3 搜索栏 */
+  .m3-search-bar {
+    background-color: #eaf1fb;
+    border-radius: 100px;
+    height: 3.5rem;
+    padding: 0 1.5rem;
+    width: 100%;
+    transition: all 0.3s ease;
+  }
+  .m3-search-bar:focus {
+    background-color: white;
+    box-shadow: 0 1px 3px 1px rgba(60,64,67,0.15);
+    outline: none;
+  }
+}
+
+/* 渐变文本动画 */
+.m3-text-gradient {
+  background: linear-gradient(90deg, #0b57d0, #4285f4, #0b57d0);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine 4s linear infinite;
+}
+
+@keyframes shine {
+  to { background-position: 200% center; }
+}
+
+.animate-m3-in {
+  animation: m3-fade-in-up 0.8s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+
+@keyframes m3-fade-in-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 网格背景装饰 */
+.bg-mesh {
+    background-image: radial-gradient(at 0% 0%, hsla(217, 89%, 61%, 0.04) 0, transparent 50%),
+                      radial-gradient(at 100% 0%, hsla(45, 98%, 50%, 0.04) 0, transparent 50%);
 }

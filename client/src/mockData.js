@@ -41,3 +41,18 @@ export const MOCK_USERS = [
   { id: 'u3', name: '软件小哥', credit: 4.5, tradeCount: 12, level: 'Lv.3 活跃买家', avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=u3', bio: '软院老铁，求各种编程书籍。', joinDate: '2025-11-20' }
 ];
 
+export const MOCK_WISHES = [
+  { id: 'w1', userId: 'me', title: '数字图像处理 (第4版)', author: '冈萨雷斯', priceRange: '30-50', timestamp: '2026-04-21' }
+];
+
+export const MOCK_NOTIFICATIONS = [
+  { id: 'n1', userId: 'me', type: 'wish_match', title: '心愿达成！', content: '你关注的《数字图像处理》刚刚上架了，快去看看吧。', bookId: 'b1', isRead: false, timestamp: '10分钟前' }
+];
+
+export const MOCK_ORDERS = [
+  { id: 'o1', bookId: 'b1', title: '数字图像处理 (第4版)', price: 45.0, status: 'unpaid', seller: '计科王学长', date: '2026-04-22 14:00', cover: 'https://images.unsplash.com/photo-1589998059171-988d887df646?auto=format&fit=crop&q=80&w=200' },
+  { id: 'o2', bookId: 'b2', title: '微观经济学：现代观点', price: 38.5, status: 'pending', seller: '经管李学姐', date: '2026-04-21 10:30', cover: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=200' },
+  { id: 'o3', bookId: 'b3', title: '算法导论', price: 89.0, status: 'completed', seller: '软件小哥', date: '2026-04-15 16:45', cover: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&q=80&w=200' },
+  { id: 'o4', bookId: 'b4', title: '离散数学', price: 25.0, status: 'cancelled', seller: '计科王学长', date: '2026-04-10 09:15', cover: 'https://images.unsplash.com/photo-1543004471-2401f3bbaf18?auto=format&fit=crop&q=80&w=200' }
+];
+
