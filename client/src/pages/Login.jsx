@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
 import { useAuth } from '../components/AuthContext';
+import Logo from '../components/Logo';
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -24,16 +25,13 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-white p-6">
       <div className="w-full max-w-[440px] flex flex-col items-center">
         {/* Logo */}
-        <div className="mb-8 flex flex-col items-center gap-2">
-          <div className="text-google-blue p-2">
-            <BookOpen className="w-10 h-10" />
-          </div>
-          <h1 className="text-2xl font-normal text-google-gray tracking-tight">求是书缘</h1>
+        <div className="mb-8 flex flex-col items-center gap-4">
+          <Logo className="h-14" />
           <h2 className="text-xl font-normal text-google-gray mt-2">
             {isLogin ? '登录' : '创建账号'}
           </h2>
           <p className="text-sm text-google-gray/70 mt-1">
-            {isLogin ? '使用您的校园账号继续' : '加入浙大专属学术资源共享社区'}
+            {isLogin ? '使用您的校园账号继续，桃酥 AI 伴你左右' : '加入浙大专属学术资源流转平台'}
           </p>
         </div>
 
@@ -97,7 +95,7 @@ const Login = () => {
         <div className="mt-12 text-center">
             <p className="text-xs text-google-gray/40">
                 本系统仅限浙江大学在校师生使用<br/>
-                登录即代表您同意《求是书缘服务协议》
+                登录即代表您同意《浙里淘书服务协议》
             </p>
         </div>
       </div>

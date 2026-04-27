@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Upload, FileText, Gift, ArrowRight, Sparkles, Zap, ChevronRight, Bookmark } from 'lucide-react';
+import { ShoppingCart, Upload, FileText, Zap, ArrowRight, ChevronRight, Bookmark, Sparkles } from 'lucide-react';
 import { MOCK_BOOKS } from '../mockData';
 import { useAuth } from '../components/AuthContext';
 
@@ -12,19 +12,15 @@ const Home = () => {
       {/* 极致震撼 Hero 区域 */}
       <section className="relative py-20">
         <div className="flex flex-col items-center text-center relative z-10">
-          <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-white/50 backdrop-blur-md border border-white shadow-sm mb-12 animate-float">
-            <Sparkles className="w-5 h-5 text-amber-500" />
-            <span className="text-sm font-bold text-gray-800 uppercase tracking-widest">让知识在求是园再次沸腾</span>
-          </div>
           
-          <h1 className="text-9xl font-black mb-10 tracking-tighter leading-[0.9] italic">
-            <span className="premium-gradient-text">KNOWLEDGE</span><br/>
-            <span className="text-gray-900">EVOLUTION</span>
+          <h1 className="text-8xl font-black mb-10 tracking-tight leading-tight">
+            <span className="premium-gradient-text">好书淘不尽</span><br/>
+            <span className="premium-gradient-text uppercase">浙里top three</span>
           </h1>
           
           <p className="text-2xl text-gray-500 mb-16 max-w-3xl leading-relaxed font-medium">
             告别昂贵的新书，拥抱传承的智慧。<br/>
-            在“求是书缘”，每一本教材都是学长留给你的通关秘籍。
+            在“浙里淘书”，每一本教材都是学长留给你的通关秘籍。
           </p>
           
           <div className="flex items-center gap-6">
@@ -35,6 +31,22 @@ const Home = () => {
               我要出书
             </Link>
           </div>
+
+          {/* IP形象：桃酥 Taosu */}
+          <div className="mt-20 flex flex-col items-center animate-bounce-slow">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-orange-400 blur-2xl opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
+              <img 
+                src="/taosu.png" 
+                alt="桃酥 Taosu" 
+                className="w-48 h-48 object-contain relative z-10 mix-blend-multiply"
+              />
+              <div className="absolute -top-4 -right-20 bg-white p-4 rounded-2xl shadow-xl border border-gray-100 animate-float">
+                <p className="text-xs font-bold text-gray-800 whitespace-nowrap">嗨！我是桃酥~ <br/><span className="text-orange-500">你的AI知识小助手</span></p>
+                <div className="absolute bottom-[-6px] left-4 w-3 h-3 bg-white border-b border-r border-gray-100 rotate-45"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* 装饰性漂浮元素 */}
@@ -42,13 +54,13 @@ const Home = () => {
         <div className="absolute bottom-20 left-[15%] w-24 h-24 bg-rose-100 rounded-[20px] -rotate-12 blur-sm -z-10 animate-float"></div>
       </section>
 
-      {/* 核心功能 - 极致视觉密度 */}
+      {/* 核心功能 */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {[
           { icon: <ShoppingCart className="w-10 h-10" />, title: "购书广场", desc: "智能课程匹配，精准锁定下期教材", color: "from-blue-500 to-indigo-600" },
           { icon: <Upload className="w-10 h-10" />, title: "极速发布", desc: "拍照即识别，3秒上架您的闲置", color: "from-emerald-500 to-teal-600" },
           { icon: <FileText className="w-10 h-10" />, title: "笔记社区", desc: "学霸笔记加持，高分从未如此简单", color: "from-orange-500 to-rose-600" },
-          { icon: <Zap className="w-10 h-10" />, title: "AI 分析", desc: "大数据分析价格趋势，买卖不亏", color: "from-purple-500 to-violet-600" }
+          { icon: <Zap className="w-10 h-10" />, title: "AI 分析", desc: "桃酥 AI 助你分析价格趋势，买卖不亏", color: "from-purple-500 to-violet-600" }
         ].map((item, idx) => (
           <div key={idx} className="premium-card p-10 group relative overflow-hidden">
             <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${item.color} opacity-5 group-hover:opacity-10 transition-opacity rounded-bl-[100px]`}></div>
@@ -61,7 +73,7 @@ const Home = () => {
         ))}
       </section>
 
-      {/* 正在热卖 - 杂志排版感 */}
+      {/* 正在热卖 */}
       <section className="py-20">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
           <div>
@@ -114,21 +126,20 @@ const Home = () => {
         </div>
       </section>
 
-      {/* CTA 注册引导 */}
+      {/* CTA */}
       {!isLoggedIn && (
         <section className="mb-20">
           <div className="bg-gray-900 rounded-[60px] p-24 text-center relative overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.2)]">
-            {/* 炫酷背景光晕 */}
             <div className="absolute top-[-50%] left-[-20%] w-[80%] h-[150%] bg-blue-600 opacity-20 blur-[150px] rotate-45"></div>
             <div className="absolute bottom-[-50%] right-[-20%] w-[80%] h-[150%] bg-purple-600 opacity-20 blur-[150px] -rotate-45"></div>
             
             <div className="relative z-10">
               <h2 className="text-7xl font-black text-white mb-8 leading-none tracking-tight">加入求是园的<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">知识文艺复兴</span></h2>
               <p className="text-gray-400 mb-16 max-w-2xl mx-auto text-xl font-medium">
-                在这里，每一页翻过的纸张都有温度。已有数万名同学通过“求是书缘”找到了他们的学术引路人。
+                在这里，每一页翻过的纸张都有温度。已有数万名同学通过“浙里淘书”找到了他们的学术引路人。好书淘不尽，浙里top three。
               </p>
               <Link to="/login" className="px-16 py-6 bg-white text-gray-900 rounded-full font-black text-2xl hover:scale-110 transition-transform shadow-2xl inline-block">
-                立即免费加入
+                立即开启寻书之旅
               </Link>
             </div>
           </div>

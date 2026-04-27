@@ -132,7 +132,7 @@ const SearchBooks = () => {
            <div className="absolute top-[-20%] right-[-10%] w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000"></div>
            <Sparkles className="w-10 h-10 mb-6 text-yellow-300" />
            <h4 className="text-xl font-black mb-3">没找到需要的书？</h4>
-           <p className="text-xs text-white/70 leading-relaxed mb-8 font-medium">登记您的心愿清单，求是书缘 AI 将为您全校实时监控。</p>
+           <p className="text-xs text-white/70 leading-relaxed mb-8 font-medium">登记您的心愿清单，桃酥 AI 将为您全校实时监控。</p>
            <button 
              onClick={() => setShowWishModal(true)}
              className="w-full py-4 bg-white text-indigo-700 rounded-2xl text-xs font-black uppercase tracking-widest hover:shadow-[0_10px_30px_rgba(255,255,255,0.3)] transition-all active:scale-95"

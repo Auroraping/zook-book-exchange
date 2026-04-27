@@ -113,7 +113,7 @@ const Cart = () => {
               <div className="mt-8 flex items-start gap-3">
                  <ShieldCheck className="w-5 h-5 text-google-green shrink-0 mt-0.5" />
                  <p className="text-[10px] text-gray-400 leading-relaxed font-medium">
-                    求是书缘保障每一笔交易。资金将暂存于平台，待您线下扫码确认收货后，款项才会拨付给卖家。
+                    浙里淘书保障每一笔交易。资金将暂存于平台，待您线下扫码确认收货后，款项才会拨付给卖家。
                  </p>
               </div>
             </div>

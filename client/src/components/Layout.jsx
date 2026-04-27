@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Search, MessageSquare, ShoppingCart, Bell, User, BookOpen, Plus, LogOut, Sparkles } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import Logo from './Logo';
 
 const Layout = () => {
   const location = useLocation();
@@ -29,8 +30,8 @@ const Layout = () => {
 
       {/* 1. 高级悬浮导航轨 (Sidebar) */}
       <aside className="w-28 flex flex-col items-center py-10 gap-12 sticky top-0 h-screen z-50 bg-white/80 backdrop-blur-xl border-r border-gray-100/50">
-        <Link to="/" className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-[22px] flex items-center justify-center text-white shadow-xl hover:rotate-6 transition-transform">
-          <BookOpen className="w-8 h-8" />
+        <Link to="/" className="w-20 h-20 flex items-center justify-center hover:scale-110 transition-transform">
+          <Logo showText={false} className="h-16" />
         </Link>
         
         <nav className="flex flex-col gap-8 flex-1">
@@ -89,7 +90,7 @@ const Layout = () => {
                 <Search className="w-6 h-6 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
                 <input 
                   type="text" 
-                  placeholder="搜索你的下一本求是真经..." 
+                  placeholder="搜索浙里淘书中的学术资源..." 
                   className="w-full bg-transparent border-none focus:ring-0 text-lg text-gray-800 placeholder-gray-400 font-medium"
                 />
                 <div className="hidden md:flex gap-3 items-center">
@@ -101,7 +102,7 @@ const Layout = () => {
            
            <div className="flex items-center gap-8 ml-12">
               {!isLoggedIn ? (
-                <Link to="/login" className="btn-premium whitespace-nowrap shadow-2xl">立即开启之旅</Link>
+                <Link to="/login" className="btn-premium whitespace-nowrap shadow-2xl">立即开启淘书之旅</Link>
               ) : (
                 <div className="flex items-center gap-4">
                     <div className="text-right hidden xl:block">
