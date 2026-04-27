@@ -28,10 +28,11 @@ const SearchBooks = () => {
   const filteredBooks = useMemo(() => {
     let list = MOCK_BOOKS.filter(book => book.status === 'approved');
     
-    if (query) {
+    const trimmedQuery = query.trim().toLowerCase();
+    if (trimmedQuery) {
       list = list.filter(book => 
-        book.title.toLowerCase().includes(query.toLowerCase()) || 
-        book.author.toLowerCase().includes(query.toLowerCase())
+        book.title.toLowerCase().includes(trimmedQuery) || 
+        book.author.toLowerCase().includes(trimmedQuery)
       );
     }
 
