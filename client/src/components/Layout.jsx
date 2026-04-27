@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, MessageSquare, ShoppingCart, Bell, User, BookOpen, Plus, LogOut, Sparkles } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import Logo from './Logo';
@@ -7,7 +7,15 @@ import Logo from './Logo';
 const Layout = () => {
   const location = useLocation();
   const { isLoggedIn, logout } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [searchValue, setSearchValue] = useState(searchParams.get('q') || '');
   const [cartCount, setCartCount] = useState(0);
+
+  // 当 URL 参数变化时，同步搜索框内容
+  useEffect(() => {
+    setSearchValue(searchParams.get('q') || '');
+  }, [searchParams]);
 
   useEffect(() => {
     const updateCart = () => {
@@ -37,6 +45,7 @@ const Layout = () => {
         <nav className="flex flex-col gap-4 flex-1">
           {[
             { icon: <Search className="w-6 h-6" />, path: '/books', label: '广场', color: 'blue' },
+            { icon: <BookOpen className="w-6 h-6" />, path: '/community', label: '笔记社区', color: 'indigo' },
             { icon: <MessageSquare className="w-6 h-6" />, path: '/messages', label: '消息', color: 'green' },
             { icon: <ShoppingCart className="w-6 h-6" />, path: '/cart', label: '清单', count: cartCount, color: 'yellow' },
             { icon: <Bell className="w-6 h-6" />, path: '/notifications', label: '通知', color: 'red' },
@@ -45,6 +54,7 @@ const Layout = () => {
             const isActive = location.pathname === item.path;
             const colors = {
                 blue: 'text-blue-600 bg-blue-50',
+                indigo: 'text-indigo-600 bg-indigo-50',
                 green: 'text-emerald-600 bg-emerald-50',
                 yellow: 'text-amber-600 bg-amber-50',
                 red: 'text-rose-600 bg-rose-50',
@@ -87,11 +97,21 @@ const Layout = () => {
         <header className="h-24 px-16 flex items-center justify-between sticky top-0 z-40 bg-white/40 backdrop-blur-md border-b border-white/20">
            <div className="flex-1 max-w-4xl">
               <div className="premium-search group">
-                <Search className="w-6 h-6 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
+                <Search 
+                  className="w-6 h-6 text-gray-400 group-focus-within:text-blue-600 transition-colors cursor-pointer hover:scale-110 active:scale-95" 
+                  onClick={() => navigate(`/books?q=${encodeURIComponent(searchValue.trim())}`)}
+                />
                 <input 
                   type="text" 
                   placeholder="搜索浙里淘书中的学术资源..." 
                   className="w-full bg-transparent border-none focus:ring-0 text-lg text-gray-800 placeholder-gray-400 font-medium"
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      navigate(`/books?q=${encodeURIComponent(searchValue.trim())}`);
+                    }
+                  }}
                 />
                 <div className="hidden md:flex gap-3 items-center">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
