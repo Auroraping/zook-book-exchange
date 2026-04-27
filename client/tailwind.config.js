@@ -40,6 +40,11 @@ export default {
           'surface-container': '#f8f9fa',
           'surface-container-high': '#f1f3f4',
         },
+        'zju': {
+          'blue': '#003f81',  // ZJU Navy Blue
+          'hover': '#002a56',
+          'light': '#e6ecf2',
+        }
       },
       borderRadius: {
         'google': '28px',

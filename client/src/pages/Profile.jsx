@@ -260,10 +260,41 @@ const Profile = () => {
                                         </div>
                                     </div>
                                     <div className="flex justify-end gap-3 pt-4 border-t border-gray-50">
-                                        <button className="px-5 py-2 text-xs font-bold text-gray-400 hover:text-gray-700 transition-colors">详情</button>
-                                        {order.status === 'unpaid' && <button className="px-6 py-2 bg-zju-blue text-white rounded-xl font-bold text-xs shadow-lg shadow-zju-blue/20 hover:bg-zju-hover transition-all">立即支付</button>}
-                                        {order.status === 'pending' && <button className="px-6 py-2 bg-green-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-green-600/20 hover:bg-green-700 transition-all">确认收货</button>}
-                                        {order.status === 'completed' && <button className="px-6 py-2 bg-white border-2 border-zju-blue text-zju-blue rounded-xl font-bold text-xs hover:bg-zju-light transition-all">评价回馈积分</button>}
+                                        <button 
+                                          onClick={(e) => { e.stopPropagation(); alert('正在调取订单详细履约记录...'); }}
+                                          className="px-5 py-2 text-xs font-bold text-gray-500 hover:text-zju-blue hover:bg-gray-50 rounded-lg transition-all"
+                                        >
+                                          详情
+                                        </button>
+                                        {order.status === 'unpaid' && (
+                                          <button 
+                                            onClick={(e) => { e.stopPropagation(); alert('正在跳转至浙大统一支付平台...'); }}
+                                            className="px-6 py-2 bg-zju-blue text-white rounded-xl font-bold text-xs shadow-lg shadow-zju-blue/20 hover:bg-zju-hover hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                                          >
+                                            立即支付
+                                          </button>
+                                        )}
+                                        {order.status === 'pending' && (
+                                          <button 
+                                            onClick={(e) => { 
+                                              e.stopPropagation(); 
+                                              if(window.confirm('确认已收到书籍并完成当面核验吗？')) {
+                                                alert('交易成功！感谢您为知识流转做出的贡献。');
+                                              }
+                                            }}
+                                            className="px-6 py-2 bg-green-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-green-600/20 hover:bg-green-700 hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                                          >
+                                            确认收货
+                                          </button>
+                                        )}
+                                        {order.status === 'completed' && (
+                                          <button 
+                                            onClick={(e) => { e.stopPropagation(); navigate('/evaluate/' + order.id); }}
+                                            className="px-6 py-2 bg-white border-2 border-zju-blue text-zju-blue rounded-xl font-bold text-xs hover:bg-zju-light hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                                          >
+                                            评价回馈积分
+                                          </button>
+                                        )}
                                     </div>
                                 </div>
                             ))}
