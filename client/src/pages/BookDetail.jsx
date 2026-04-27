@@ -82,9 +82,9 @@ const BookDetail = () => {
                <button onClick={addToCart} className="flex-[2] m3-btn-filled !rounded-[24px] !py-5 flex items-center justify-center gap-3 text-lg shadow-google-3">
                   <ShoppingBag className="w-6 h-6" /> 加入购书清单
                </button>
-               <button className="flex-1 m3-btn-tonal !bg-white border border-gray-200 !text-google-on-surface !rounded-[24px] flex items-center justify-center gap-3 text-lg hover:bg-gray-50">
+               <Link to="/messages" className="flex-1 m3-btn-tonal !bg-white border border-gray-200 !text-google-on-surface !rounded-[24px] flex items-center justify-center gap-3 text-lg hover:bg-gray-50">
                   <MessageSquare className="w-6 h-6" /> 聊一聊
-               </button>
+               </Link>
             </div>
           </section>
 

@@ -29,12 +29,12 @@ const Layout = () => {
       </div>
 
       {/* 1. 高级悬浮导航轨 (Sidebar) */}
-      <aside className="w-28 flex flex-col items-center py-10 gap-12 sticky top-0 h-screen z-50 bg-white/80 backdrop-blur-xl border-r border-gray-100/50">
-        <Link to="/" className="w-20 h-20 flex items-center justify-center hover:scale-110 transition-transform">
-          <Logo showText={false} className="h-16" />
+      <aside className="w-24 flex flex-col items-center py-6 sticky top-0 h-screen z-50 bg-white/80 backdrop-blur-xl border-r border-gray-100/50">
+        <Link to="/" className="w-16 h-16 flex items-center justify-center hover:scale-110 transition-transform mb-8">
+          <Logo showText={false} className="h-12" />
         </Link>
         
-        <nav className="flex flex-col gap-8 flex-1">
+        <nav className="flex flex-col gap-4 flex-1">
           {[
             { icon: <Search className="w-6 h-6" />, path: '/books', label: '广场', color: 'blue' },
             { icon: <MessageSquare className="w-6 h-6" />, path: '/messages', label: '消息', color: 'green' },
@@ -54,7 +54,7 @@ const Layout = () => {
               <Link 
                 key={item.path}
                 to={item.path} 
-                className={`group flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all duration-300 ${isActive ? colors[item.color] : 'text-gray-400 hover:text-gray-800'}`}
+                className={`group flex flex-col items-center gap-1 p-2.5 rounded-2xl transition-all duration-300 ${isActive ? colors[item.color] : 'text-gray-400 hover:text-gray-800'}`}
               >
                 <div className={`p-1 rounded-lg transition-transform ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
                     {item.icon}
@@ -70,13 +70,13 @@ const Layout = () => {
           })}
         </nav>
 
-        <div className="flex flex-col gap-4">
-           <Link to="/publish" className="w-14 h-14 bg-gray-900 rounded-[18px] flex items-center justify-center text-white shadow-2xl hover:scale-110 transition-transform active:scale-95 group">
-              <Plus className="w-7 h-7 group-hover:rotate-90 transition-transform" />
+        <div className="flex flex-col gap-3 mt-auto">
+           <Link to="/publish" className="w-12 h-12 bg-gray-900 rounded-[16px] flex items-center justify-center text-white shadow-2xl hover:scale-110 transition-transform active:scale-95 group">
+              <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform" />
            </Link>
            {isLoggedIn && (
-             <button onClick={logout} className="w-14 h-14 bg-white border border-gray-100 rounded-[18px] flex items-center justify-center text-rose-500 hover:bg-rose-50 transition-colors shadow-sm">
-               <LogOut className="w-6 h-6" />
+             <button onClick={logout} className="w-12 h-12 bg-white border border-gray-100 rounded-[16px] flex items-center justify-center text-rose-500 hover:bg-rose-50 transition-colors shadow-sm" title="退出登录">
+               <LogOut className="w-5 h-5" />
              </button>
            )}
         </div>

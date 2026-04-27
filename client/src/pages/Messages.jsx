@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Send, Image as ImageIcon, MessageSquareText } from 'lucide-react';
+import { Send, Image as ImageIcon, MessageSquareText, Bell } from 'lucide-react';
 import { MOCK_BOOKS } from '../mockData';
 
 const Messages = () => {
@@ -61,12 +61,18 @@ const Messages = () => {
 
                     {activeTab === 'system' && (
                         <div className="p-6 flex flex-col gap-4">
-                             <div className="bg-white border border-gray-100 rounded-[20px] p-5 shadow-sm relative overflow-hidden group hover:shadow-google-2 transition-all">
+                             <div 
+                                onClick={() => alert('跳转至书籍详情：离散数学')}
+                                className="bg-white border border-gray-100 rounded-[20px] p-5 shadow-sm relative overflow-hidden group hover:shadow-google-2 hover:-translate-y-0.5 cursor-pointer transition-all active:scale-95"
+                             >
                                  <div className="absolute top-0 left-0 w-1.5 h-full bg-google-red"></div>
                                  <h4 className="font-medium text-google-on-surface text-sm mb-1">心仪教材降价</h4>
                                  <p className="text-xs text-google-gray leading-relaxed">您求购的《离散数学》刚刚有同学大幅降价上架，快去看看！</p>
                              </div>
-                             <div className="bg-white border border-gray-100 rounded-[20px] p-5 shadow-sm relative overflow-hidden group hover:shadow-google-2 transition-all">
+                             <div 
+                                onClick={() => alert('查看订单详情：O2')}
+                                className="bg-white border border-gray-100 rounded-[20px] p-5 shadow-sm relative overflow-hidden group hover:shadow-google-2 hover:-translate-y-0.5 cursor-pointer transition-all active:scale-95"
+                             >
                                  <div className="absolute top-0 left-0 w-1.5 h-full bg-google-green"></div>
                                  <h4 className="font-medium text-google-on-surface text-sm mb-1">交易成功</h4>
                                  <p className="text-xs text-google-gray leading-relaxed">系统已确认买家签收了您的书籍。</p>
@@ -78,65 +84,75 @@ const Messages = () => {
 
             {/* 右边内容区 */}
             <div className="flex-1 flex flex-col bg-white">
-                {activeTab === 'chat' && activeChat ? (
-                    <>
-                        <div className="h-[72px] px-8 flex items-center justify-between border-b border-gray-50">
-                            <div className="flex items-center gap-4">
-                                <h3 className="font-medium text-lg text-google-on-surface">{activeChat.name}</h3>
-                                <span className="flex items-center gap-1.5 text-[10px] text-google-green font-medium bg-google-green/5 px-2.5 py-1 rounded-full">
-                                    <div className="w-1.5 h-1.5 bg-google-green rounded-full animate-pulse"></div>
-                                    在线
-                                </span>
+                {activeTab === 'chat' ? (
+                    activeChat ? (
+                        <>
+                            <div className="h-[72px] px-8 flex items-center justify-between border-b border-gray-50">
+                                <div className="flex items-center gap-4">
+                                    <h3 className="font-medium text-lg text-google-on-surface">{activeChat.name}</h3>
+                                    <span className="flex items-center gap-1.5 text-[10px] text-google-green font-medium bg-google-green/5 px-2.5 py-1 rounded-full">
+                                        <div className="w-1.5 h-1.5 bg-google-green rounded-full animate-pulse"></div>
+                                        在线
+                                    </span>
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="flex-1 p-8 overflow-y-auto bg-gray-50/30 flex flex-col gap-6">
-                            {/* 商品卡片 */}
-                            <div className="bg-white google-card !p-4 flex gap-4 w-full max-w-md mx-auto mb-4 border-gray-100 !rounded-2xl">
-                                <img src={activeChat.book.cover} className="w-14 h-20 object-cover rounded-lg shadow-sm" />
-                                <div className="flex-1 min-w-0">
-                                    <h5 className="font-medium text-sm text-google-on-surface truncate mb-1">{activeChat.book.title}</h5>
-                                    <div className="text-[11px] text-google-gray mb-3 italic">正在协商此商品</div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-google-red font-medium text-lg">¥{activeChat.book.price}</span>
-                                        <button className="m3-btn-filled !px-4 !py-1.5 !text-[11px] shadow-google-1">立即支付</button>
+                            <div className="flex-1 p-8 overflow-y-auto bg-gray-50/30 flex flex-col gap-6">
+                                {/* 商品卡片 */}
+                                <div className="bg-white google-card !p-4 flex gap-4 w-full max-w-md mx-auto mb-4 border-gray-100 !rounded-2xl">
+                                    <img src={activeChat.book.cover} className="w-14 h-20 object-cover rounded-lg shadow-sm" />
+                                    <div className="flex-1 min-w-0">
+                                        <h5 className="font-medium text-sm text-google-on-surface truncate mb-1">{activeChat.book.title}</h5>
+                                        <div className="text-[11px] text-google-gray mb-3 italic">正在协商此商品</div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-google-red font-medium text-lg">¥{activeChat.book.price}</span>
+                                            <button className="m3-btn-filled !px-4 !py-1.5 !text-[11px] shadow-google-1">立即支付</button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="flex items-start gap-4 max-w-[85%]">
-                                <img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${activeChat.name}`} className="w-9 h-9 rounded-full border border-gray-100 bg-white shadow-sm" />
-                                <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-none text-sm text-google-on-surface shadow-sm leading-relaxed">
-                                    我已经把重点题目都勾在旁边了。如果不考研的话，这个书基本当字典查。
+                                <div className="flex items-start gap-4 max-w-[85%]">
+                                    <img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${activeChat.name}`} className="w-9 h-9 rounded-full border border-gray-100 bg-white shadow-sm" />
+                                    <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-none text-sm text-google-on-surface shadow-sm leading-relaxed">
+                                        我已经把重点题目都勾在旁边了。如果不考研的话，这个书基本当字典查。
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start justify-end gap-4 max-w-[85%] self-end">
+                                    <div className="bg-google-blue text-white p-4 rounded-2xl rounded-tr-none text-sm shadow-google-1 leading-relaxed">
+                                        太感谢了学长！我现在在西区食堂，方便当面买吗？
+                                    </div>
+                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" className="w-9 h-9 rounded-full border-2 border-white shadow-google-1 object-cover bg-white" />
                                 </div>
                             </div>
 
-                            <div className="flex items-start justify-end gap-4 max-w-[85%] self-end">
-                                <div className="bg-google-blue text-white p-4 rounded-2xl rounded-tr-none text-sm shadow-google-1 leading-relaxed">
-                                    太感谢了学长！我现在在西区食堂，方便当面买吗？
+                            <div className="p-6 bg-white border-t border-gray-50 flex flex-col gap-4">
+                                <div className="flex gap-2">
+                                    <button className="p-2 text-google-gray hover:text-google-blue hover:bg-gray-100 rounded-xl transition-all"><ImageIcon className="w-5 h-5"/></button>
                                 </div>
-                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" className="w-9 h-9 rounded-full border-2 border-white shadow-google-1 object-cover bg-white" />
+                                <div className="flex gap-4">
+                                    <textarea className="flex-1 bg-gray-50 border-none rounded-2xl p-4 text-sm focus:bg-white focus:ring-2 focus:ring-google-blue/20 transition-all resize-none h-24" placeholder="发送消息..."></textarea>
+                                    <button className="w-14 h-24 bg-google-blue rounded-2xl flex items-center justify-center text-white hover:shadow-google-2 transition-all active:scale-95">
+                                        <Send className="w-6 h-6" />
+                                    </button>
+                                </div>
                             </div>
+                        </>
+                    ) : (
+                        <div className="flex-1 flex items-center justify-center text-gray-200 flex-col gap-6">
+                            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center">
+                                <MessageSquareText className="w-10 h-10 opacity-20" />
+                            </div>
+                            <span className="text-sm font-medium tracking-wide">请选择一个对话开始交流</span>
                         </div>
-
-                        <div className="p-6 bg-white border-t border-gray-50 flex flex-col gap-4">
-                            <div className="flex gap-2">
-                                <button className="p-2 text-google-gray hover:text-google-blue hover:bg-gray-100 rounded-xl transition-all"><ImageIcon className="w-5 h-5"/></button>
-                            </div>
-                            <div className="flex gap-4">
-                                <textarea className="flex-1 bg-gray-50 border-none rounded-2xl p-4 text-sm focus:bg-white focus:ring-2 focus:ring-google-blue/20 transition-all resize-none h-24" placeholder="发送消息..."></textarea>
-                                <button className="w-14 h-24 bg-google-blue rounded-2xl flex items-center justify-center text-white hover:shadow-google-2 transition-all active:scale-95">
-                                    <Send className="w-6 h-6" />
-                                </button>
-                            </div>
-                        </div>
-                    </>
+                    )
                 ) : (
-                    <div className="flex-1 flex items-center justify-center text-gray-200 flex-col gap-6">
-                        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center">
-                            <MessageSquareText className="w-10 h-10 opacity-20" />
+                    <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50/10 p-12 text-center">
+                        <div className="w-24 h-24 bg-white rounded-[32px] shadow-google-1 flex items-center justify-center mb-8">
+                             <Bell className="w-10 h-10 text-google-blue opacity-50" />
                         </div>
-                        <span className="text-sm font-medium tracking-wide">请选择一个对话开始交流</span>
+                        <h3 className="text-xl font-bold text-google-on-surface mb-3">系统消息中心</h3>
+                        <p className="max-w-xs text-sm leading-relaxed">这里记录了您的订单动态、心愿达成以及社区公告。点击左侧卡片查看详情。</p>
                     </div>
                 )}
             </div>
