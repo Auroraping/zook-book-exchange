@@ -33,20 +33,20 @@ const Home = () => {
           </div>
 
           {/* IP形象：桃酥 Taosu */}
-          <div className="mt-20 flex flex-col items-center animate-bounce-slow">
+          <Link to="/ai-analysis" className="mt-20 flex flex-col items-center animate-bounce-slow group/taosu">
             <div className="relative group">
-              <div className="absolute inset-0 bg-orange-400 blur-2xl opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
+              <div className="absolute inset-0 bg-orange-400 blur-2xl opacity-20 group-hover/taosu:opacity-40 transition-opacity rounded-full"></div>
               <img 
                 src="/taosu.png" 
                 alt="桃酥 Taosu" 
-                className="w-48 h-48 object-contain relative z-10 mix-blend-multiply"
+                className="w-48 h-48 object-contain relative z-10 mix-blend-multiply group-hover/taosu:scale-105 transition-transform"
               />
               <div className="absolute -top-4 -right-20 bg-white p-4 rounded-2xl shadow-xl border border-gray-100 animate-float">
-                <p className="text-xs font-bold text-gray-800 whitespace-nowrap">嗨！我是桃酥~ <br/><span className="text-orange-500">你的AI知识小助手</span></p>
+                <p className="text-xs font-bold text-gray-800 whitespace-nowrap">嗨！我是桃酥~ <br/><span className="text-orange-500">点我进入 AI 助手</span></p>
                 <div className="absolute bottom-[-6px] left-4 w-3 h-3 bg-white border-b border-r border-gray-100 rotate-45"></div>
               </div>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* 装饰性漂浮元素 */}
