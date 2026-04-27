@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, Bell, BookOpen, Plus, LogOut, ArrowRight } from 'lucide-react';
+import { Search, ShoppingCart, Bell, BookOpen, Plus, LogOut, ArrowRight, CalendarDays } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import Logo from './Logo';
 
@@ -47,6 +47,7 @@ const Layout = () => {
           {[
             { icon: <Search className="w-6 h-6" />, path: '/books', label: '广场', color: 'blue' },
             { icon: <ShoppingCart className="w-6 h-6" />, path: '/cart', label: '清单', count: cartCount, color: 'yellow' },
+            { icon: <CalendarDays className="w-6 h-6" />, path: '/schedule', label: '课表', color: 'green' },
             { icon: <BookOpen className="w-6 h-6" />, path: '/community', label: '社区', color: 'blue' },
             { icon: <img src="/taosu.png" alt="桃酥" className="w-8 h-8 object-contain" />, path: '/ai-analysis', label: '桃酥', color: 'orange' },
           ].map((item) => {
@@ -54,6 +55,7 @@ const Layout = () => {
             const colors = {
               blue: 'text-blue-600 bg-blue-50',
               yellow: 'text-amber-600 bg-amber-50',
+              green: 'text-emerald-600 bg-emerald-50',
               orange: 'text-orange-600 bg-orange-50',
             };
             return (
