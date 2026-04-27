@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BadgeCheck, Bot, CheckCircle2, ChevronRight, Cpu, MessageSquareText, Search, Send, ShieldAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MOCK_BOOKS } from '../mockData';
@@ -22,13 +22,9 @@ const quickPrompts = [
   }
 ];
 
-const sourceCards = [
-  { label: '教材库', value: '14 本', tone: 'blue' },
-  { label: '课程关联', value: '4 门', tone: 'emerald' },
-  { label: '知识社区', value: '3 份', tone: 'orange' }
-];
+const SCHEDULE_STORAGE_KEY = 'zookBoundSchedule';
 
-const getTaosuAnswer = (question, strongBooks, cautiousBooks) => {
+const getTaosuAnswer = (question, strongBooks, cautiousBooks, boundCourses) => {
   const lowerQuestion = question.toLowerCase();
   const matchedBook = MOCK_BOOKS.find((book) =>
     lowerQuestion.includes(book.title.toLowerCase()) ||
@@ -52,6 +48,26 @@ const getTaosuAnswer = (question, strongBooks, cautiousBooks) => {
   }
 
   if (question.includes('课表') || question.includes('优先级')) {
+    if (boundCourses.length > 0) {
+      const priorityBooks = boundCourses
+        .map((course) => {
+          const bestBook = MOCK_BOOKS
+            .filter((book) => book.status === 'approved' && book.courseId === course.id)
+            .sort((a, b) => b.aiScore - a.aiScore || a.price - b.price)[0];
+          return bestBook ? { course, book: bestBook } : null;
+        })
+        .filter(Boolean);
+
+      const courseSummary = boundCourses.map((course) => course.name).join('、');
+      const bookSummary = priorityBooks.slice(0, 4).map(({ book }) => `《${book.title}》`).join('、');
+
+      if (priorityBooks.length > 0) {
+        return `我已经读取到你绑定的本学期课表：${courseSummary}。按课程硬度和 AI 必要性，桃酥建议优先看 ${bookSummary}。如果预算有限，先买专业必修和 AI 分数 90 以上的书，公共课可以结合知识社区资料再决定。`;
+      }
+
+      return `我已经读取到你绑定的本学期课表：${courseSummary}，但当前教材库还没有完全匹配的二手书源。建议先去课表推荐页登记悬赏，桃酥后续可以按课程帮你监控新上架教材。`;
+    }
+
     return `按当前原型课表，桃酥建议优先级是：专业硬课 > 数理基础课 > 公共课 > 可替代资料课。先看 ${strongBooks.slice(0, 3).map((book) => `《${book.title}》`).join('、')}，这些评分高且复用价值更强。`;
   }
 
@@ -63,6 +79,19 @@ const getTaosuAnswer = (question, strongBooks, cautiousBooks) => {
 };
 
 const AIAnalysis = () => {
+  const [boundCourses, setBoundCourses] = useState([]);
+
+  useEffect(() => {
+    try {
+      const savedSchedule = JSON.parse(localStorage.getItem(SCHEDULE_STORAGE_KEY) || '{}');
+      if (Array.isArray(savedSchedule.courses)) {
+        setBoundCourses(savedSchedule.courses);
+      }
+    } catch {
+      setBoundCourses([]);
+    }
+  }, []);
+
   const strongBooks = useMemo(
     () => MOCK_BOOKS.filter((book) => book.aiScore > 85).sort((a, b) => b.aiScore - a.aiScore),
     []
@@ -86,11 +115,17 @@ const AIAnalysis = () => {
   ]);
   const [draft, setDraft] = useState('');
 
+  const sourceCards = useMemo(() => ([
+    { label: '教材库', value: `${MOCK_BOOKS.length} 本`, tone: 'blue' },
+    { label: '课程关联', value: boundCourses.length > 0 ? `${boundCourses.length} 门` : '未绑定', tone: 'emerald' },
+    { label: '知识社区', value: '3 份', tone: 'orange' }
+  ]), [boundCourses.length]);
+
   const askTaosu = (question) => {
     const cleanQuestion = question.trim();
     if (!cleanQuestion) return;
 
-    const answer = getTaosuAnswer(cleanQuestion, strongBooks, cautiousBooks);
+    const answer = getTaosuAnswer(cleanQuestion, strongBooks, cautiousBooks, boundCourses);
     setMessages((current) => [
       ...current,
       { id: `user-${Date.now()}`, role: 'user', content: cleanQuestion },
