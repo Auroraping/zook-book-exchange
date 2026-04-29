@@ -18,6 +18,8 @@ import Achievements from './pages/Achievements';
 import Evaluate from './pages/Evaluate';
 import Admin from './pages/Admin';
 import Cart from './pages/Cart';
+import WishSquare from './pages/WishSquare';
+import Chat from './pages/Chat';
 
 
 function App() {
@@ -44,6 +46,8 @@ function App() {
           <Route path="achievements" element={<Achievements />} />
           <Route path="admin" element={<Admin />} />
           <Route path="cart" element={<Cart />} />
+          <Route path="wish-square" element={<WishSquare />} />
+          <Route path="chat" element={<Chat />} />
 
         </Route>
       </Routes>

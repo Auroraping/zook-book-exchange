@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, Bell, BookOpen, Plus, LogOut, ArrowRight, CalendarDays } from 'lucide-react';
+import { Search, ShoppingCart, Bell, BookOpen, Plus, LogOut, ArrowRight, CalendarDays, Heart } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import Logo from './Logo';
 
@@ -46,14 +46,17 @@ const Layout = () => {
         <nav className="flex flex-col gap-4 flex-1">
           {[
             { icon: <Search className="w-6 h-6" />, path: '/books', label: '广场', color: 'blue' },
+            { icon: <Heart className="w-6 h-6" />, path: '/wish-square', label: '心愿', color: 'purple' },
             { icon: <ShoppingCart className="w-6 h-6" />, path: '/cart', label: '清单', count: cartCount, color: 'yellow' },
             { icon: <CalendarDays className="w-6 h-6" />, path: '/schedule', label: '课表', color: 'green' },
             { icon: <BookOpen className="w-6 h-6" />, path: '/community', label: '社区', color: 'blue' },
+            { icon: <Bell className="w-6 h-6" />, path: '/chat', label: '消息', color: 'blue' },
             { icon: <img src="/taosu.png" alt="桃酥" className="w-8 h-8 object-contain" />, path: '/ai-analysis', label: '桃酥', color: 'orange' },
           ].map((item) => {
             const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
             const colors = {
               blue: 'text-blue-600 bg-blue-50',
+              purple: 'text-purple-600 bg-purple-50',
               yellow: 'text-amber-600 bg-amber-50',
               green: 'text-emerald-600 bg-emerald-50',
               orange: 'text-orange-600 bg-orange-50',
@@ -114,9 +117,9 @@ const Layout = () => {
             ) : (
               <div className="flex items-center gap-4">
                 <Link
-                  to="/messages"
+                  to="/chat"
                   className={`relative w-12 h-12 rounded-[16px] border flex items-center justify-center transition-all shadow-sm ${
-                    location.pathname === '/messages' || location.pathname === '/notifications'
+                    location.pathname === '/chat'
                       ? 'bg-blue-50 text-blue-600 border-blue-100'
                       : 'bg-white text-gray-400 border-gray-100 hover:text-blue-600 hover:bg-blue-50'
                   }`}
