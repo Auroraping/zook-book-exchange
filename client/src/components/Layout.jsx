@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingCart, Bell, BookOpen, Plus, LogOut, ArrowRight, CalendarDays, Heart } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import Logo from './Logo';
+import FloatingAI from './FloatingAI';
 
 const Layout = () => {
   const location = useLocation();
@@ -148,6 +149,7 @@ const Layout = () => {
             <Outlet />
           </div>
         </main>
+        <FloatingAI />
       </div>
     </div>
   );
