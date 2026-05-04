@@ -65,11 +65,11 @@ function renderSidebar() {
 
 function renderTopbar() {
   const userHtml = state.user 
-    ? `<div class="flex items-center gap-3 cursor-pointer group" onclick="alert('个人主页功能开发中')">
+    ? `<div class="flex items-center gap-3 cursor-pointer group" onclick="doLogout()" title="点击注销账户">
          <div class="w-10 h-10 rounded-full ${state.userRole === 'seller' ? 'bg-emerald-100 border-emerald-200 text-emerald-600' : 'bg-blue-100 border-blue-200 text-blue-600'} flex items-center justify-center font-black text-xl overflow-hidden group-hover:scale-110 transition-transform">👨‍🎓</div>
          <div class="flex flex-col hidden lg:flex">
            <span class="text-sm font-black text-gray-900">${state.user}</span>
-           <span class="text-[10px] font-bold ${state.userRole === 'seller' ? 'text-emerald-600' : 'text-blue-600'}">已认证·${state.userRole === 'seller' ? '卖家账户' : '买家账户'}</span>
+           <span class="text-[10px] font-bold ${state.userRole === 'seller' ? 'text-emerald-600' : 'text-blue-600'}">已认证·${state.userRole === 'seller' ? '卖家账户' : '买家账户'} (点击注销)</span>
          </div>
        </div>`
     : `<div class="btn-premium whitespace-nowrap shadow-2xl cursor-pointer" onclick="navigate('login')">请先选择身份登录</div>`;
@@ -319,6 +319,16 @@ function doLogin(role) {
   alert(`登录成功！已为您切换至【${role === 'buyer' ? '买家' : '卖家'}】身份：` + user);
   renderTopbar();
   navigate('home');
+}
+
+function doLogout() {
+  if(confirm(`确定要退出当前虚拟账户【${state.user}】吗？`)) {
+    state.user = null;
+    state.userRole = null;
+    renderTopbar();
+    alert('已成功注销账户！您现在可以切换身份重新登录。');
+    navigate('home');
+  }
 }
 
 // ========== 桃酥 AI ==========
@@ -631,3 +641,4 @@ window.doBindSchedule = doBindSchedule;
 window.doSearchCommunity = doSearchCommunity;
 window.doSendChat = doSendChat;
 window.doAddWish = doAddWish;
+window.doLogout = doLogout;
