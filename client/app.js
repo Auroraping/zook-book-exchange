@@ -97,6 +97,10 @@ function navigate(page) {
     case 'ai': renderAI(el); break;
     case 'login': renderLogin(el); break;
     case 'publish': renderPublish(el); break;
+    case 'schedule': renderSchedule(el); break;
+    case 'community': renderCommunity(el); break;
+    case 'messages': renderMessages(el); break;
+    case 'wish': renderWish(el); break;
     default: el.innerHTML = `<div class="py-40 flex flex-col items-center text-center animate-google-in"><div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center text-gray-300 mb-8 text-4xl">🚧</div><h2 class="text-3xl font-black text-gray-900 mb-4">${page.toUpperCase()} 模块模拟</h2><p class="text-gray-500 max-w-sm text-lg">这是一个虚拟的原型占位页面。</p></div>`;
   }
   window.scrollTo(0, 0);
@@ -353,6 +357,157 @@ function doPublish() {
   URL.revokeObjectURL(url);
   alert('书籍《' + title + '》发布成功！商品数据已通过文件保存。');
   navigate('books');
+}
+
+// ========== 课表模块 (静态展示) ==========
+function renderSchedule(el) {
+  el.innerHTML = `
+    <div class="max-w-7xl mx-auto flex flex-col gap-8 animate-google-in py-12">
+      <section class="bg-white border border-gray-100 rounded-[32px] shadow-sm p-8 overflow-hidden relative">
+        <div class="absolute inset-x-0 top-0 h-1.5 flex">
+          <div class="flex-1 bg-blue-600"></div><div class="flex-1 bg-red-500"></div>
+          <div class="flex-1 bg-yellow-400"></div><div class="flex-1 bg-green-500"></div>
+        </div>
+        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
+          <div>
+            <div class="flex items-center gap-3 mb-4">
+              <span class="w-10 h-10 rounded-2xl flex items-center justify-center bg-blue-50 text-blue-600">🔗</span>
+              <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border bg-blue-50 text-blue-600 border-blue-100">Schedule Binding</span>
+            </div>
+            <h1 class="text-4xl font-black text-gray-900 tracking-tight mb-3">课表绑定推荐 (静态原型)</h1>
+            <p class="text-sm text-gray-500 leading-relaxed max-w-2xl">先绑定本学期课表，再由系统按课程 ID 匹配二手教材。当前为静态展示，满足无后端要求。</p>
+          </div>
+        </div>
+      </section>
+      <div class="grid grid-cols-1 xl:grid-cols-[340px_1fr] gap-8 items-start">
+        <aside class="bg-white rounded-[32px] border border-gray-100 shadow-sm p-6">
+          <h2 class="font-black text-gray-900 mb-6">我的本学期课表</h2>
+          <div class="grid grid-cols-1 gap-3 mb-6">
+            <div class="h-12 rounded-2xl bg-blue-600 text-white text-sm font-black flex items-center justify-center gap-2 cursor-pointer w-full">教务网一键同步</div>
+            <label class="h-12 rounded-2xl bg-gray-50 border border-gray-100 text-gray-700 text-sm font-black flex items-center justify-center gap-2 w-full">上传课表截图识别</label>
+          </div>
+          <div class="rounded-3xl bg-gray-50 border border-dashed border-gray-200 p-6 text-center mb-6">
+            <h3 class="font-black text-gray-900 mb-2">还没绑定课表</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">绑定后才会按课程生成专属教材推荐。</p>
+          </div>
+        </aside>
+        <main class="flex flex-col gap-8">
+            <section class="bg-white border border-gray-100 rounded-[32px] shadow-sm p-12 text-center">
+              <img src="/taosu.png" alt="桃酥" class="w-28 h-28 object-contain mx-auto mb-6" />
+              <h2 class="text-3xl font-black text-gray-900 mb-3">绑定课表后，桃酥才能按课程挑书</h2>
+              <p class="text-gray-500 max-w-xl mx-auto leading-relaxed mb-8">当前不会假装你已经绑定。点击左侧按钮后，系统会把模拟课表写入本地并生成推荐。</p>
+              <div class="h-12 px-8 rounded-full bg-blue-600 text-white font-black inline-flex items-center justify-center">立即绑定示例课表</div>
+            </section>
+        </main>
+      </div>
+    </div>
+  `;
+}
+
+// ========== 社区模块 (静态展示) ==========
+function renderCommunity(el) {
+  el.innerHTML = `
+    <div class="max-w-7xl mx-auto flex flex-col gap-8 animate-google-in py-12">
+      <section class="bg-white border border-gray-100 rounded-[32px] shadow-sm overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-900 to-blue-600 px-12 py-11 text-white">
+          <div class="flex items-start justify-between gap-8">
+            <div>
+              <div class="flex items-center gap-2 mb-4">
+                <span class="text-[10px] font-black uppercase tracking-[0.25em] text-blue-100">Knowledge Community</span>
+              </div>
+              <h1 class="text-4xl font-black tracking-tight mb-4">求是知识共创社区 (静态原型)</h1>
+              <p class="text-blue-100 max-w-2xl text-sm leading-relaxed">课程笔记、历年真题、复习提纲和名词解释集中沉淀。静态展示。</p>
+            </div>
+            <div class="hidden lg:grid grid-cols-3 gap-3 w-[360px]">
+              <div class="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 backdrop-blur"><p class="text-2xl font-black">1245</p><p class="text-[10px] font-bold text-blue-100 mt-1">最高点赞</p></div>
+              <div class="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 backdrop-blur"><p class="text-2xl font-black">3</p><p class="text-[10px] font-bold text-blue-100 mt-1">热载资料</p></div>
+              <div class="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 backdrop-blur"><p class="text-2xl font-black">AI</p><p class="text-[10px] font-bold text-blue-100 mt-1">自动归档</p></div>
+            </div>
+          </div>
+          <div class="mt-9 max-w-3xl flex bg-white rounded-2xl shadow-xl shadow-blue-900/10 overflow-hidden h-14">
+            <input type="text" placeholder="搜索课程笔记、历届真题或名词解释..." class="flex-1 px-6 bg-transparent border-none outline-none text-sm font-medium text-gray-800 placeholder:text-gray-400" />
+            <div class="px-8 bg-orange-500 text-white font-black text-sm flex items-center justify-center">挖掘资料</div>
+          </div>
+        </div>
+      </section>
+      <section class="flex flex-col gap-6">
+        <h2 class="text-3xl font-black text-gray-900">本周校园热载榜</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <article class="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 flex flex-col">
+            <div class="flex justify-between items-start gap-3 mb-5">
+              <span class="bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1.5 rounded-full border border-blue-100">高等数学</span>
+              <span class="bg-emerald-50 text-emerald-600 text-[10px] font-black px-3 py-1.5 rounded-full border border-emerald-100">免费获取</span>
+            </div>
+            <h3 class="font-black text-gray-900 text-lg leading-snug">高数期末必考题型总结 (附详细解析)</h3>
+            <p class="text-sm text-gray-500 leading-relaxed mt-4">桃酥已自动关联课程与教材，可作为买书前后的复习资料补充。</p>
+            <div class="mt-auto pt-5 border-t border-gray-50 flex justify-between items-center text-xs text-gray-400 font-black">
+               <span>作者: 计科李学长</span><span>👍 128</span>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+// ========== 消息模块 (静态展示) ==========
+function renderMessages(el) {
+  el.innerHTML = `
+    <div class="max-w-7xl mx-auto flex flex-col gap-8 animate-google-in py-12">
+       <h1 class="text-4xl font-black text-gray-900 mb-8">消息中心 (静态原型)</h1>
+       <div class="bg-white rounded-[32px] border border-gray-100 shadow-sm flex overflow-hidden" style="height:600px;">
+         <div class="w-80 border-r border-gray-100 flex flex-col">
+           <div class="p-6 border-b border-gray-100"><h2 class="text-xl font-black">联系人</h2></div>
+           <div class="p-4 flex gap-4 items-center bg-blue-50 border-l-4 border-blue-600 cursor-pointer">
+             <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-xl">👨‍🎓</div>
+             <div><h3 class="font-bold text-gray-900">数学系学霸</h3><p class="text-xs text-gray-500">这本高数还有吗？</p></div>
+           </div>
+           <div class="p-4 flex gap-4 items-center cursor-pointer hover:bg-gray-50">
+             <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-xl">👩‍💻</div>
+             <div><h3 class="font-bold text-gray-900">软件小哥</h3><p class="text-xs text-gray-500">明天玉泉面交可以吗</p></div>
+           </div>
+         </div>
+         <div class="flex-1 flex flex-col bg-gray-50">
+           <div class="p-6 border-b border-gray-100 bg-white"><h2 class="text-xl font-black">数学系学霸</h2></div>
+           <div class="flex-1 p-6">
+              <div class="bg-white p-4 rounded-2xl shadow-sm max-w-[70%] mb-4 text-gray-800">你好，在吗？这本高数还有吗？</div>
+           </div>
+           <div class="p-6 bg-white border-t border-gray-100 flex gap-4">
+              <input type="text" class="flex-1 h-12 bg-gray-50 border border-gray-200 rounded-full px-6 outline-none" placeholder="输入消息..." />
+              <div class="w-24 bg-blue-600 text-white rounded-full font-bold flex items-center justify-center cursor-pointer">发送</div>
+           </div>
+         </div>
+       </div>
+    </div>
+  `;
+}
+
+// ========== 心愿单模块 (静态展示) ==========
+function renderWish(el) {
+  el.innerHTML = `
+    <div class="max-w-7xl mx-auto flex flex-col gap-8 animate-google-in py-12">
+       <h1 class="text-4xl font-black text-gray-900 mb-8">全校寻书心愿单 (静态原型)</h1>
+       <div class="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8">
+         <h2 class="text-xl font-black mb-6">最新悬赏</h2>
+         <div class="flex flex-col gap-4">
+           <div class="p-6 border border-gray-100 rounded-2xl flex justify-between items-center bg-gray-50 hover:bg-white transition-all cursor-pointer">
+             <div>
+                <h3 class="font-bold text-lg text-gray-900 mb-1">急求《离散数学及其应用》</h3>
+                <p class="text-gray-500 text-sm">愿意高价收购，玉泉校区当面交易。</p>
+             </div>
+             <div class="px-6 py-2 bg-rose-50 text-rose-600 font-bold rounded-full">赏金 ¥50</div>
+           </div>
+           <div class="p-6 border border-gray-100 rounded-2xl flex justify-between items-center bg-gray-50 hover:bg-white transition-all cursor-pointer">
+             <div>
+                <h3 class="font-bold text-lg text-gray-900 mb-1">求一本《现代操作系统》</h3>
+                <p class="text-gray-500 text-sm">笔记清晰优先，紫金港可以自取。</p>
+             </div>
+             <div class="px-6 py-2 bg-blue-50 text-blue-600 font-bold rounded-full">正常求购</div>
+           </div>
+         </div>
+       </div>
+    </div>
+  `;
 }
 
 // 暴露到全局
