@@ -4,7 +4,7 @@
  */
 
 const ITEMS_PER_PAGE = 24;
-const state = { books: [], filteredBooks: [], cart: [], page: 1, currentView: 'home', loading: true, user: null, userRole: null, scheduleBound: false, messages: [{text: '你好，在吗？这本高数还有吗？', sender: 'other'}] };
+const state = { books: [], filteredBooks: [], cart: [], page: 1, currentView: 'home', loading: true, user: null, userRole: null, scheduleBound: false, messages: [{text: '你好，在吗？这本高数还有吗？', sender: 'other'}], orders: [], published: [] };
 
 // ========== 启动 ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -65,11 +65,11 @@ function renderSidebar() {
 
 function renderTopbar() {
   const userHtml = state.user 
-    ? `<div class="flex items-center gap-3 cursor-pointer group" onclick="doLogout()" title="点击注销账户">
+    ? `<div class="flex items-center gap-3 cursor-pointer group" onclick="navigate('profile')" title="进入个人主页">
          <div class="w-10 h-10 rounded-full bg-blue-100 border-blue-200 text-blue-600 flex items-center justify-center font-black text-xl overflow-hidden group-hover:scale-110 transition-transform">👨‍🎓</div>
          <div class="flex flex-col hidden lg:flex">
            <span class="text-sm font-black text-gray-900">${state.user}</span>
-           <span class="text-[10px] font-bold text-blue-600">已认证·求是学子 (点击注销)</span>
+           <span class="text-[10px] font-bold text-blue-600 group-hover:text-blue-800 transition-colors">个人中心 ➜</span>
          </div>
        </div>`
     : `<div class="btn-premium whitespace-nowrap shadow-2xl cursor-pointer" onclick="navigate('login')">登录淘书通行证</div>`;
@@ -111,6 +111,7 @@ function navigate(page) {
     case 'community': renderCommunity(el); break;
     case 'messages': renderMessages(el); break;
     case 'wish': renderWish(el); break;
+    case 'profile': renderProfile(el); break;
     default: el.innerHTML = `<div class="py-40 flex flex-col items-center text-center animate-google-in"><div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center text-gray-300 mb-8 text-4xl">🚧</div><h2 class="text-3xl font-black text-gray-900 mb-4">${page.toUpperCase()} 模块模拟</h2><p class="text-gray-500 max-w-sm text-lg">这是一个虚拟的原型占位页面。</p></div>`;
   }
   window.scrollTo(0, 0);
@@ -331,6 +332,8 @@ function finishCheckoutTransaction() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
   
+  state.orders.unshift(orderData);
+  
   const modal = document.getElementById('payment-modal');
   if (modal) modal.remove();
   
@@ -487,6 +490,8 @@ function doPublish() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      
+      state.published.unshift(bookData);
       
       alert(`🎉 商品《${title}》上架成功！\\n已绑定至卖家【${state.user}】的账户，数据已保存至本地。`);
       navigate('books');
@@ -688,6 +693,70 @@ function doAddWish() {
   list.innerHTML = html + list.innerHTML;
   input.value = '';
   alert('心愿单发布成功！已加入列表。');
+}
+
+// ========== 个人主页模块 ==========
+function renderProfile(el) {
+  if (!state.user) {
+    navigate('login');
+    return;
+  }
+
+  const ordersHtml = state.orders.length === 0 
+    ? `<div class="text-center text-gray-400 py-12 text-sm bg-gray-50 rounded-2xl border border-dashed border-gray-200">暂无买家交易记录</div>`
+    : state.orders.map(o => `
+      <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100 flex justify-between items-center mb-4 animate-google-in hover:shadow-md transition-shadow">
+        <div>
+          <p class="text-xs text-gray-400 mb-2 font-mono tracking-widest">${o.trade_id}</p>
+          <p class="font-bold text-gray-800 text-sm max-w-sm truncate">${o.items_intended.map(i=>'《'+i.title+'》').join(', ')}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xl font-black text-rose-500 mb-1">¥${o.total_estimated_cny.toFixed(2)}</p>
+          <span class="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-[10px] font-bold">意向已确认，待线下交接</span>
+        </div>
+      </div>
+    `).join('');
+
+  const publishedHtml = state.published.length === 0
+    ? `<div class="text-center text-gray-400 py-12 text-sm bg-gray-50 rounded-2xl border border-dashed border-gray-200">暂无卖家发布记录</div>`
+    : state.published.map(p => `
+      <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100 flex justify-between items-center mb-4 animate-google-in hover:shadow-md transition-shadow">
+        <div>
+          <p class="text-xs text-gray-400 mb-2 font-mono tracking-widest">${p.product_id}</p>
+          <p class="font-bold text-gray-800 text-sm max-w-sm truncate">《${p.product_info.title}》</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xl font-black text-gray-900 mb-1">¥${p.product_info.price.toFixed(2)}</p>
+          <span class="px-3 py-1 bg-emerald-100 text-emerald-600 rounded-full text-[10px] font-bold">审核通过·已上架</span>
+        </div>
+      </div>
+    `).join('');
+
+  el.innerHTML = `
+    <div class="max-w-6xl mx-auto py-12 animate-google-in">
+       <div class="bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 p-10 flex flex-col md:flex-row items-center gap-8 mb-8 relative overflow-hidden">
+          <div class="absolute right-0 top-0 w-64 h-64 bg-blue-50 rounded-full mix-blend-multiply filter blur-3xl opacity-70 -translate-y-1/2 translate-x-1/2"></div>
+          <div class="w-24 h-24 rounded-full bg-blue-100 border-4 border-blue-50 text-blue-600 flex items-center justify-center text-5xl font-black relative z-10 shadow-inner">👨‍🎓</div>
+          <div class="flex-1 text-center md:text-left relative z-10">
+             <h1 class="text-3xl font-black text-gray-900 mb-2">${state.user}</h1>
+             <p class="text-blue-600 font-bold text-sm bg-blue-50 inline-block px-4 py-1.5 rounded-full border border-blue-100">统一身份认证·求是学子</p>
+          </div>
+          <div class="px-8 py-3.5 bg-rose-50 text-rose-600 rounded-full font-bold cursor-pointer hover:bg-rose-600 hover:text-white transition-all shadow-sm relative z-10" onclick="doLogout()">退出登录系统</div>
+       </div>
+
+       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <section class="bg-white rounded-[32px] shadow-sm border border-gray-100 p-8">
+             <h2 class="text-xl font-black text-gray-900 mb-6 flex items-center gap-3"><span class="w-10 h-10 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center text-xl">🛒</span> <span class="flex-1">我发起的交易</span> <span class="text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full">买家视角</span></h2>
+             <div class="flex flex-col">${ordersHtml}</div>
+          </section>
+          
+          <section class="bg-white rounded-[32px] shadow-sm border border-gray-100 p-8">
+             <h2 class="text-xl font-black text-gray-900 mb-6 flex items-center gap-3"><span class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-xl">🏪</span> <span class="flex-1">我发布的闲置</span> <span class="text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full">卖家视角</span></h2>
+             <div class="flex flex-col">${publishedHtml}</div>
+          </section>
+       </div>
+    </div>
+  `;
 }
 
 // 暴露到全局
