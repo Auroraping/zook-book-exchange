@@ -4,7 +4,7 @@
  */
 
 const ITEMS_PER_PAGE = 24;
-const state = { books: [], filteredBooks: [], cart: [], page: 1, currentView: 'home', loading: true };
+const state = { books: [], filteredBooks: [], cart: [], page: 1, currentView: 'home', loading: true, user: null };
 
 // ========== 启动 ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -64,6 +64,16 @@ function renderSidebar() {
 }
 
 function renderTopbar() {
+  const userHtml = state.user 
+    ? `<div class="flex items-center gap-3 cursor-pointer group" onclick="alert('个人主页功能开发中')">
+         <div class="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-600 font-black text-xl overflow-hidden group-hover:scale-110 transition-transform">👨‍🎓</div>
+         <div class="flex flex-col hidden lg:flex">
+           <span class="text-sm font-black text-gray-900">${state.user}</span>
+           <span class="text-[10px] font-bold text-blue-600">已认证·求是学子</span>
+         </div>
+       </div>`
+    : `<div class="btn-premium whitespace-nowrap shadow-2xl cursor-pointer" onclick="navigate('login')">立即登录淘书</div>`;
+
   document.getElementById('topbar').innerHTML = `
     <div class="flex-1 max-w-3xl">
       <div class="group h-16 bg-white/85 border border-gray-100 rounded-[24px] px-5 flex items-center gap-4 shadow-[0_12px_40px_rgba(60,64,67,0.08)] backdrop-blur-xl focus-within:bg-white focus-within:border-blue-100 transition-all">
@@ -76,7 +86,7 @@ function renderTopbar() {
       </div>
     </div>
     <div class="flex items-center gap-8 ml-12">
-      <div class="btn-premium whitespace-nowrap shadow-2xl cursor-pointer" onclick="navigate('login')">立即登录淘书</div>
+      ${userHtml}
     </div>`;
 }
 
@@ -276,8 +286,10 @@ function renderLogin(el) {
 }
 
 function doLogin() {
-  const user = document.getElementById('login-user').value;
-  alert('登录成功！欢迎 ' + (user || '求是学子'));
+  const user = document.getElementById('login-user').value || '计科王学长';
+  state.user = user;
+  alert('登录成功！欢迎 ' + user);
+  renderTopbar();
   navigate('home');
 }
 
