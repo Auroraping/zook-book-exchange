@@ -473,7 +473,7 @@ function renderCommunity(el) {
 
 function doSearchCommunity() {
   const q = document.getElementById('community-search').value;
-  alert(q ? \`已在社区数据库中为您检索到关于 "\${q}" 的 12 篇相关资料！(模拟交互)\` : '请输入搜索关键词');
+  alert(q ? `已在社区数据库中为您检索到关于 "${q}" 的 12 篇相关资料！(模拟交互)` : '请输入搜索关键词');
 }
 
 // ========== 消息模块 (带虚拟交互) ==========
@@ -559,7 +559,7 @@ function doAddWish() {
   const list = document.getElementById('wish-list');
   const html = `
     <div class="p-6 border border-blue-100 rounded-2xl flex justify-between items-center bg-blue-50 animate-google-in mb-4">
-       <div><h3 class="font-bold text-lg text-blue-900 mb-1">急求《\${val}》</h3><p class="text-blue-500 text-sm">您刚刚发布的新心愿单。</p></div>
+       <div><h3 class="font-bold text-lg text-blue-900 mb-1">急求《${val}》</h3><p class="text-blue-500 text-sm">您刚刚发布的新心愿单。</p></div>
        <div class="px-6 py-2 bg-blue-600 text-white font-bold rounded-full">等待接单</div>
     </div>`;
   list.innerHTML = html + list.innerHTML;
