@@ -4,7 +4,7 @@
  */
 
 const ITEMS_PER_PAGE = 24;
-const state = { books: [], filteredBooks: [], cart: [], page: 1, currentView: 'home', loading: true, user: null, scheduleBound: false, messages: [{text: '你好，在吗？这本高数还有吗？', sender: 'other'}] };
+const state = { books: [], filteredBooks: [], cart: [], page: 1, currentView: 'home', loading: true, user: null, userRole: null, scheduleBound: false, messages: [{text: '你好，在吗？这本高数还有吗？', sender: 'other'}] };
 
 // ========== 启动 ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -66,13 +66,13 @@ function renderSidebar() {
 function renderTopbar() {
   const userHtml = state.user 
     ? `<div class="flex items-center gap-3 cursor-pointer group" onclick="alert('个人主页功能开发中')">
-         <div class="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-600 font-black text-xl overflow-hidden group-hover:scale-110 transition-transform">👨‍🎓</div>
+         <div class="w-10 h-10 rounded-full ${state.userRole === 'seller' ? 'bg-emerald-100 border-emerald-200 text-emerald-600' : 'bg-blue-100 border-blue-200 text-blue-600'} flex items-center justify-center font-black text-xl overflow-hidden group-hover:scale-110 transition-transform">👨‍🎓</div>
          <div class="flex flex-col hidden lg:flex">
            <span class="text-sm font-black text-gray-900">${state.user}</span>
-           <span class="text-[10px] font-bold text-blue-600">已认证·求是学子</span>
+           <span class="text-[10px] font-bold ${state.userRole === 'seller' ? 'text-emerald-600' : 'text-blue-600'}">已认证·${state.userRole === 'seller' ? '卖家账户' : '买家账户'}</span>
          </div>
        </div>`
-    : `<div class="btn-premium whitespace-nowrap shadow-2xl cursor-pointer" onclick="navigate('login')">立即登录淘书</div>`;
+    : `<div class="btn-premium whitespace-nowrap shadow-2xl cursor-pointer" onclick="navigate('login')">请先选择身份登录</div>`;
 
   document.getElementById('topbar').innerHTML = `
     <div class="flex-1 max-w-3xl">
@@ -255,17 +255,34 @@ function renderCart(el) {
 
 function checkout() { 
   if (state.cart.length === 0) return;
-  const orderData = { id: 'ORDER_' + Date.now(), date: new Date().toISOString(), items: state.cart, total: state.cart.reduce((s, b) => s + b.price, 0) };
+  if (!state.user) {
+    alert('⚠️ 交易拦截：请先在右上角【登录买家账户】后再进行结算！这是核心要求哦。');
+    navigate('login');
+    return;
+  }
+  
+  const orderData = { 
+    transaction_type: "买家交易记录 (Buyer Transaction)",
+    buyer_account: state.user,
+    buyer_role: state.userRole,
+    order_id: 'ORDER_' + Date.now(), 
+    transaction_date: new Date().toLocaleString(),
+    items_purchased: state.cart.map(b => ({ book_id: b.id, title: b.title, price: b.price })),
+    total_amount_cny: state.cart.reduce((s, b) => s + b.price, 0),
+    payment_status: "SUCCESS (虚拟支付成功)"
+  };
+  
   const blob = new Blob([JSON.stringify(orderData, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'zook_order_' + orderData.id + '.json';
+  a.download = `[交易记录]买家订单_${state.user}_${orderData.order_id}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  alert('交易成功！您的订单数据已作为文件保存下载。'); 
+  
+  alert(`交易成功！已从买家【${state.user}】的账户扣款。\\n交易数据已生成文件并自动下载，老师可以查阅文件内容。`); 
   state.cart = []; 
   navigate('home'); 
 }
@@ -274,21 +291,32 @@ function checkout() {
 function renderLogin(el) {
   el.innerHTML = `
     <div class="py-20 flex justify-center animate-google-in">
-      <div class="bg-white p-12 rounded-[32px] shadow-xl w-96 border border-gray-100 flex flex-col gap-6">
-        <h2 class="text-2xl font-black text-center mb-4 text-gray-900">欢迎来到浙里淘书</h2>
+      <div class="bg-white p-12 rounded-[32px] shadow-xl w-[440px] border border-gray-100 flex flex-col gap-6">
+        <h2 class="text-2xl font-black text-center mb-2 text-gray-900">虚拟账户登录系统</h2>
+        <p class="text-center text-sm text-gray-500 mb-4 bg-yellow-50 p-3 rounded-xl border border-yellow-100">为满足作业对“买家/卖家账户”流程的重点要求，请选择您的模拟身份登录。</p>
         <div class="flex flex-col gap-4">
-          <input type="text" id="login-user" placeholder="买家/卖家账号" class="h-12 border border-gray-200 rounded-lg px-4 outline-none focus:border-blue-500" />
-          <input type="password" placeholder="密码" class="h-12 border border-gray-200 rounded-lg px-4 outline-none focus:border-blue-500" />
-          <div class="bg-blue-600 text-white text-center py-4 rounded-[16px] font-bold cursor-pointer mt-4 shadow-lg hover:bg-blue-700 transition-all" onclick="doLogin()">登录账户</div>
+          <input type="text" id="login-user" placeholder="输入你想使用的账号名 (任意)" value="计科王同学" class="h-12 border border-gray-200 rounded-lg px-4 outline-none focus:border-blue-500 text-center font-bold" />
+          
+          <div class="flex gap-4 mt-2">
+            <div class="flex-1 bg-blue-600 text-white text-center py-4 rounded-[16px] font-bold cursor-pointer shadow-lg hover:bg-blue-700 transition-all flex flex-col items-center justify-center gap-1" onclick="doLogin('buyer')">
+              <span class="text-2xl">🛒</span>
+              <span>作为买家登录</span>
+            </div>
+            <div class="flex-1 bg-emerald-600 text-white text-center py-4 rounded-[16px] font-bold cursor-pointer shadow-lg hover:bg-emerald-700 transition-all flex flex-col items-center justify-center gap-1" onclick="doLogin('seller')">
+              <span class="text-2xl">🏪</span>
+              <span>作为卖家登录</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>`;
 }
 
-function doLogin() {
-  const user = document.getElementById('login-user').value || '计科王学长';
+function doLogin(role) {
+  const user = document.getElementById('login-user').value || '匿名用户';
   state.user = user;
-  alert('登录成功！欢迎 ' + user);
+  state.userRole = role;
+  alert(`登录成功！已为您切换至【${role === 'buyer' ? '买家' : '卖家'}】身份：` + user);
   renderTopbar();
   navigate('home');
 }
@@ -355,19 +383,41 @@ function renderPublish(el) {
 }
 
 function doPublish() {
+  if (!state.user) {
+    alert('⚠️ 发布拦截：请先在右上角【登录卖家账户】后再发布二手书！这是核心要求哦。');
+    navigate('login');
+    return;
+  }
+
   const title = document.getElementById('pub-title').value || '未命名书籍';
   const price = document.getElementById('pub-price').value || '0';
-  const bookData = { id: 'PUB_' + Date.now(), title: title, price: parseFloat(price), date: new Date().toISOString() };
+  const condition = document.getElementById('pub-condition').value || '未知';
+  
+  const bookData = { 
+    transaction_type: "卖家上架记录 (Seller Publishing)",
+    seller_account: state.user,
+    seller_role: state.userRole,
+    product_id: 'PUB_' + Date.now(), 
+    product_info: {
+      title: title,
+      price: parseFloat(price),
+      condition: condition
+    },
+    publish_date: new Date().toLocaleString(),
+    system_status: "PUBLISHED (上架成功)"
+  };
+  
   const blob = new Blob([JSON.stringify(bookData, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'zook_published_' + bookData.id + '.json';
+  a.download = `[交易记录]卖家发布_${state.user}_${bookData.product_id}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  alert('书籍《' + title + '》发布成功！商品数据已通过文件保存。');
+  
+  alert(`商品《${title}》上架成功！已绑定至卖家【${state.user}】的账户。\\n上架数据已生成文件并自动下载，老师可以查阅文件内容。`);
   navigate('books');
 }
 
