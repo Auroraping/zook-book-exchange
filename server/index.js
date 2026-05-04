@@ -16,12 +16,47 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-// 简单的内存消息存储
+// 简单的内存存储
 const messages = [];
+const users = new Map([
+  ['U_MOCK_001', '书友小陈'],
+  ['U_MOCK_002', '李学姐'],
+  ['U_MOCK_003', '计科王同学'],
+  ['U_MOCK_004', '高数笔记小助手']
+]);
 
 // Socket.io 逻辑
 io.on('connection', (socket) => {
   console.log('[Socket] User connected:', socket.id);
+
+  // 注册用户
+  socket.on('register_user', (user) => {
+    if (user && user.id) {
+      users.set(user.id, user.username);
+      console.log(`[Socket] User registered: ${user.username} (${user.id})`);
+    }
+  });
+
+  // 搜索用户
+  socket.on('search_user', (query, callback) => {
+    console.log(`[Socket] Searching for: ${query}`);
+    let result = null;
+    
+    // 优先尝试 ID 匹配
+    if (users.has(query)) {
+      result = { id: query, name: users.get(query) };
+    } else {
+      // 模糊匹配名字
+      for (const [id, name] of users.entries()) {
+        if (name === query || name.includes(query)) {
+          result = { id, name };
+          break;
+        }
+      }
+    }
+    
+    callback(result);
+  });
 
   // 监听加入房间
   socket.on('join_room', (roomId) => {

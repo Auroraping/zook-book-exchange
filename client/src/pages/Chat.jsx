@@ -53,7 +53,10 @@ const Chat = () => {
       console.log('[Chat] Socket connected');
       setIsConnected(true);
       if (activeChat) socket.emit('join_room', activeChat.id);
-      if (user?.id) socket.emit('join_room', `notify_${user.id}`);
+      if (user?.id) {
+        socket.emit('join_room', `notify_${user.id}`);
+        socket.emit('register_user', user); // 连接成功后立即注册
+      }
     };
 
     const onDisconnect = () => {
@@ -133,35 +136,33 @@ const Chat = () => {
     e.preventDefault();
     if (!searchQuery.trim() || !currentUser) return;
 
-    const targetId = searchQuery.startsWith('U') ? searchQuery : null;
-    const targetName = searchQuery;
+    socket.emit('search_user', searchQuery, (result) => {
+      if (result) {
+        if (result.id === currentUser.id) {
+          alert("不能和自己聊天哦");
+          return;
+        }
 
-    // 生成唯一的 1对1 房间 ID
-    let roomId;
-    if (targetId) {
-      if (targetId === currentUser.id) {
-        alert("不能和自己聊天哦");
-        return;
+        const roomId = getRoomId(currentUser.id, result.id);
+        const existingChat = chats.find(c => c.id === roomId);
+
+        if (existingChat) {
+          switchChat(existingChat);
+        } else {
+          const newChat = {
+            id: roomId,
+            name: result.name,
+            avatar: result.name.charAt(0).toUpperCase(),
+            lastMsg: '新发起的聊天'
+          };
+          setChats(prev => [newChat, ...prev]);
+          switchChat(newChat);
+        }
+      } else {
+        alert("未找到该用户，请检查 ID 或名字是否正确");
       }
-      roomId = getRoomId(currentUser.id, targetId);
-    } else {
-      // 如果搜的是名字，暂时回退到旧逻辑或提示
-      roomId = `room_${targetName}`;
-    }
-
-    const existingChat = chats.find(c => c.id === roomId);
-    if (existingChat) {
-      switchChat(existingChat);
-    } else {
-      const newChat = {
-        id: roomId,
-        name: targetId ? `书友 (${targetId})` : targetName,
-        avatar: targetName.charAt(0).toUpperCase(),
-        lastMsg: '新发起的聊天'
-      };
-      setChats(prev => [newChat, ...prev]);
-      switchChat(newChat);
-    }
+    });
+    
     setSearchQuery('');
   };
 
