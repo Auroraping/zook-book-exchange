@@ -367,7 +367,7 @@ function renderLogin(el) {
   el.innerHTML = `
     <div class="py-20 flex justify-center animate-google-in">
       <div class="bg-white p-12 rounded-[32px] shadow-xl w-[480px] border border-gray-100 flex flex-col gap-6">
-        <h2 class="text-2xl font-black text-center mb-2 text-gray-900">角色模拟登录 (作业要求)</h2>
+        <h2 class="text-2xl font-black text-center mb-2 text-gray-900">角色模拟登录</h2>
         <p class="text-center text-sm text-gray-500 mb-4 bg-yellow-50 p-3 rounded-xl border border-yellow-100">为满足作业“模拟完整的买家、卖家账户及交易流程”的要求，请选择测试角色。</p>
         
         <div class="flex gap-4 mt-2">
@@ -376,10 +376,10 @@ function renderLogin(el) {
             <span class="text-lg">作为买家登录</span>
             <span class="text-xs text-blue-200 font-normal mt-1">内置测试购物车与购买记录</span>
           </div>
-          <div class="flex-1 bg-emerald-600 text-white text-center py-6 rounded-[24px] font-bold cursor-pointer shadow-lg hover:bg-emerald-700 transition-all flex flex-col items-center justify-center gap-2" onclick="doLogin('seller')">
+          <div class="flex-1 text-center py-6 rounded-[24px] font-bold cursor-pointer shadow-lg hover:opacity-90 transition-all flex flex-col items-center justify-center gap-2" style="background-color: #059669; color: white;" onclick="doLogin('seller')">
             <span class="text-4xl">🏪</span>
             <span class="text-lg">作为卖家登录</span>
-            <span class="text-xs text-emerald-200 font-normal mt-1">内置测试发布与上架记录</span>
+            <span class="text-xs font-normal mt-1" style="color: #a7f3d0;">内置测试发布与上架记录</span>
           </div>
         </div>
       </div>
