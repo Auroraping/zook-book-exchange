@@ -50,11 +50,11 @@ io.on('connection', (socket) => {
 // 登录接口
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
-  
+
   console.log(`[Auth] Attempting login for: ${username}`);
-  
+
   const result = await authenticateZJU(username, password);
-  
+
   if (result.success) {
     res.json({ success: true, user: { username } });
   } else {
