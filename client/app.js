@@ -224,7 +224,9 @@ function bookCard(book) {
             <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-6">${book.campus} · ${book.author}</p></div>
           <div class="flex justify-between items-end border-t border-gray-50 pt-6 mt-auto">
             <div><p class="text-[10px] text-gray-400 font-black uppercase mb-1">Exchange</p><span class="text-3xl font-black text-gray-900">¥${book.price}</span></div>
-            <div class="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 shadow-xl shadow-blue-500/40 text-2xl">›</div>
+            <div class="${book.sold ? 'bg-gray-100 text-gray-400' : 'bg-blue-600 text-white opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0'} w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-xl ${book.sold ? '' : 'shadow-blue-500/40 text-2xl'}">
+              ${book.sold ? '<span class="text-[10px] font-black uppercase">Sold</span>' : '›'}
+            </div>
           </div>
         </div>
       </div>
@@ -234,7 +236,12 @@ function bookCard(book) {
 // ========== 购物车 ==========
 function addToCart(id) {
   const book = state.books.find(b => b.id === id);
-  if (book && !state.cart.find(c => c.id === id)) { state.cart.push(book); alert('已将《' + book.title + '》加入清单'); navigate('cart'); }
+  if (!book) return;
+  if (book.sold) { alert('抱歉，该书已被抢先下单了！'); return; }
+  if (state.cart.find(c => c.id === id)) { alert('该书已经在您的清单里啦，去结算吧！'); navigate('cart'); return; }
+  state.cart.push(book); 
+  alert('已将《' + book.title + '》加入清单'); 
+  navigate('cart');
 }
 
 function renderCart(el) {
@@ -351,6 +358,11 @@ function finishCheckoutTransaction() {
   const titles = state.cart.map(b => '《' + b.title + '》').join('、');
   const msgText = `您好！我已经生成了线下交易备案凭证（订单尾号 ${orderData.trade_id.slice(-4)}）。<br/>我想购买 ${titles}，预估总计 ¥${orderData.total_estimated_cny}。<br/>请问咱们怎么交接比较方便呢？`;
   state.messages.push({text: msgText, sender: 'me'});
+  
+  state.cart.forEach(item => {
+    const globalBook = state.books.find(b => b.id === item.id);
+    if (globalBook) globalBook.sold = true;
+  });
   
   state.cart = []; 
   navigate('messages'); 
@@ -515,6 +527,14 @@ function renderPublish(el) {
 }
 
 function doPublish() {
+  const title = document.getElementById('pub-title').value.trim();
+  const price = document.getElementById('pub-price').value.trim();
+  
+  if (!title || !price) {
+    alert('⚠️ 请填写完整的书籍名称和价格！');
+    return;
+  }
+  
   if (!state.user) {
     alert('⚠️ 发布拦截：请先选择【卖家】角色登录后再发布二手书！');
     navigate('login');
