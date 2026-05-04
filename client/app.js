@@ -742,6 +742,13 @@ function viewNote(id) {
 
 // ========== 消息模块 (带虚拟交互) ==========
 function renderMessages(el) {
+  let counterpartName = "数学系学霸";
+  if (state.userRole === 'buyer') {
+    counterpartName = "法学大四·卖家测试";
+  } else if (state.userRole === 'seller') {
+    counterpartName = "计科大二·买家测试";
+  }
+
   const msgsHtml = state.messages.map(m => 
     m.sender === 'me' 
       ? `<div class="bg-blue-600 text-white p-4 rounded-2xl rounded-br shadow-sm max-w-[70%] mb-4 self-end ml-auto">${m.text}</div>`
@@ -756,11 +763,11 @@ function renderMessages(el) {
            <div class="p-6 border-b border-gray-100"><h2 class="text-xl font-black">联系人</h2></div>
            <div class="p-4 flex gap-4 items-center bg-blue-50 border-l-4 border-blue-600 cursor-pointer">
              <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-xl">👨‍🎓</div>
-             <div><h3 class="font-bold text-gray-900">数学系学霸</h3><p class="text-xs text-blue-600 font-bold">有新消息</p></div>
+             <div><h3 class="font-bold text-gray-900">${counterpartName}</h3><p class="text-xs text-blue-600 font-bold">有新消息</p></div>
            </div>
          </div>
          <div class="flex-1 flex flex-col bg-gray-50">
-           <div class="p-6 border-b border-gray-100 bg-white"><h2 class="text-xl font-black">数学系学霸</h2></div>
+           <div class="p-6 border-b border-gray-100 bg-white"><h2 class="text-xl font-black">${counterpartName}</h2></div>
            <div class="flex-1 p-6 flex flex-col overflow-y-auto" id="msg-container">
               ${msgsHtml}
            </div>
