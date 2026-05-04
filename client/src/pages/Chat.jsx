@@ -14,6 +14,20 @@ const socket = io('http://localhost:3001', {
 });
 
 const Chat = () => {
+  const [messages, setMessages] = useState([]);
+  const [inputText, setInputText] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [chats, setChats] = useState(INITIAL_CHATS);
+  const [activeChat, setActiveChat] = useState(INITIAL_CHATS[0]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const messagesEndRef = useRef(null);
+
+  // 滚动到底部
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   // 生成唯一的房间 ID (确保 A->B 和 B->A 进入同一个房间)
   const getRoomId = (id1, id2) => {
     const sortedIds = [id1, id2].sort();
