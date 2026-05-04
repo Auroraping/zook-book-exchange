@@ -21,6 +21,7 @@ const Chat = () => {
   const [activeChat, setActiveChat] = useState(INITIAL_CHATS[0]);
   const [isConnected, setIsConnected] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
   const messagesEndRef = useRef(null);
 
   // 滚动到底部
@@ -136,33 +137,38 @@ const Chat = () => {
     e.preventDefault();
     if (!searchQuery.trim() || !currentUser) return;
 
-    socket.emit('search_user', searchQuery, (result) => {
-      if (result) {
-        if (result.id === currentUser.id) {
-          alert("不能和自己聊天哦");
-          return;
-        }
-
-        const roomId = getRoomId(currentUser.id, result.id);
-        const existingChat = chats.find(c => c.id === roomId);
-
-        if (existingChat) {
-          switchChat(existingChat);
-        } else {
-          const newChat = {
-            id: roomId,
-            name: result.name,
-            avatar: result.name.charAt(0).toUpperCase(),
-            lastMsg: '新发起的聊天'
-          };
-          setChats(prev => [newChat, ...prev]);
-          switchChat(newChat);
-        }
+    socket.emit('search_user', searchQuery, (results) => {
+      if (results && results.length > 0) {
+        setSearchResults(results);
       } else {
         alert("未找到该用户，请检查 ID 或名字是否正确");
+        setSearchResults([]);
       }
     });
-    
+  };
+
+  const startChatWithResult = (result) => {
+    if (result.id === currentUser.id) {
+      alert("不能和自己聊天哦");
+      return;
+    }
+
+    const roomId = getRoomId(currentUser.id, result.id);
+    const existingChat = chats.find(c => c.id === roomId);
+
+    if (existingChat) {
+      switchChat(existingChat);
+    } else {
+      const newChat = {
+        id: roomId,
+        name: result.name,
+        avatar: result.name.charAt(0).toUpperCase(),
+        lastMsg: '新发起的聊天'
+      };
+      setChats(prev => [newChat, ...prev]);
+      switchChat(newChat);
+    }
+    setSearchResults([]); // 选择后清空搜索结果
     setSearchQuery('');
   };
 
@@ -189,6 +195,30 @@ const Chat = () => {
             />
           </form>
         </div>
+
+        {/* 搜索结果显示区域 */}
+        {searchResults.length > 0 && (
+          <div className="search-results-list">
+            <div className="results-header">
+              <span>搜索结果 ({searchResults.length})</span>
+              <button onClick={() => setSearchResults([])}>关闭</button>
+            </div>
+            {searchResults.map(result => (
+              <div 
+                key={result.id} 
+                className="search-result-item"
+                onClick={() => startChatWithResult(result)}
+              >
+                <div className="res-avatar">{result.name.charAt(0)}</div>
+                <div className="res-info">
+                  <div className="res-name">{result.name}</div>
+                  <div className="res-id">ID: {result.id}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="chat-list">
           {chats.map(chat => (
             <div 

@@ -40,22 +40,22 @@ io.on('connection', (socket) => {
   // 搜索用户
   socket.on('search_user', (query, callback) => {
     console.log(`[Socket] Searching for: ${query}`);
-    let result = null;
+    const results = [];
     
-    // 优先尝试 ID 匹配
-    if (users.has(query)) {
-      result = { id: query, name: users.get(query) };
-    } else {
-      // 模糊匹配名字
-      for (const [id, name] of users.entries()) {
-        if (name === query || name.includes(query)) {
-          result = { id, name };
-          break;
-        }
+    const lowerQuery = query.toLowerCase();
+
+    for (const [id, name] of users.entries()) {
+      if (
+        id.toLowerCase() === lowerQuery || 
+        name.toLowerCase() === lowerQuery || 
+        name.toLowerCase().includes(lowerQuery)
+      ) {
+        results.push({ id, name });
       }
     }
     
-    callback(result);
+    // 限制返回数量，防止列表过长
+    callback(results.slice(0, 10));
   });
 
   // 监听加入房间
