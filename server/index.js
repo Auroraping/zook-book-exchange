@@ -39,20 +39,14 @@ io.on('connection', (socket) => {
   });
 
   // 搜索用户
-  socket.on('search_user', (query, callback) => {
-    if (!query) return callback([]);
+  socket.on('search_user', (query) => {
+    if (!query) return socket.emit('search_results', []);
     
-    console.log(`[Socket] === New Search Request ===`);
-    console.log(`[Socket] Query: "${query}"`);
-    console.log(`[Socket] Current Registered Users Count: ${users.size}`);
-    
-    // 调试打印：打印当前内存中所有用户（仅限开发环境日志）
-    const allUsers = Array.from(users.entries());
-    console.log(`[Socket] All users in memory:`, JSON.stringify(allUsers));
-
+    console.log(`[Socket] Search request from ${socket.id} for: "${query}"`);
     const results = [];
     const lowerQuery = query.toLowerCase();
 
+    // 健壮性匹配
     users.forEach((name, id) => {
       const safeName = name ? String(name).toLowerCase() : '';
       const safeId = id ? String(id).toLowerCase() : '';
@@ -62,8 +56,8 @@ io.on('connection', (socket) => {
       }
     });
     
-    console.log(`[Socket] Matches found: ${results.length}`);
-    callback(results.slice(0, 10));
+    console.log(`[Socket] Returning ${results.length} results to ${socket.id}`);
+    socket.emit('search_results', results.slice(0, 10));
   });
 
   // 监听加入房间

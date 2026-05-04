@@ -22,6 +22,7 @@ const Chat = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   const messagesEndRef = useRef(null);
 
   // 滚动到底部
@@ -101,16 +102,29 @@ const Chat = () => {
       }
     };
 
+    const onSearchResults = (results) => {
+      console.log('[Chat] Received search_results:', results);
+      setIsSearching(false);
+      if (results && results.length > 0) {
+        setSearchResults(results);
+      } else {
+        alert(`未找到匹配的结果。提示：对方必须已登录且进入过此页面才能被搜到。`);
+        setSearchResults([]);
+      }
+    };
+
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('receive_history', onHistory);
     socket.on('receive_message', onMessage);
+    socket.on('search_results', onSearchResults);
 
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
       socket.off('receive_history', onHistory);
       socket.off('receive_message', onMessage);
+      socket.off('search_results', onSearchResults);
     };
   }, [activeChat.id]);
 
@@ -143,26 +157,11 @@ const Chat = () => {
     if (!searchQuery.trim() || !currentUser) return;
 
     console.log('[Chat] Pre-search registration for:', currentUser.name);
-    // 每次搜索前先强行报到，确保服务器有我
     socket.emit('register_user', currentUser);
 
-    console.log('[Chat] Initiating search for:', searchQuery);
-    
-    // 增加超时处理提示
-    const timeout = setTimeout(() => {
-      alert("服务器响应超时，请刷新页面重试");
-    }, 5000);
-
-    socket.emit('search_user', searchQuery, (results) => {
-      clearTimeout(timeout);
-      console.log('[Chat] Search response received:', results);
-      if (results && results.length > 0) {
-        setSearchResults(results);
-      } else {
-        alert(`未找到匹配 "${searchQuery}" 的用户。提示：目前只能搜到已登录且刷新过聊天页面的用户。`);
-        setSearchResults([]);
-      }
-    });
+    console.log('[Chat] Emitting search_user for:', searchQuery);
+    setIsSearching(true);
+    socket.emit('search_user', searchQuery);
   };
 
   const startChatWithResult = (result) => {
@@ -215,13 +214,13 @@ const Chat = () => {
         </div>
 
         {/* 搜索结果显示区域 */}
-        {searchResults.length > 0 && (
+        {(isSearching || searchResults.length > 0) && (
           <div className="search-results-list">
             <div className="results-header">
-              <span>搜索结果 ({searchResults.length})</span>
-              <button onClick={() => setSearchResults([])}>关闭</button>
+              <span>{isSearching ? '正在搜索...' : `搜索结果 (${searchResults.length})`}</span>
+              <button onClick={() => { setSearchResults([]); setIsSearching(false); }}>关闭</button>
             </div>
-            {searchResults.map(result => (
+            {!isSearching && searchResults.map(result => (
               <div 
                 key={result.id} 
                 className="search-result-item"
