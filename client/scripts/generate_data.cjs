@@ -53,7 +53,7 @@ function generateData(count) {
 
 const count = 100005;
 const data = generateData(count);
-const outputPath = path.resolve(__dirname, '..', 'client', 'public', 'books_data.json');
+const outputPath = path.resolve(__dirname, '..', 'public', 'books_data.json');
 fs.writeFileSync(outputPath, JSON.stringify(data));
 console.log(`Generated ${count} items to ${outputPath}`);
 console.log(`File size: ${(fs.statSync(outputPath).size / 1024 / 1024).toFixed(2)} MB`);
