@@ -248,9 +248,9 @@ function renderCart(el) {
         <h4 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-10">订单摘要</h4>
         <div class="space-y-6 mb-10"><div class="flex justify-between text-base font-medium text-gray-600"><span>商品金额</span><span>¥${total.toFixed(2)}</span></div>
           <div class="flex justify-between text-base font-medium text-gray-600"><span>校内转运</span><span class="text-blue-600">免运费</span></div></div>
-        <div class="flex justify-between items-baseline mb-12"><span class="text-lg font-bold text-gray-800">应付总额</span><span class="text-4xl font-black text-gray-900">¥${total.toFixed(2)}</span></div>
-        <div class="w-full py-6 bg-blue-600 text-white rounded-full font-black text-lg text-center shadow-xl cursor-pointer hover:bg-blue-700 transition-all" onclick="checkout()">确认并提交订单</div>
-      </div></div></div></div>`;
+        <div class="flex justify-between items-baseline"><div><p class="text-sm text-gray-500 mb-1">预估总额</p><p class="text-3xl font-black text-rose-500">¥${total}</p></div>
+       <div class="px-10 py-4 bg-gray-900 text-white rounded-2xl font-black text-lg cursor-pointer shadow-xl hover:bg-blue-600 transition-colors" onclick="checkout()">发起交易请求 (${state.cart.length}件)</div>
+    </div></div></div></div>`;
 }
 
 function checkout() { 
@@ -264,30 +264,30 @@ function checkout() {
   const total = state.cart.reduce((s, b) => s + b.price, 0);
   const modalHtml = `
     <div id="payment-modal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center animate-google-in">
-      <div class="bg-white w-[420px] rounded-[32px] shadow-2xl p-8 relative overflow-hidden">
+      <div class="bg-white w-[460px] rounded-[32px] shadow-2xl p-8 relative overflow-hidden">
         <div class="absolute top-0 inset-x-0 h-2 bg-blue-600"></div>
-        <h3 class="text-2xl font-black text-center mb-2 text-gray-900">浙里淘书收银台</h3>
-        <p class="text-center text-sm text-gray-500 mb-6">安全支付环境，正在向卖家付款</p>
+        <h3 class="text-2xl font-black text-center mb-2 text-gray-900">发起线下交易请求</h3>
+        <p class="text-center text-sm text-gray-500 mb-6 leading-relaxed">平台不支持直接线上扣款。<br/>请生成【交易备案凭证】后，与卖家私聊线下交接或付款。</p>
         
         <div class="bg-gray-50 rounded-2xl p-6 mb-6 text-center border border-gray-100">
-           <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2">需支付总额</p>
+           <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2">订单预估总额</p>
            <p class="text-4xl font-black text-rose-500">¥\${total.toFixed(2)}</p>
         </div>
 
         <div class="flex flex-col gap-3 mb-8">
            <div class="flex items-center justify-between p-4 border-2 border-blue-600 bg-blue-50 rounded-xl cursor-pointer">
-              <div class="flex items-center gap-3"><span class="text-2xl">💳</span><span class="font-bold text-blue-900">校园卡余额支付</span></div>
+              <div class="flex items-center gap-3"><span class="text-2xl">🤝</span><span class="font-bold text-blue-900">当面交接 (线下验书后付款)</span></div>
               <div class="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs">✓</div>
            </div>
-           <div class="flex items-center justify-between p-4 border border-gray-100 rounded-xl cursor-pointer opacity-50">
-              <div class="flex items-center gap-3"><span class="text-2xl">📱</span><span class="font-bold text-gray-500">支付宝 / 微信</span></div>
+           <div class="flex items-center justify-between p-4 border border-gray-100 rounded-xl cursor-pointer opacity-80">
+              <div class="flex items-center gap-3"><span class="text-2xl">📍</span><span class="font-bold text-gray-600">定点自提 (私聊发微信收款码)</span></div>
            </div>
         </div>
 
         <div id="pay-btn" class="w-full bg-gray-900 text-white text-center py-4 rounded-[16px] font-black cursor-pointer shadow-lg hover:bg-blue-600 transition-all text-lg" onclick="processPayment()">
-          确认支付
+          确认意向并生成凭证
         </div>
-        <button class="w-full text-center text-sm font-bold text-gray-400 mt-4 hover:text-gray-600" onclick="document.getElementById('payment-modal').remove()">暂不支付，放弃订单</button>
+        <button class="w-full text-center text-sm font-bold text-gray-400 mt-4 hover:text-gray-600" onclick="document.getElementById('payment-modal').remove()">暂不发起，返回修改</button>
       </div>
     </div>
   `;
@@ -296,11 +296,11 @@ function checkout() {
 
 function processPayment() {
   const btn = document.getElementById('pay-btn');
-  btn.innerHTML = '安全支付处理中...';
+  btn.innerHTML = '正在备案并生成凭证...';
   btn.className = "w-full bg-blue-100 text-blue-600 text-center py-4 rounded-[16px] font-black pointer-events-none text-lg";
   
   setTimeout(() => {
-    btn.innerHTML = '支付成功 ✓';
+    btn.innerHTML = '凭证生成成功 ✓';
     btn.className = "w-full bg-emerald-500 text-white text-center py-4 rounded-[16px] font-black pointer-events-none text-lg shadow-lg shadow-emerald-500/30";
     
     setTimeout(() => {
@@ -311,22 +311,22 @@ function processPayment() {
 
 function finishCheckoutTransaction() {
   const orderData = { 
-    transaction_type: "买家交易记录 (Buyer Transaction)",
+    transaction_type: "买家交易备案记录 (Offline Trade Record)",
     buyer_account: state.user,
     buyer_role: state.userRole,
-    order_id: 'ORDER_' + Date.now(), 
-    transaction_date: new Date().toLocaleString(),
-    items_purchased: state.cart.map(b => ({ book_id: b.id, title: b.title, price: b.price })),
-    total_amount_cny: state.cart.reduce((s, b) => s + b.price, 0),
-    payment_method: "校园卡余额",
-    payment_status: "SUCCESS (真实模拟支付成功)"
+    trade_id: 'TRADE_' + Date.now(), 
+    record_date: new Date().toLocaleString(),
+    items_intended: state.cart.map(b => ({ book_id: b.id, title: b.title, price: b.price })),
+    total_estimated_cny: state.cart.reduce((s, b) => s + b.price, 0),
+    handover_method: "当面交接 (线下验书付款)",
+    trade_status: "INTENTION_CONFIRMED (意向已确认，待线下交易)"
   };
   
   const blob = new Blob([JSON.stringify(orderData, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `[交易记录]买家订单_${state.user}_${orderData.order_id}.json`;
+  a.download = `[交易备案]买家线下交易请求_${state.user}_${orderData.trade_id}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -335,9 +335,9 @@ function finishCheckoutTransaction() {
   const modal = document.getElementById('payment-modal');
   if (modal) modal.remove();
   
-  alert(`🎉 交易完全成功！\\n已从买家【${state.user}】的校园卡扣款。\\n交易结构化数据已生成文件并自动下载。`); 
+  alert(`🎉 交易意向已备案，凭证已下载至本地！\\n接下来系统将为您自动跳转至【消息中心】，请您拿着该凭证与卖家私聊沟通线下交接事宜。`); 
   state.cart = []; 
-  navigate('home'); 
+  navigate('messages'); 
 }
 
 // ========== 登录系统 ==========
