@@ -392,6 +392,13 @@ function doLogin(role) {
     state.user = '计科大二·买家测试';
     state.orders = [
       {
+        trade_id: 'TRADE_99812732',
+        total_estimated_cny: 25.00,
+        items_intended: [{title: '法理学（第四版）'}],
+        handover_method: "私聊协商决定",
+        trade_status: "INTENTION_CONFIRMED (意向已确认，待线下交易)"
+      },
+      {
         trade_id: 'TRADE_99812731',
         total_estimated_cny: 45.00,
         items_intended: [{title: '离散数学（第2版）'}, {title: '大学英语综合教程'}],
