@@ -32,8 +32,9 @@ io.on('connection', (socket) => {
   // 注册用户
   socket.on('register_user', (user) => {
     if (user && user.id) {
-      users.set(user.id, user.username);
-      console.log(`[Socket] User registered: ${user.username} (${user.id})`);
+      const displayName = user.name || user.username || '匿名用户';
+      users.set(user.id, displayName);
+      console.log(`[Socket] User registered: ${displayName} (${user.id})`);
     }
   });
 
@@ -47,11 +48,12 @@ io.on('connection', (socket) => {
 
     // 遍历用户表进行匹配
     users.forEach((name, id) => {
-      if (
-        id.toLowerCase().includes(lowerQuery) || 
-        name.toLowerCase().includes(lowerQuery)
-      ) {
-        results.push({ id, name });
+      // 增加判空保护，防止 crash
+      const safeName = name ? String(name).toLowerCase() : '';
+      const safeId = id ? String(id).toLowerCase() : '';
+      
+      if (safeId.includes(lowerQuery) || safeName.includes(lowerQuery)) {
+        results.push({ id, name: name || '未知用户' });
       }
     });
     

@@ -38,7 +38,7 @@ const Chat = () => {
   useEffect(() => {
     let user = JSON.parse(localStorage.getItem('user'));
     if (!user) {
-      user = { username: 'Guest_' + Math.floor(Math.random() * 1000), id: 'U' + Math.floor(Math.random() * 1000000) };
+      user = { name: 'Guest_' + Math.floor(Math.random() * 1000), id: 'U' + Math.floor(Math.random() * 1000000) };
     } else if (!user.id || user.id === 'me') {
       user.id = 'U' + Math.floor(Math.random() * 1000000);
       localStorage.setItem('user', JSON.stringify(user));
@@ -121,7 +121,7 @@ const Chat = () => {
     const messageData = {
       id: `${currentUser.id}_${Date.now()}`,
       roomId: activeChat.id,
-      sender: currentUser.username,
+      sender: currentUser.name || currentUser.username,
       senderId: currentUser.id,
       text: inputText,
       timestamp: new Date().toISOString()
@@ -190,7 +190,7 @@ const Chat = () => {
             </span>
           </div>
           <div className="current-user-tag">
-            <span>{currentUser?.username}</span>
+            <span>{currentUser?.name || currentUser?.username}</span>
             <span className="user-id">ID: {currentUser?.id}</span>
           </div>
           <form className="search-bar" onSubmit={handleSearch}>
@@ -258,7 +258,7 @@ const Chat = () => {
           {messages.map((msg, index) => (
             <div 
               key={msg.id || index} 
-              className={`message-bubble ${msg.sender === currentUser?.username ? 'sent' : 'received'}`}
+              className={`message-bubble ${(msg.sender === currentUser?.name || msg.sender === currentUser?.username) ? 'sent' : 'received'}`}
             >
               <div className="bubble-sender">{msg.sender}</div>
               <div className="bubble-content">
