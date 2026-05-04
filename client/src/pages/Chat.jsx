@@ -34,7 +34,12 @@ const Chat = () => {
     }
     setCurrentUser(user);
 
-    // 如果已经连接，立即更新状态
+    // 1. 始终加入自己的 ID 房间，以便接收别人发给我的消息
+    if (user && user.id) {
+      socket.emit('join_room', `room_${user.id}`);
+    }
+
+    // 2. 如果已经连接，立即更新状态
     if (socket.connected) {
       setIsConnected(true);
       socket.emit('join_room', activeChat.id);
@@ -44,6 +49,9 @@ const Chat = () => {
       console.log('Connected to chat server');
       setIsConnected(true);
       socket.emit('join_room', activeChat.id);
+      if (user && user.id) {
+        socket.emit('join_room', `room_${user.id}`);
+      }
     };
 
     const onDisconnect = () => {
@@ -53,18 +61,38 @@ const Chat = () => {
 
     const onHistory = (history) => {
       console.log('Received history:', history);
-      setIsConnected(true); // 收到历史记录也说明连接是通的
+      setIsConnected(true);
       setMessages(history);
     };
 
     const onMessage = (data) => {
       console.log('Received message:', data);
-      if (data.roomId === activeChat.id) {
-        setMessages((prev) => {
-          const exists = prev.some(m => m.id === data.id || (m.text === data.text && m.sender === data.sender && Math.abs(new Date(m.timestamp) - new Date(data.timestamp)) < 1000));
-          if (exists) return prev;
-          return [...prev, data];
-        });
+      
+      // 如果消息属于当前活跃聊天，或者是我自己的 ID 房间（别人发给我的）
+      if (data.roomId === activeChat.id || data.roomId === `room_${user.id}`) {
+        
+        // 如果是别人发给我的（roomId 是我的 ID），且不在当前聊天列表中，自动添加
+        if (data.roomId === `room_${user.id}` && data.sender !== user.username) {
+          setChats(prev => {
+            const exists = prev.find(c => c.id === data.roomId);
+            if (exists) return prev;
+            return [{
+              id: data.roomId,
+              name: data.sender,
+              avatar: data.sender.charAt(0).toUpperCase(),
+              lastMsg: data.text
+            }, ...prev];
+          });
+        }
+
+        // 如果当前窗口正好是这条消息的房间，则显示消息
+        if (data.roomId === activeChat.id) {
+          setMessages((prev) => {
+            const exists = prev.some(m => m.id === data.id || (m.text === data.text && m.sender === data.sender && Math.abs(new Date(m.timestamp) - new Date(data.timestamp)) < 1000));
+            if (exists) return prev;
+            return [...prev, data];
+          });
+        }
       }
     };
 
