@@ -66,13 +66,13 @@ function renderSidebar() {
 function renderTopbar() {
   const userHtml = state.user 
     ? `<div class="flex items-center gap-3 cursor-pointer group" onclick="doLogout()" title="点击注销账户">
-         <div class="w-10 h-10 rounded-full ${state.userRole === 'seller' ? 'bg-emerald-100 border-emerald-200 text-emerald-600' : 'bg-blue-100 border-blue-200 text-blue-600'} flex items-center justify-center font-black text-xl overflow-hidden group-hover:scale-110 transition-transform">👨‍🎓</div>
+         <div class="w-10 h-10 rounded-full bg-blue-100 border-blue-200 text-blue-600 flex items-center justify-center font-black text-xl overflow-hidden group-hover:scale-110 transition-transform">👨‍🎓</div>
          <div class="flex flex-col hidden lg:flex">
            <span class="text-sm font-black text-gray-900">${state.user}</span>
-           <span class="text-[10px] font-bold ${state.userRole === 'seller' ? 'text-emerald-600' : 'text-blue-600'}">已认证·${state.userRole === 'seller' ? '卖家账户' : '买家账户'} (点击注销)</span>
+           <span class="text-[10px] font-bold text-blue-600">已认证·求是学子 (点击注销)</span>
          </div>
        </div>`
-    : `<div class="btn-premium whitespace-nowrap shadow-2xl cursor-pointer" onclick="navigate('login')">请先选择身份登录</div>`;
+    : `<div class="btn-premium whitespace-nowrap shadow-2xl cursor-pointer" onclick="navigate('login')">登录淘书通行证</div>`;
 
   document.getElementById('topbar').innerHTML = `
     <div class="flex-1 max-w-3xl">
@@ -256,7 +256,7 @@ function renderCart(el) {
 function checkout() { 
   if (state.cart.length === 0) return;
   if (!state.user) {
-    alert('⚠️ 交易拦截：请先在右上角【登录买家账户】后再进行结算！这是核心要求哦。');
+    alert('⚠️ 交易拦截：请先在右上角登录账号后再发起交易！');
     navigate('login');
     return;
   }
@@ -313,7 +313,6 @@ function finishCheckoutTransaction() {
   const orderData = { 
     transaction_type: "买家交易备案记录 (Offline Trade Record)",
     buyer_account: state.user,
-    buyer_role: state.userRole,
     trade_id: 'TRADE_' + Date.now(), 
     record_date: new Date().toLocaleString(),
     items_intended: state.cart.map(b => ({ book_id: b.id, title: b.title, price: b.price })),
@@ -354,31 +353,23 @@ function renderLogin(el) {
   el.innerHTML = `
     <div class="py-20 flex justify-center animate-google-in">
       <div class="bg-white p-12 rounded-[32px] shadow-xl w-[440px] border border-gray-100 flex flex-col gap-6">
-        <h2 class="text-2xl font-black text-center mb-2 text-gray-900">虚拟账户登录系统</h2>
-        <p class="text-center text-sm text-gray-500 mb-4 bg-yellow-50 p-3 rounded-xl border border-yellow-100">为满足作业对“买家/卖家账户”流程的重点要求，请选择您的模拟身份登录。</p>
+        <h2 class="text-2xl font-black text-center mb-2 text-gray-900">统一身份认证系统</h2>
+        <p class="text-center text-sm text-gray-500 mb-4 bg-blue-50 p-3 rounded-xl border border-blue-100">请登录您的学工号。每个账户既可作为买家购买，也可作为卖家发布。</p>
         <div class="flex flex-col gap-4">
-          <input type="text" id="login-user" placeholder="输入你想使用的账号名 (任意)" value="计科王同学" class="h-12 border border-gray-200 rounded-lg px-4 outline-none focus:border-blue-500 text-center font-bold" />
+          <input type="text" id="login-user" placeholder="输入模拟账号名 (例如: 计科王同学)" value="计科王同学" class="h-12 border border-gray-200 rounded-lg px-4 outline-none focus:border-blue-500 text-center font-bold" />
           
-          <div class="flex gap-4 mt-2">
-            <div class="flex-1 bg-blue-600 text-white text-center py-4 rounded-[16px] font-bold cursor-pointer shadow-lg hover:bg-blue-700 transition-all flex flex-col items-center justify-center gap-1" onclick="doLogin('buyer')">
-              <span class="text-2xl">🛒</span>
-              <span>作为买家登录</span>
-            </div>
-            <div class="flex-1 bg-emerald-600 text-white text-center py-4 rounded-[16px] font-bold cursor-pointer shadow-lg hover:bg-emerald-700 transition-all flex flex-col items-center justify-center gap-1" onclick="doLogin('seller')">
-              <span class="text-2xl">🏪</span>
-              <span>作为卖家登录</span>
-            </div>
+          <div class="w-full bg-blue-600 text-white text-center py-4 rounded-[16px] font-black cursor-pointer shadow-lg hover:bg-blue-700 transition-all text-lg mt-2" onclick="doLogin()">
+            一键登录系统
           </div>
         </div>
       </div>
     </div>`;
 }
 
-function doLogin(role) {
-  const user = document.getElementById('login-user').value || '匿名用户';
+function doLogin() {
+  const user = document.getElementById('login-user').value || '计科王同学';
   state.user = user;
-  state.userRole = role;
-  alert(`登录成功！已为您切换至【${role === 'buyer' ? '买家' : '卖家'}】身份：` + user);
+  alert(`登录成功！欢迎回到淘书，【${user}】`);
   renderTopbar();
   navigate('home');
 }
@@ -456,7 +447,7 @@ function renderPublish(el) {
 
 function doPublish() {
   if (!state.user) {
-    alert('⚠️ 发布拦截：请先在右上角【登录卖家账户】后再发布二手书！这是核心要求哦。');
+    alert('⚠️ 发布拦截：请先在右上角登录账号后再发布二手书！');
     navigate('login');
     return;
   }
@@ -477,7 +468,6 @@ function doPublish() {
       const bookData = { 
         transaction_type: "卖家上架记录 (Seller Publishing)",
         seller_account: state.user,
-        seller_role: state.userRole,
         product_id: 'PUB_' + Date.now(), 
         product_info: {
           title: title,
