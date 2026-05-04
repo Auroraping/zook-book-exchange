@@ -6,7 +6,6 @@ import './Chat.css';
 const INITIAL_CHATS = [
   { id: 'room_chen', name: '书友小陈', avatar: '陈', lastMsg: '那本数学分析还在吗？' },
   { id: 'room_li', name: '李学姐', avatar: '李', lastMsg: '已经收到书了，谢谢！' },
-  { id: 'room_test', name: '测试用户 (Test)', avatar: 'T', lastMsg: '你好，来测试一下吧' }
 ];
 
 // 将 socket 移入组件或确保其单例连接
@@ -18,51 +17,70 @@ const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
+  const [chats, setChats] = useState(INITIAL_CHATS);
   const [activeChat, setActiveChat] = useState(INITIAL_CHATS[0]);
   const [isConnected, setIsConnected] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user')) || { username: 'Guest' };
+    let user = JSON.parse(localStorage.getItem('user'));
+    if (!user) {
+      user = { username: 'Guest_' + Math.floor(Math.random() * 1000), id: 'U' + Math.floor(Math.random() * 1000000) };
+    } else if (!user.id) {
+      // 为旧用户补全 ID
+      user.id = 'U' + Math.floor(Math.random() * 1000000);
+      localStorage.setItem('user', JSON.stringify(user));
+    }
     setCurrentUser(user);
 
-    socket.on('connect', () => {
+    // 如果已经连接，立即更新状态
+    if (socket.connected) {
+      setIsConnected(true);
+      socket.emit('join_room', activeChat.id);
+    }
+
+    const onConnect = () => {
       console.log('Connected to chat server');
       setIsConnected(true);
       socket.emit('join_room', activeChat.id);
-    });
+    };
 
-    socket.on('disconnect', () => {
+    const onDisconnect = () => {
+      console.log('Disconnected from chat server');
       setIsConnected(false);
-    });
+    };
 
-    // 监听历史记录
-    socket.on('receive_history', (history) => {
+    const onHistory = (history) => {
       console.log('Received history:', history);
+      setIsConnected(true); // 收到历史记录也说明连接是通的
       setMessages(history);
-    });
+    };
 
-    // 监听单条新消息
-    socket.on('receive_message', (data) => {
+    const onMessage = (data) => {
       console.log('Received message:', data);
       if (data.roomId === activeChat.id) {
         setMessages((prev) => {
-          // 检查是否已经存在（防止自己发的消息重复显示）
           const exists = prev.some(m => m.id === data.id || (m.text === data.text && m.sender === data.sender && Math.abs(new Date(m.timestamp) - new Date(data.timestamp)) < 1000));
           if (exists) return prev;
           return [...prev, data];
         });
       }
-    });
+    };
+
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    socket.on('receive_history', onHistory);
+    socket.on('receive_message', onMessage);
 
     // 切换房间时重新加入
     socket.emit('join_room', activeChat.id);
 
     return () => {
-      socket.off('receive_history');
-      socket.off('receive_message');
-      socket.off('connect');
-      socket.off('disconnect');
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+      socket.off('receive_history', onHistory);
+      socket.off('receive_message', onMessage);
     };
   }, [activeChat.id]);
 
@@ -103,6 +121,30 @@ const Chat = () => {
     socket.emit('join_room', chat.id);
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    // 模拟搜索逻辑：如果是新 ID，则创建一个新聊天会话
+    // 在真实应用中，这里应该请求后端查询用户是否存在
+    const newChatId = searchQuery.startsWith('room_') ? searchQuery : `room_${searchQuery}`;
+    const existingChat = chats.find(c => c.id === newChatId || c.name === searchQuery);
+
+    if (existingChat) {
+      switchChat(existingChat);
+    } else {
+      const newChat = {
+        id: newChatId,
+        name: searchQuery,
+        avatar: searchQuery.charAt(0).toUpperCase(),
+        lastMsg: '新发起的聊天'
+      };
+      setChats(prev => [newChat, ...prev]);
+      switchChat(newChat);
+    }
+    setSearchQuery('');
+  };
+
   return (
     <div className="chat-container">
       <div className="chat-sidebar">
@@ -113,10 +155,21 @@ const Chat = () => {
               {isConnected ? '已连接' : '连接中...'}
             </span>
           </div>
-          <div className="current-user-tag">身份: {currentUser?.username}</div>
+          <div className="current-user-tag">
+            <span>{currentUser?.username}</span>
+            <span className="user-id">ID: {currentUser?.id}</span>
+          </div>
+          <form className="search-bar" onSubmit={handleSearch}>
+            <input 
+              type="text" 
+              placeholder="搜索用户名字或 ID..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </form>
         </div>
         <div className="chat-list">
-          {INITIAL_CHATS.map(chat => (
+          {chats.map(chat => (
             <div 
               key={chat.id} 
               className={`chat-item ${activeChat.id === chat.id ? 'active' : ''}`}
