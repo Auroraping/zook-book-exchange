@@ -42,13 +42,18 @@ io.on('connection', (socket) => {
   socket.on('search_user', (query, callback) => {
     if (!query) return callback([]);
     
-    console.log(`[Socket] Searching for: "${query}"`);
+    console.log(`[Socket] === New Search Request ===`);
+    console.log(`[Socket] Query: "${query}"`);
+    console.log(`[Socket] Current Registered Users Count: ${users.size}`);
+    
+    // 调试打印：打印当前内存中所有用户（仅限开发环境日志）
+    const allUsers = Array.from(users.entries());
+    console.log(`[Socket] All users in memory:`, JSON.stringify(allUsers));
+
     const results = [];
     const lowerQuery = query.toLowerCase();
 
-    // 遍历用户表进行匹配
     users.forEach((name, id) => {
-      // 增加判空保护，防止 crash
       const safeName = name ? String(name).toLowerCase() : '';
       const safeId = id ? String(id).toLowerCase() : '';
       
@@ -57,7 +62,7 @@ io.on('connection', (socket) => {
       }
     });
     
-    console.log(`[Socket] Found ${results.length} matches for "${query}"`);
+    console.log(`[Socket] Matches found: ${results.length}`);
     callback(results.slice(0, 10));
   });
 

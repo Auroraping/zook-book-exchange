@@ -142,13 +142,24 @@ const Chat = () => {
     e.preventDefault();
     if (!searchQuery.trim() || !currentUser) return;
 
+    console.log('[Chat] Pre-search registration for:', currentUser.name);
+    // 每次搜索前先强行报到，确保服务器有我
+    socket.emit('register_user', currentUser);
+
     console.log('[Chat] Initiating search for:', searchQuery);
+    
+    // 增加超时处理提示
+    const timeout = setTimeout(() => {
+      alert("服务器响应超时，请刷新页面重试");
+    }, 5000);
+
     socket.emit('search_user', searchQuery, (results) => {
+      clearTimeout(timeout);
       console.log('[Chat] Search response received:', results);
       if (results && results.length > 0) {
         setSearchResults(results);
       } else {
-        alert("未找到该用户，请检查 ID 或名字是否正确");
+        alert(`未找到匹配 "${searchQuery}" 的用户。提示：目前只能搜到已登录且刷新过聊天页面的用户。`);
         setSearchResults([]);
       }
     });
