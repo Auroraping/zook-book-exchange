@@ -7,7 +7,7 @@ import { MOCK_BOOKS, MOCK_USERS, MOCK_WISHES, MOCK_NOTIFICATIONS, MOCK_ORDERS } 
 const Profile = () => {
   const navigate = useNavigate();
   const { id } = useParams(); // URL中的用户ID
-  const { user: currentUser, isLoggedIn } = useAuth();
+  const { user: currentUser, isLoggedIn, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'favorites' | 'listings' | 'wishes' | 'notifications'
   const [favorites, setFavorites] = useState([]);
   const [profileUser, setProfileUser] = useState(null);
@@ -20,13 +20,13 @@ const Profile = () => {
     if (isOwnProfile) {
       if (isLoggedIn) {
         setProfileUser({
-          id: 'me',
-          name: '张同学',
+          id: currentUser?.id || 'me',
+          name: currentUser?.name || '张同学',
           credit: 4.9,
           tradeCount: 15,
           level: 'V4 铂金买家',
           avatar: '/user_avatar.png',
-          bio: '浙大19级老学长，求购各种经管类书籍。',
+          bio: currentUser?.bio || '浙大19级老学长，求购各种经管类书籍。',
           joinDate: '2023-10-01'
         });
         const favIds = JSON.parse(localStorage.getItem('favorites') || '[]');
@@ -485,7 +485,9 @@ const Profile = () => {
                 </button>
                 <button 
                   onClick={() => {
-                    setProfileUser({ ...profileUser, name: editData.name, bio: editData.bio });
+                    const newData = { name: editData.name, bio: editData.bio };
+                    setProfileUser({ ...profileUser, ...newData });
+                    updateUser(newData);
                     setIsEditModalOpen(false);
                     alert('资料保存成功！');
                   }}
