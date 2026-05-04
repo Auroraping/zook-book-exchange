@@ -65,12 +65,12 @@ function renderSidebar() {
 
 function renderTopbar() {
   const roleBadge = state.userRole === 'seller' 
-    ? `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-black">卖家</span>`
+    ? `<span class="px-2 py-0.5 rounded text-[10px] font-black" style="background-color:#d1fae5; color:#047857;">卖家</span>`
     : `<span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-black">买家</span>`;
 
   const userHtml = state.user 
     ? `<div class="flex items-center gap-3 cursor-pointer group" onclick="navigate('profile')" title="进入个人主页">
-         <div class="w-10 h-10 rounded-full ${state.userRole === 'seller' ? 'bg-emerald-100 text-emerald-600 border-emerald-200' : 'bg-blue-100 text-blue-600 border-blue-200'} flex items-center justify-center font-black text-xl overflow-hidden group-hover:scale-110 transition-transform">👨‍🎓</div>
+         <div class="w-10 h-10 rounded-full flex items-center justify-center font-black text-xl overflow-hidden group-hover:scale-110 transition-transform" ${state.userRole==='seller'?'style="background-color:#d1fae5; color:#059669; border:1px solid #a7f3d0;"':'class="bg-blue-100 text-blue-600 border-blue-200"'}>👨‍🎓</div>
          <div class="flex flex-col hidden lg:flex">
            <div class="flex items-center gap-1"><span class="text-sm font-black text-gray-900">${state.user}</span>${roleBadge}</div>
            <span class="text-[10px] font-bold text-gray-400 group-hover:text-blue-600 transition-colors">个人中心 ➜</span>
@@ -691,7 +691,7 @@ function renderCommunity(el) {
           <article class="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 flex flex-col hover:-translate-y-1 hover:shadow-xl transition-all cursor-pointer" onclick="viewNote(${n.id})">
             <div class="flex justify-between items-start gap-3 mb-5">
               <span class="bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1.5 rounded-full border border-blue-100">${n.course}</span>
-              <span class="bg-emerald-50 text-emerald-600 text-[10px] font-black px-3 py-1.5 rounded-full border border-emerald-100">${n.type}</span>
+              <span class="text-[10px] font-black px-3 py-1.5 rounded-full border" style="background-color:#ecfdf5; color:#059669; border-color:#d1fae5;">${n.type}</span>
             </div>
             <h3 class="font-black text-gray-900 text-lg leading-snug">${n.title}</h3>
             <p class="text-sm text-gray-500 leading-relaxed mt-4">${n.desc}</p>
@@ -854,7 +854,7 @@ function renderProfile(el) {
           <p class="font-bold text-gray-800 text-sm max-w-sm truncate">${o.items_intended.map(i=>'《'+i.title+'》').join(', ')}</p>
         </div>
         <div class="text-right">
-          <p class="text-xl font-black text-rose-500 mb-1">¥${o.total_estimated_cny.toFixed(2)}</p>
+          <p class="text-xl font-black mb-1" style="color:#f43f5e;">¥${o.total_estimated_cny.toFixed(2)}</p>
           <span class="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-[10px] font-bold">意向已确认，待线下交接</span>
         </div>
       </div>
@@ -870,7 +870,7 @@ function renderProfile(el) {
         </div>
         <div class="text-right">
           <p class="text-xl font-black text-gray-900 mb-1">¥${p.product_info.price.toFixed(2)}</p>
-          <span class="px-3 py-1 bg-emerald-100 text-emerald-600 rounded-full text-[10px] font-bold">审核通过·已上架</span>
+          <span class="px-3 py-1 rounded-full text-[10px] font-bold" style="background-color:#d1fae5; color:#059669;">审核通过·已上架</span>
         </div>
       </div>
     `).join('');
@@ -882,19 +882,19 @@ function renderProfile(el) {
           <div class="w-24 h-24 rounded-full bg-blue-100 border-4 border-blue-50 text-blue-600 flex items-center justify-center text-5xl font-black relative z-10 shadow-inner">👨‍🎓</div>
           <div class="flex-1 text-center md:text-left relative z-10">
              <h1 class="text-3xl font-black text-gray-900 mb-2">${state.user}</h1>
-             <p class="${state.userRole === 'seller' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-blue-600 bg-blue-50 border-blue-100'} font-bold text-sm inline-block px-4 py-1.5 rounded-full border">虚拟测试账户</p>
+             <p class="font-bold text-sm inline-block px-4 py-1.5 rounded-full border" style="${state.userRole === 'seller' ? 'color:#059669; background-color:#ecfdf5; border-color:#d1fae5;' : 'color:#2563eb; background-color:#eff6ff; border-color:#dbeafe;'}">虚拟测试账户</p>
           </div>
-          <div class="px-8 py-3.5 bg-rose-50 text-rose-600 rounded-full font-bold cursor-pointer hover:bg-rose-600 hover:text-white transition-all shadow-sm relative z-10" onclick="doLogout()">退出登录系统</div>
+          <div class="px-8 py-3.5 rounded-full font-bold cursor-pointer transition-all shadow-sm relative z-10" style="background-color:#fff1f2; color:#e11d48;" onmouseover="this.style.backgroundColor='#e11d48'; this.style.color='white';" onmouseout="this.style.backgroundColor='#fff1f2'; this.style.color='#e11d48';" onclick="doLogout()">退出登录系统</div>
        </div>
 
        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <section class="bg-white rounded-[32px] shadow-sm border border-gray-100 p-8">
-             <h2 class="text-xl font-black text-gray-900 mb-6 flex items-center gap-3"><span class="w-10 h-10 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center text-xl">🛒</span> <span class="flex-1">我发起的交易</span> <span class="text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full">买家视角</span></h2>
+             <h2 class="text-xl font-black text-gray-900 mb-6 flex items-center gap-3"><span class="w-10 h-10 rounded-2xl flex items-center justify-center text-xl" style="background-color:#fff1f2; color:#f43f5e;">🛒</span> <span class="flex-1">我发起的交易</span> <span class="text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full">买家视角</span></h2>
              <div class="flex flex-col">${ordersHtml}</div>
           </section>
           
           <section class="bg-white rounded-[32px] shadow-sm border border-gray-100 p-8">
-             <h2 class="text-xl font-black text-gray-900 mb-6 flex items-center gap-3"><span class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-xl">🏪</span> <span class="flex-1">我发布的闲置</span> <span class="text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full">卖家视角</span></h2>
+             <h2 class="text-xl font-black text-gray-900 mb-6 flex items-center gap-3"><span class="w-10 h-10 rounded-2xl flex items-center justify-center text-xl" style="background-color:#ecfdf5; color:#10b981;">🏪</span> <span class="flex-1">我发布的闲置</span> <span class="text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full">卖家视角</span></h2>
              <div class="flex flex-col">${publishedHtml}</div>
           </section>
        </div>
