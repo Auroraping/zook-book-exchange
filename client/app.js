@@ -563,6 +563,41 @@ function doBindSchedule() {
 
 // ========== 社区模块 (带虚拟交互) ==========
 function renderCommunity(el) {
+  const MOCK_NOTES = [
+    {
+      id: 1,
+      course: "高等数学",
+      type: "免费获取",
+      title: "高数期末必考题型总结 (附详细解析)",
+      desc: "桃酥已自动关联课程与教材，可作为买书前后的复习资料补充。",
+      author: "计科李学长",
+      likes: 128,
+      content: "<h3>一、极限的求解方法总结</h3><br/>1. 洛必达法则的使用条件及易错点。<br/>2. 泰勒公式展开技巧。<br/><br/><h3>二、定积分与不定积分</h3><br/>核心题型解析：注意换元积分和分部积分的组合使用...<br/><br/>预祝大家期末考试顺利，逢考必过！"
+    },
+    {
+      id: 2,
+      course: "计算机网络",
+      type: "求是币 2",
+      title: "自顶向下方法 - 第7版 个人读书笔记",
+      desc: "期末突击必备，涵盖了应用层到物理层的所有核心概念与抓包分析。",
+      author: "网络小神童",
+      likes: 85,
+      content: "<h3>计算机网络核心考点：</h3><br/>- HTTP/1.1 与 HTTP/2 的区别<br/>- TCP 三次握手与四次挥手详解<br/>- 拥塞控制算法 (Slow Start, Congestion Avoidance)<br/>详细内容建议配合实验课的 WireShark 抓包结果复习。"
+    },
+    {
+      id: 3,
+      course: "离散数学",
+      type: "免费获取",
+      title: "图论部分名词解释与经典算法背诵版",
+      desc: "整理了 Dijkstra、Prim、Kruskal 等算法的伪代码和图例推导。",
+      author: "离散不挂科",
+      likes: 210,
+      content: "图论重点：<br/><br/>连通图、欧拉图、哈密顿图的区别与判定定理。<br/>最短路径算法的手工推导过程。<br/>树的生成与最小生成树的两种经典算法。"
+    }
+  ];
+
+  window.MOCK_NOTES = MOCK_NOTES; // for viewNote to access
+
   el.innerHTML = `
     <div class="max-w-7xl mx-auto flex flex-col gap-8 animate-google-in py-12">
       <section class="bg-white border border-gray-100 rounded-[32px] shadow-sm overflow-hidden">
@@ -585,17 +620,19 @@ function renderCommunity(el) {
       <section class="flex flex-col gap-6">
         <h2 class="text-3xl font-black text-gray-900">本周校园热载榜</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          <article class="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 flex flex-col hover:-translate-y-1 hover:shadow-xl transition-all cursor-pointer">
+          ${MOCK_NOTES.map(n => `
+          <article class="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 flex flex-col hover:-translate-y-1 hover:shadow-xl transition-all cursor-pointer" onclick="viewNote(${n.id})">
             <div class="flex justify-between items-start gap-3 mb-5">
-              <span class="bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1.5 rounded-full border border-blue-100">高等数学</span>
-              <span class="bg-emerald-50 text-emerald-600 text-[10px] font-black px-3 py-1.5 rounded-full border border-emerald-100">免费获取</span>
+              <span class="bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1.5 rounded-full border border-blue-100">${n.course}</span>
+              <span class="bg-emerald-50 text-emerald-600 text-[10px] font-black px-3 py-1.5 rounded-full border border-emerald-100">${n.type}</span>
             </div>
-            <h3 class="font-black text-gray-900 text-lg leading-snug">高数期末必考题型总结 (附详细解析)</h3>
-            <p class="text-sm text-gray-500 leading-relaxed mt-4">桃酥已自动关联课程与教材，可作为买书前后的复习资料补充。</p>
+            <h3 class="font-black text-gray-900 text-lg leading-snug">${n.title}</h3>
+            <p class="text-sm text-gray-500 leading-relaxed mt-4">${n.desc}</p>
             <div class="mt-auto pt-5 border-t border-gray-50 flex justify-between items-center text-xs text-gray-400 font-black">
-               <span>作者: 计科李学长</span><span>👍 128</span>
+               <span>作者: ${n.author}</span><span>👍 ${n.likes}</span>
             </div>
           </article>
+          `).join('')}
         </div>
       </section>
     </div>
@@ -605,6 +642,35 @@ function renderCommunity(el) {
 function doSearchCommunity() {
   const q = document.getElementById('community-search').value;
   alert(q ? `已在社区数据库中为您检索到关于 "${q}" 的 12 篇相关资料！(模拟交互)` : '请输入搜索关键词');
+}
+
+function viewNote(id) {
+  const note = window.MOCK_NOTES.find(n => n.id === id);
+  if(!note) return;
+  
+  const modalHtml = `
+    <div id="note-modal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center animate-google-in p-4" onclick="if(event.target===this) this.remove()">
+      <div class="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+        <div class="px-10 py-8 border-b border-gray-100 bg-gray-50 relative">
+           <button class="absolute top-8 right-8 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-300 font-bold" onclick="document.getElementById('note-modal').remove()">✕</button>
+           <div class="flex gap-2 mb-4">
+              <span class="bg-blue-100 text-blue-700 text-[10px] font-black px-3 py-1 rounded-full">${note.course}</span>
+           </div>
+           <h2 class="text-2xl font-black text-gray-900 mb-2">${note.title}</h2>
+           <p class="text-sm text-gray-500">作者：${note.author} · 获赞 ${note.likes} 次</p>
+        </div>
+        <div class="p-10 overflow-y-auto text-gray-700 leading-relaxed text-base">
+           ${note.content}
+           
+           <div class="mt-12 p-6 bg-blue-50 rounded-2xl border border-blue-100 text-center">
+              <p class="text-sm text-blue-800 font-bold mb-3">这份笔记对你有帮助吗？</p>
+              <button class="bg-blue-600 text-white px-8 py-3 rounded-full font-bold shadow-md hover:bg-blue-700 transition-colors" onclick="alert('点赞成功，已感谢作者！'); document.getElementById('note-modal').remove()">👍 赞赏作者</button>
+           </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
 
 // ========== 消息模块 (带虚拟交互) ==========
@@ -774,6 +840,7 @@ window.doLogin = doLogin;
 window.doPublish = doPublish;
 window.doBindSchedule = doBindSchedule;
 window.doSearchCommunity = doSearchCommunity;
+window.viewNote = viewNote;
 window.doSendChat = doSendChat;
 window.doAddWish = doAddWish;
 window.doLogout = doLogout;
