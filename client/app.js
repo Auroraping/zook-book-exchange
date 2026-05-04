@@ -261,6 +261,55 @@ function checkout() {
     return;
   }
   
+  const total = state.cart.reduce((s, b) => s + b.price, 0);
+  const modalHtml = `
+    <div id="payment-modal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center animate-google-in">
+      <div class="bg-white w-[420px] rounded-[32px] shadow-2xl p-8 relative overflow-hidden">
+        <div class="absolute top-0 inset-x-0 h-2 bg-blue-600"></div>
+        <h3 class="text-2xl font-black text-center mb-2 text-gray-900">浙里淘书收银台</h3>
+        <p class="text-center text-sm text-gray-500 mb-6">安全支付环境，正在向卖家付款</p>
+        
+        <div class="bg-gray-50 rounded-2xl p-6 mb-6 text-center border border-gray-100">
+           <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2">需支付总额</p>
+           <p class="text-4xl font-black text-rose-500">¥\${total.toFixed(2)}</p>
+        </div>
+
+        <div class="flex flex-col gap-3 mb-8">
+           <div class="flex items-center justify-between p-4 border-2 border-blue-600 bg-blue-50 rounded-xl cursor-pointer">
+              <div class="flex items-center gap-3"><span class="text-2xl">💳</span><span class="font-bold text-blue-900">校园卡余额支付</span></div>
+              <div class="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs">✓</div>
+           </div>
+           <div class="flex items-center justify-between p-4 border border-gray-100 rounded-xl cursor-pointer opacity-50">
+              <div class="flex items-center gap-3"><span class="text-2xl">📱</span><span class="font-bold text-gray-500">支付宝 / 微信</span></div>
+           </div>
+        </div>
+
+        <div id="pay-btn" class="w-full bg-gray-900 text-white text-center py-4 rounded-[16px] font-black cursor-pointer shadow-lg hover:bg-blue-600 transition-all text-lg" onclick="processPayment()">
+          确认支付
+        </div>
+        <button class="w-full text-center text-sm font-bold text-gray-400 mt-4 hover:text-gray-600" onclick="document.getElementById('payment-modal').remove()">暂不支付，放弃订单</button>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function processPayment() {
+  const btn = document.getElementById('pay-btn');
+  btn.innerHTML = '安全支付处理中...';
+  btn.className = "w-full bg-blue-100 text-blue-600 text-center py-4 rounded-[16px] font-black pointer-events-none text-lg";
+  
+  setTimeout(() => {
+    btn.innerHTML = '支付成功 ✓';
+    btn.className = "w-full bg-emerald-500 text-white text-center py-4 rounded-[16px] font-black pointer-events-none text-lg shadow-lg shadow-emerald-500/30";
+    
+    setTimeout(() => {
+      finishCheckoutTransaction();
+    }, 1000);
+  }, 1500);
+}
+
+function finishCheckoutTransaction() {
   const orderData = { 
     transaction_type: "买家交易记录 (Buyer Transaction)",
     buyer_account: state.user,
@@ -269,7 +318,8 @@ function checkout() {
     transaction_date: new Date().toLocaleString(),
     items_purchased: state.cart.map(b => ({ book_id: b.id, title: b.title, price: b.price })),
     total_amount_cny: state.cart.reduce((s, b) => s + b.price, 0),
-    payment_status: "SUCCESS (虚拟支付成功)"
+    payment_method: "校园卡余额",
+    payment_status: "SUCCESS (真实模拟支付成功)"
   };
   
   const blob = new Blob([JSON.stringify(orderData, null, 2)], { type: 'application/json' });
@@ -282,7 +332,10 @@ function checkout() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
   
-  alert(`交易成功！已从买家【${state.user}】的账户扣款。\\n交易数据已生成文件并自动下载，老师可以查阅文件内容。`); 
+  const modal = document.getElementById('payment-modal');
+  if (modal) modal.remove();
+  
+  alert(`🎉 交易完全成功！\\n已从买家【${state.user}】的校园卡扣款。\\n交易结构化数据已生成文件并自动下载。`); 
   state.cart = []; 
   navigate('home'); 
 }
@@ -386,7 +439,7 @@ function renderPublish(el) {
             <p class="text-sm font-bold text-gray-500 mb-2">新旧程度</p>
             <input type="text" id="pub-condition" placeholder="例如：9成新" class="w-full h-12 border border-gray-200 rounded-lg px-4 outline-none focus:border-blue-500" />
           </div>
-          <div class="bg-gray-900 text-white text-center py-4 rounded-[16px] font-bold cursor-pointer mt-6 shadow-xl hover:scale-105 transition-transform" onclick="doPublish()">确认发布</div>
+          <div id="pub-btn" class="bg-gray-900 text-white text-center py-4 rounded-[16px] font-bold cursor-pointer mt-6 shadow-xl hover:scale-105 transition-transform" onclick="doPublish()">确认发布上架</div>
         </div>
       </div>
     </div>`;
@@ -403,32 +456,43 @@ function doPublish() {
   const price = document.getElementById('pub-price').value || '0';
   const condition = document.getElementById('pub-condition').value || '未知';
   
-  const bookData = { 
-    transaction_type: "卖家上架记录 (Seller Publishing)",
-    seller_account: state.user,
-    seller_role: state.userRole,
-    product_id: 'PUB_' + Date.now(), 
-    product_info: {
-      title: title,
-      price: parseFloat(price),
-      condition: condition
-    },
-    publish_date: new Date().toLocaleString(),
-    system_status: "PUBLISHED (上架成功)"
-  };
-  
-  const blob = new Blob([JSON.stringify(bookData, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `[交易记录]卖家发布_${state.user}_${bookData.product_id}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  
-  alert(`商品《${title}》上架成功！已绑定至卖家【${state.user}】的账户。\\n上架数据已生成文件并自动下载，老师可以查阅文件内容。`);
-  navigate('books');
+  const btn = document.getElementById('pub-btn');
+  btn.innerHTML = '正在上传数据至系统...';
+  btn.className = "bg-blue-100 text-blue-600 text-center py-4 rounded-[16px] font-bold pointer-events-none mt-6 transition-all";
+
+  setTimeout(() => {
+    btn.innerHTML = '审核通过，发布成功 ✓';
+    btn.className = "bg-emerald-500 text-white text-center py-4 rounded-[16px] font-bold pointer-events-none mt-6 shadow-lg shadow-emerald-500/30 transition-all";
+    
+    setTimeout(() => {
+      const bookData = { 
+        transaction_type: "卖家上架记录 (Seller Publishing)",
+        seller_account: state.user,
+        seller_role: state.userRole,
+        product_id: 'PUB_' + Date.now(), 
+        product_info: {
+          title: title,
+          price: parseFloat(price),
+          condition: condition
+        },
+        publish_date: new Date().toLocaleString(),
+        system_status: "PUBLISHED (模拟审核与上架成功)"
+      };
+      
+      const blob = new Blob([JSON.stringify(bookData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `[交易记录]卖家发布_${state.user}_${bookData.product_id}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      alert(`🎉 商品《${title}》上架成功！\\n已绑定至卖家【${state.user}】的账户，数据已保存至本地。`);
+      navigate('books');
+    }, 800);
+  }, 1500);
 }
 
 // ========== 课表模块 (带虚拟交互) ==========
@@ -642,3 +706,4 @@ window.doSearchCommunity = doSearchCommunity;
 window.doSendChat = doSendChat;
 window.doAddWish = doAddWish;
 window.doLogout = doLogout;
+window.processPayment = processPayment;
