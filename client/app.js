@@ -4,7 +4,7 @@
  */
 
 const ITEMS_PER_PAGE = 24;
-const state = { books: [], filteredBooks: [], cart: [], page: 1, currentView: 'home', loading: true, user: null };
+const state = { books: [], filteredBooks: [], cart: [], page: 1, currentView: 'home', loading: true, user: null, scheduleBound: false, messages: [{text: '你好，在吗？这本高数还有吗？', sender: 'other'}] };
 
 // ========== 启动 ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -371,8 +371,22 @@ function doPublish() {
   navigate('books');
 }
 
-// ========== 课表模块 (静态展示) ==========
+// ========== 课表模块 (带虚拟交互) ==========
 function renderSchedule(el) {
+  const btnText = state.scheduleBound ? '重新同步教务课表' : '教务网一键同步';
+  const boundHtml = state.scheduleBound 
+    ? `<div class="rounded-2xl bg-emerald-50 border border-emerald-100 px-4 py-3 mb-6"><div class="flex items-center gap-2 text-emerald-700 text-xs font-black mb-1">已完成课表绑定</div><p class="text-[11px] text-emerald-700 leading-relaxed">来源：教务网模拟同步</p></div>`
+    : `<div class="rounded-3xl bg-gray-50 border border-dashed border-gray-200 p-6 text-center mb-6"><h3 class="font-black text-gray-900 mb-2">还没绑定课表</h3><p class="text-xs text-gray-500 leading-relaxed">绑定后才会按课程生成专属教材推荐。</p></div>`;
+
+  const mainHtml = state.scheduleBound
+    ? `<section class="bg-white border border-gray-100 rounded-[32px] shadow-sm p-7"><h2 class="text-2xl font-black text-gray-900">已生成本学期购书优先级</h2><p class="text-sm text-gray-500 mt-2">为您推荐了 3 本高优先级教材，预计为您省下 ¥150。</p></section>`
+    : `<section class="bg-white border border-gray-100 rounded-[32px] shadow-sm p-12 text-center">
+         <img src="/taosu.png" alt="桃酥" class="w-28 h-28 object-contain mx-auto mb-6" />
+         <h2 class="text-3xl font-black text-gray-900 mb-3">绑定课表后，桃酥才能按课程挑书</h2>
+         <p class="text-gray-500 max-w-xl mx-auto leading-relaxed mb-8">系统会把模拟课表写入本地并生成推荐。</p>
+         <div class="h-12 px-8 rounded-full bg-blue-600 text-white font-black inline-flex items-center justify-center cursor-pointer hover:bg-blue-700 transition-all" onclick="doBindSchedule()">立即绑定示例课表</div>
+       </section>`;
+
   el.innerHTML = `
     <div class="max-w-7xl mx-auto flex flex-col gap-8 animate-google-in py-12">
       <section class="bg-white border border-gray-100 rounded-[32px] shadow-sm p-8 overflow-hidden relative">
@@ -380,14 +394,14 @@ function renderSchedule(el) {
           <div class="flex-1 bg-blue-600"></div><div class="flex-1 bg-red-500"></div>
           <div class="flex-1 bg-yellow-400"></div><div class="flex-1 bg-green-500"></div>
         </div>
-        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
+        <div class="flex items-end justify-between gap-8">
           <div>
             <div class="flex items-center gap-3 mb-4">
               <span class="w-10 h-10 rounded-2xl flex items-center justify-center bg-blue-50 text-blue-600">🔗</span>
               <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border bg-blue-50 text-blue-600 border-blue-100">Schedule Binding</span>
             </div>
-            <h1 class="text-4xl font-black text-gray-900 tracking-tight mb-3">课表绑定推荐 (静态原型)</h1>
-            <p class="text-sm text-gray-500 leading-relaxed max-w-2xl">先绑定本学期课表，再由系统按课程 ID 匹配二手教材。当前为静态展示，满足无后端要求。</p>
+            <h1 class="text-4xl font-black text-gray-900 tracking-tight mb-3">课表绑定推荐</h1>
+            <p class="text-sm text-gray-500 max-w-2xl">先绑定本学期课表，再由系统按课程 ID 匹配二手教材。满足无后端纯前端交互模拟。</p>
           </div>
         </div>
       </section>
@@ -395,28 +409,28 @@ function renderSchedule(el) {
         <aside class="bg-white rounded-[32px] border border-gray-100 shadow-sm p-6">
           <h2 class="font-black text-gray-900 mb-6">我的本学期课表</h2>
           <div class="grid grid-cols-1 gap-3 mb-6">
-            <div class="h-12 rounded-2xl bg-blue-600 text-white text-sm font-black flex items-center justify-center gap-2 cursor-pointer w-full">教务网一键同步</div>
-            <label class="h-12 rounded-2xl bg-gray-50 border border-gray-100 text-gray-700 text-sm font-black flex items-center justify-center gap-2 w-full">上传课表截图识别</label>
+            <div class="h-12 rounded-2xl bg-blue-600 text-white text-sm font-black flex items-center justify-center gap-2 cursor-pointer w-full hover:bg-blue-700 transition-all" id="sync-btn" onclick="doBindSchedule()">${btnText}</div>
+            <label class="h-12 rounded-2xl bg-gray-50 border border-gray-100 text-gray-700 text-sm font-black flex items-center justify-center gap-2 w-full cursor-pointer hover:bg-gray-100 transition-all">上传课表截图识别</label>
           </div>
-          <div class="rounded-3xl bg-gray-50 border border-dashed border-gray-200 p-6 text-center mb-6">
-            <h3 class="font-black text-gray-900 mb-2">还没绑定课表</h3>
-            <p class="text-xs text-gray-500 leading-relaxed">绑定后才会按课程生成专属教材推荐。</p>
-          </div>
+          ${boundHtml}
         </aside>
-        <main class="flex flex-col gap-8">
-            <section class="bg-white border border-gray-100 rounded-[32px] shadow-sm p-12 text-center">
-              <img src="/taosu.png" alt="桃酥" class="w-28 h-28 object-contain mx-auto mb-6" />
-              <h2 class="text-3xl font-black text-gray-900 mb-3">绑定课表后，桃酥才能按课程挑书</h2>
-              <p class="text-gray-500 max-w-xl mx-auto leading-relaxed mb-8">当前不会假装你已经绑定。点击左侧按钮后，系统会把模拟课表写入本地并生成推荐。</p>
-              <div class="h-12 px-8 rounded-full bg-blue-600 text-white font-black inline-flex items-center justify-center">立即绑定示例课表</div>
-            </section>
-        </main>
+        <main class="flex flex-col gap-8">${mainHtml}</main>
       </div>
     </div>
   `;
 }
 
-// ========== 社区模块 (静态展示) ==========
+function doBindSchedule() {
+  const btn = document.getElementById('sync-btn');
+  if(btn) btn.innerText = '同步中...';
+  setTimeout(() => {
+    state.scheduleBound = true;
+    alert('课表绑定成功！已为您生成教材推荐。');
+    if(state.currentView === 'schedule') renderSchedule(document.getElementById('page-content'));
+  }, 800);
+}
+
+// ========== 社区模块 (带虚拟交互) ==========
 function renderCommunity(el) {
   el.innerHTML = `
     <div class="max-w-7xl mx-auto flex flex-col gap-8 animate-google-in py-12">
@@ -427,25 +441,20 @@ function renderCommunity(el) {
               <div class="flex items-center gap-2 mb-4">
                 <span class="text-[10px] font-black uppercase tracking-[0.25em] text-blue-100">Knowledge Community</span>
               </div>
-              <h1 class="text-4xl font-black tracking-tight mb-4">求是知识共创社区 (静态原型)</h1>
-              <p class="text-blue-100 max-w-2xl text-sm leading-relaxed">课程笔记、历年真题、复习提纲和名词解释集中沉淀。静态展示。</p>
-            </div>
-            <div class="hidden lg:grid grid-cols-3 gap-3 w-[360px]">
-              <div class="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 backdrop-blur"><p class="text-2xl font-black">1245</p><p class="text-[10px] font-bold text-blue-100 mt-1">最高点赞</p></div>
-              <div class="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 backdrop-blur"><p class="text-2xl font-black">3</p><p class="text-[10px] font-bold text-blue-100 mt-1">热载资料</p></div>
-              <div class="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 backdrop-blur"><p class="text-2xl font-black">AI</p><p class="text-[10px] font-bold text-blue-100 mt-1">自动归档</p></div>
+              <h1 class="text-4xl font-black tracking-tight mb-4">求是知识共创社区</h1>
+              <p class="text-blue-100 max-w-2xl text-sm leading-relaxed">课程笔记、历年真题、复习提纲和名词解释集中沉淀。</p>
             </div>
           </div>
           <div class="mt-9 max-w-3xl flex bg-white rounded-2xl shadow-xl shadow-blue-900/10 overflow-hidden h-14">
-            <input type="text" placeholder="搜索课程笔记、历届真题或名词解释..." class="flex-1 px-6 bg-transparent border-none outline-none text-sm font-medium text-gray-800 placeholder:text-gray-400" />
-            <div class="px-8 bg-orange-500 text-white font-black text-sm flex items-center justify-center">挖掘资料</div>
+            <input type="text" id="community-search" placeholder="搜索课程笔记、历届真题或名词解释..." class="flex-1 px-6 bg-transparent border-none outline-none text-sm font-medium text-gray-800 placeholder:text-gray-400" onkeypress="if(event.key==='Enter') doSearchCommunity()" />
+            <div class="px-8 bg-orange-500 text-white font-black text-sm flex items-center justify-center cursor-pointer hover:bg-orange-600 transition-colors" onclick="doSearchCommunity()">挖掘资料</div>
           </div>
         </div>
       </section>
       <section class="flex flex-col gap-6">
         <h2 class="text-3xl font-black text-gray-900">本周校园热载榜</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          <article class="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 flex flex-col">
+          <article class="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 flex flex-col hover:-translate-y-1 hover:shadow-xl transition-all cursor-pointer">
             <div class="flex justify-between items-start gap-3 mb-5">
               <span class="bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1.5 rounded-full border border-blue-100">高等数学</span>
               <span class="bg-emerald-50 text-emerald-600 text-[10px] font-black px-3 py-1.5 rounded-full border border-emerald-100">免费获取</span>
@@ -462,31 +471,80 @@ function renderCommunity(el) {
   `;
 }
 
-// ========== 消息模块 (静态展示) ==========
+function doSearchCommunity() {
+  const q = document.getElementById('community-search').value;
+  alert(q ? \`已在社区数据库中为您检索到关于 "\${q}" 的 12 篇相关资料！(模拟交互)\` : '请输入搜索关键词');
+}
+
+// ========== 消息模块 (带虚拟交互) ==========
 function renderMessages(el) {
+  const msgsHtml = state.messages.map(m => 
+    m.sender === 'me' 
+      ? `<div class="bg-blue-600 text-white p-4 rounded-2xl rounded-br shadow-sm max-w-[70%] mb-4 self-end ml-auto">${m.text}</div>`
+      : `<div class="bg-white p-4 rounded-2xl shadow-sm max-w-[70%] mb-4 text-gray-800 self-start">${m.text}</div>`
+  ).join('');
+
   el.innerHTML = `
     <div class="max-w-7xl mx-auto flex flex-col gap-8 animate-google-in py-12">
-       <h1 class="text-4xl font-black text-gray-900 mb-8">消息中心 (静态原型)</h1>
+       <h1 class="text-4xl font-black text-gray-900 mb-8">消息中心</h1>
        <div class="bg-white rounded-[32px] border border-gray-100 shadow-sm flex overflow-hidden" style="height:600px;">
          <div class="w-80 border-r border-gray-100 flex flex-col">
            <div class="p-6 border-b border-gray-100"><h2 class="text-xl font-black">联系人</h2></div>
            <div class="p-4 flex gap-4 items-center bg-blue-50 border-l-4 border-blue-600 cursor-pointer">
              <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-xl">👨‍🎓</div>
-             <div><h3 class="font-bold text-gray-900">数学系学霸</h3><p class="text-xs text-gray-500">这本高数还有吗？</p></div>
-           </div>
-           <div class="p-4 flex gap-4 items-center cursor-pointer hover:bg-gray-50">
-             <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-xl">👩‍💻</div>
-             <div><h3 class="font-bold text-gray-900">软件小哥</h3><p class="text-xs text-gray-500">明天玉泉面交可以吗</p></div>
+             <div><h3 class="font-bold text-gray-900">数学系学霸</h3><p class="text-xs text-blue-600 font-bold">有新消息</p></div>
            </div>
          </div>
          <div class="flex-1 flex flex-col bg-gray-50">
            <div class="p-6 border-b border-gray-100 bg-white"><h2 class="text-xl font-black">数学系学霸</h2></div>
-           <div class="flex-1 p-6">
-              <div class="bg-white p-4 rounded-2xl shadow-sm max-w-[70%] mb-4 text-gray-800">你好，在吗？这本高数还有吗？</div>
+           <div class="flex-1 p-6 flex flex-col overflow-y-auto" id="msg-container">
+              ${msgsHtml}
            </div>
            <div class="p-6 bg-white border-t border-gray-100 flex gap-4">
-              <input type="text" class="flex-1 h-12 bg-gray-50 border border-gray-200 rounded-full px-6 outline-none" placeholder="输入消息..." />
-              <div class="w-24 bg-blue-600 text-white rounded-full font-bold flex items-center justify-center cursor-pointer">发送</div>
+              <input type="text" id="msg-input" class="flex-1 h-12 bg-gray-50 border border-gray-200 rounded-full px-6 outline-none" placeholder="输入消息..." onkeypress="if(event.key==='Enter') doSendChat()" />
+              <div class="w-24 bg-blue-600 text-white rounded-full font-bold flex items-center justify-center cursor-pointer hover:bg-blue-700 transition-colors" onclick="doSendChat()">发送</div>
+           </div>
+         </div>
+       </div>
+    </div>
+  `;
+  setTimeout(() => { const c = document.getElementById('msg-container'); if(c) c.scrollTop = c.scrollHeight; }, 10);
+}
+
+function doSendChat() {
+  const input = document.getElementById('msg-input');
+  const txt = input.value.trim();
+  if(!txt) return;
+  state.messages.push({text: txt, sender: 'me'});
+  if(state.currentView === 'messages') renderMessages(document.getElementById('page-content'));
+  
+  setTimeout(() => {
+    state.messages.push({text: '好的，了解了。(模拟自动回复)', sender: 'other'});
+    if(state.currentView === 'messages') renderMessages(document.getElementById('page-content'));
+  }, 800);
+}
+
+// ========== 心愿单模块 (带虚拟交互) ==========
+function renderWish(el) {
+  el.innerHTML = `
+    <div class="max-w-7xl mx-auto flex flex-col gap-8 animate-google-in py-12">
+       <h1 class="text-4xl font-black text-gray-900 mb-8">全校寻书心愿单</h1>
+       
+       <div class="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8 flex gap-4">
+          <input type="text" id="wish-input" placeholder="输入你急需寻找的教材..." class="flex-1 h-14 bg-gray-50 border border-gray-200 rounded-2xl px-6 outline-none text-lg" onkeypress="if(event.key==='Enter') doAddWish()" />
+          <div class="px-10 bg-gray-900 text-white font-black rounded-2xl flex items-center justify-center cursor-pointer hover:bg-blue-600 transition-colors" onclick="doAddWish()">发布悬赏</div>
+       </div>
+
+       <div class="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8">
+         <h2 class="text-xl font-black mb-6">最新悬赏</h2>
+         <div class="flex flex-col gap-4" id="wish-list">
+           <div class="p-6 border border-gray-100 rounded-2xl flex justify-between items-center bg-gray-50 hover:bg-white transition-all cursor-pointer">
+             <div><h3 class="font-bold text-lg text-gray-900 mb-1">急求《离散数学及其应用》</h3><p class="text-gray-500 text-sm">愿意高价收购，玉泉校区当面交易。</p></div>
+             <div class="px-6 py-2 bg-rose-50 text-rose-600 font-bold rounded-full">赏金 ¥50</div>
+           </div>
+           <div class="p-6 border border-gray-100 rounded-2xl flex justify-between items-center bg-gray-50 hover:bg-white transition-all cursor-pointer">
+             <div><h3 class="font-bold text-lg text-gray-900 mb-1">求一本《现代操作系统》</h3><p class="text-gray-500 text-sm">笔记清晰优先，紫金港可以自取。</p></div>
+             <div class="px-6 py-2 bg-blue-50 text-blue-600 font-bold rounded-full">正常求购</div>
            </div>
          </div>
        </div>
@@ -494,32 +552,19 @@ function renderMessages(el) {
   `;
 }
 
-// ========== 心愿单模块 (静态展示) ==========
-function renderWish(el) {
-  el.innerHTML = `
-    <div class="max-w-7xl mx-auto flex flex-col gap-8 animate-google-in py-12">
-       <h1 class="text-4xl font-black text-gray-900 mb-8">全校寻书心愿单 (静态原型)</h1>
-       <div class="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8">
-         <h2 class="text-xl font-black mb-6">最新悬赏</h2>
-         <div class="flex flex-col gap-4">
-           <div class="p-6 border border-gray-100 rounded-2xl flex justify-between items-center bg-gray-50 hover:bg-white transition-all cursor-pointer">
-             <div>
-                <h3 class="font-bold text-lg text-gray-900 mb-1">急求《离散数学及其应用》</h3>
-                <p class="text-gray-500 text-sm">愿意高价收购，玉泉校区当面交易。</p>
-             </div>
-             <div class="px-6 py-2 bg-rose-50 text-rose-600 font-bold rounded-full">赏金 ¥50</div>
-           </div>
-           <div class="p-6 border border-gray-100 rounded-2xl flex justify-between items-center bg-gray-50 hover:bg-white transition-all cursor-pointer">
-             <div>
-                <h3 class="font-bold text-lg text-gray-900 mb-1">求一本《现代操作系统》</h3>
-                <p class="text-gray-500 text-sm">笔记清晰优先，紫金港可以自取。</p>
-             </div>
-             <div class="px-6 py-2 bg-blue-50 text-blue-600 font-bold rounded-full">正常求购</div>
-           </div>
-         </div>
-       </div>
-    </div>
-  `;
+function doAddWish() {
+  const input = document.getElementById('wish-input');
+  const val = input.value.trim();
+  if(!val) return;
+  const list = document.getElementById('wish-list');
+  const html = `
+    <div class="p-6 border border-blue-100 rounded-2xl flex justify-between items-center bg-blue-50 animate-google-in mb-4">
+       <div><h3 class="font-bold text-lg text-blue-900 mb-1">急求《\${val}》</h3><p class="text-blue-500 text-sm">您刚刚发布的新心愿单。</p></div>
+       <div class="px-6 py-2 bg-blue-600 text-white font-bold rounded-full">等待接单</div>
+    </div>`;
+  list.innerHTML = html + list.innerHTML;
+  input.value = '';
+  alert('心愿单发布成功！已加入列表。');
 }
 
 // 暴露到全局
@@ -532,3 +577,7 @@ window.sendMsg = sendMsg;
 window.sortBooks = sortBooks;
 window.doLogin = doLogin;
 window.doPublish = doPublish;
+window.doBindSchedule = doBindSchedule;
+window.doSearchCommunity = doSearchCommunity;
+window.doSendChat = doSendChat;
+window.doAddWish = doAddWish;
