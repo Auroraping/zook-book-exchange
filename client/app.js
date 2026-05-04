@@ -211,7 +211,7 @@ function loadMore() { state.page++; renderBooks(document.getElementById('page-co
 
 function bookCard(book) {
   return `
-    <div class="group cursor-pointer" onclick="addToCart('${book.id}')">
+    <div class="group cursor-pointer" onclick="initiateDirectTrade('${book.id}')">
       <div class="premium-card !p-0 overflow-hidden !rounded-[40px] h-full flex flex-col">
         <div class="relative aspect-[3/4] overflow-hidden bg-gray-100">
           <img src="${book.cover}" alt="${book.title}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
@@ -266,6 +266,73 @@ function renderCart(el) {
     </div></div></div></div>`;
 }
 
+const MOCK_SELLERS = [
+  "求是园张学姐 (经管学院)",
+  "紫金港王学长 (计科系)",
+  "玉泉李同学 (物理系)",
+  "传媒学院周学姐",
+  "生工系陈同学"
+];
+
+function getSellerForBook(bookId) {
+  const idNum = typeof bookId === 'string' ? (parseInt(bookId.replace(/\D/g, '')) || 0) : bookId;
+  return MOCK_SELLERS[idNum % MOCK_SELLERS.length];
+}
+
+function initiateDirectTrade(bookId) {
+  const book = state.books.find(b => b.id == bookId);
+  if (!book) return;
+  
+  if (!state.user) {
+    alert('⚠️ 交易拦截：请先选择【买家】角色登录后再发起交易！');
+    navigate('login');
+    return;
+  }
+  if (state.userRole !== 'buyer') {
+    alert('⚠️ 角色拦截：您当前登录的是卖家测试账户。为了符合模拟逻辑，请退出并切换为【买家】角色后再购买！');
+    return;
+  }
+
+  const seller = getSellerForBook(book.id);
+  state.activeTrade = { book, seller };
+  
+  const modalHtml = `
+    <div id="payment-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-center justify-center animate-google-in p-4" onclick="if(event.target===this) this.remove()">
+      <div class="bg-white w-full max-w-lg rounded-[48px] shadow-2xl p-12 flex flex-col items-center text-center animate-google-in" onclick="event.stopPropagation()">
+        <h2 class="text-4xl font-black text-gray-900 mb-4">发起线下交易请求</h2>
+        <p class="text-gray-500 font-medium mb-1 text-sm">平台不支持直接线上扣款。</p>
+        <p class="text-gray-500 font-medium mb-10 text-sm">请生成【交易备案凭证】后，与卖家私聊线下交接或付款。</p>
+        
+        <div class="bg-gray-50 rounded-[32px] p-10 w-full mb-10 border border-gray-100 relative overflow-hidden">
+           <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">订单预估总额</p>
+           <p class="text-7xl font-black text-rose-500 mb-2">¥${book.price}</p>
+           <p class="text-sm font-bold text-gray-600 mt-2">《${book.title}》</p>
+           <p class="text-[10px] text-blue-600 font-black mt-2 uppercase tracking-widest">联系卖家：${seller}</p>
+        </div>
+
+        <div class="flex flex-col gap-3 mb-10 w-full">
+           <div class="flex items-center justify-between p-6 border-2 border-blue-600 bg-blue-50 rounded-[24px] cursor-default text-left">
+              <div class="flex items-center gap-4">
+                 <span class="text-3xl">💬</span>
+                 <div class="flex flex-col">
+                    <span class="font-black text-gray-900 text-lg">私聊协商交接方式</span>
+                    <span class="text-xs text-blue-600 font-medium">具体时间、地点与付款方式由双方沟通决定</span>
+                 </div>
+              </div>
+              <div class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-black">✓</div>
+           </div>
+        </div>
+
+        <div id="pay-btn" class="w-full bg-gray-900 text-white text-center py-6 rounded-[24px] font-black cursor-pointer shadow-xl hover:bg-blue-600 transition-all text-xl mb-6" onclick="processPayment()">
+           确认意向并生成凭证
+        </div>
+        <button class="text-gray-400 font-black hover:text-gray-600 transition-colors uppercase tracking-widest text-xs" onclick="document.getElementById('payment-modal').remove()">暂不发起，返回修改</button>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
 function checkout() { 
   if (state.cart.length === 0) return;
   if (!state.user) {
@@ -278,36 +345,24 @@ function checkout() {
     return;
   }
   
+  state.activeTrade = null;
   const total = state.cart.reduce((s, b) => s + b.price, 0);
   const modalHtml = `
-    <div id="payment-modal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center animate-google-in">
-      <div class="bg-white w-[460px] rounded-[32px] shadow-2xl p-8 relative overflow-hidden">
-        <div class="absolute top-0 inset-x-0 h-2 bg-blue-600"></div>
-        <h3 class="text-2xl font-black text-center mb-2 text-gray-900">发起线下交易请求</h3>
-        <p class="text-center text-sm text-gray-500 mb-6 leading-relaxed">平台不支持直接线上扣款。<br/>请生成【交易备案凭证】后，与卖家私聊线下交接或付款。</p>
+    <div id="payment-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-center justify-center animate-google-in p-4" onclick="if(event.target===this) this.remove()">
+      <div class="bg-white w-full max-w-lg rounded-[48px] shadow-2xl p-12 flex flex-col items-center text-center animate-google-in" onclick="event.stopPropagation()">
+        <h2 class="text-4xl font-black text-gray-900 mb-4">发起线下交易请求</h2>
+        <p class="text-gray-500 font-medium mb-1 text-sm">平台不支持直接线上扣款。</p>
+        <p class="text-gray-500 font-medium mb-10 text-sm">请生成【交易备案凭证】后，与卖家私密处沟通线下交接。</p>
         
-        <div class="bg-gray-50 rounded-2xl p-6 mb-6 text-center border border-gray-100">
-           <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2">订单预估总额</p>
-           <p class="text-4xl font-black text-rose-500">¥${total.toFixed(2)}</p>
+        <div class="bg-gray-50 rounded-[32px] p-10 w-full mb-10 border border-gray-100">
+           <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">订单预估总额</p>
+           <p class="text-7xl font-black text-rose-500">¥${total.toFixed(2)}</p>
+           <p class="text-xs text-gray-400 mt-4 font-bold">合并结算清单中共 ${state.cart.length} 本书籍</p>
         </div>
 
-        <div class="flex flex-col gap-3 mb-8">
-           <div class="flex items-center justify-between p-4 border-2 border-blue-600 bg-blue-50 rounded-xl cursor-default">
-              <div class="flex items-center gap-3">
-                 <span class="text-2xl">💬</span>
-                 <div class="flex flex-col">
-                    <span class="font-bold text-blue-900">私聊协商交接方式</span>
-                    <span class="text-xs text-blue-600 mt-1">具体时间、地点与付款方式由双方沟通决定</span>
-                 </div>
-              </div>
-              <div class="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs">✓</div>
-           </div>
+        <div id="pay-btn" class="w-full bg-gray-900 text-white text-center py-6 rounded-[24px] font-black cursor-pointer shadow-xl hover:bg-blue-600 transition-all text-xl mb-6" onclick="processPayment()">
+           确认意向并生成凭证
         </div>
-
-        <div id="pay-btn" class="w-full bg-gray-900 text-white text-center py-4 rounded-[16px] font-black cursor-pointer shadow-lg hover:bg-blue-600 transition-all text-lg" onclick="processPayment()">
-          确认意向并生成凭证
-        </div>
-        <button class="w-full text-center text-sm font-bold text-gray-400 mt-4 hover:text-gray-600" onclick="document.getElementById('payment-modal').remove()">暂不发起，返回修改</button>
       </div>
     </div>
   `;
@@ -316,12 +371,16 @@ function checkout() {
 
 function processPayment() {
   const btn = document.getElementById('pay-btn');
+  if(!btn) return;
   btn.innerHTML = '正在备案并生成凭证...';
-  btn.className = "w-full bg-blue-100 text-blue-600 text-center py-4 rounded-[16px] font-black pointer-events-none text-lg";
+  btn.style.backgroundColor = '#dbeafe';
+  btn.style.color = '#2563eb';
+  btn.style.pointerEvents = 'none';
   
   setTimeout(() => {
     btn.innerHTML = '凭证生成成功 ✓';
-    btn.className = "w-full bg-emerald-500 text-white text-center py-4 rounded-[16px] font-black pointer-events-none text-lg shadow-lg shadow-emerald-500/30";
+    btn.style.backgroundColor = '#10b981';
+    btn.style.color = 'white';
     
     setTimeout(() => {
       finishCheckoutTransaction();
@@ -330,45 +389,51 @@ function processPayment() {
 }
 
 function finishCheckoutTransaction() {
+  const isDirect = !!state.activeTrade;
+  const items = isDirect ? [state.activeTrade.book] : state.cart;
+  const sellerName = isDirect ? state.activeTrade.seller : "数学系学霸 (模拟卖家)";
+  const totalPrice = items.reduce((s, b) => s + b.price, 0);
+
   const orderData = { 
     transaction_type: "买家交易备案记录 (Offline Trade Record)",
     buyer_account: state.user,
+    seller_counterpart: sellerName,
     trade_id: 'TRADE_' + Date.now(), 
     record_date: new Date().toLocaleString(),
-    items_intended: state.cart.map(b => ({ book_id: b.id, title: b.title, price: b.price })),
-    total_estimated_cny: state.cart.reduce((s, b) => s + b.price, 0),
+    items_intended: items.map(b => ({ book_id: b.id, title: b.title, price: b.price })),
+    total_estimated_cny: totalPrice,
     handover_method: "私聊协商决定",
-    trade_status: "INTENTION_CONFIRMED (意向已确认，待线下交易)"
+    trade_status: "INTENTION_CONFIRMED (意向已确认)"
   };
   
   const blob = new Blob([JSON.stringify(orderData, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `[交易备案]买家线下交易请求_${state.user}_${orderData.trade_id}.json`;
+  a.download = `[交易备案]买家请求_${state.user.replace(/·/g,'_')}_${orderData.trade_id.slice(-6)}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
   
   state.orders.unshift(orderData);
-  
   const modal = document.getElementById('payment-modal');
   if (modal) modal.remove();
   
-  const titles = state.cart.map(b => '《' + b.title + '》').join('、');
-  const msgText = `您好！我已经生成了线下交易备案凭证（订单尾号 ${orderData.trade_id.slice(-4)}）。<br/>我想购买 ${titles}，预估总计 ¥${orderData.total_estimated_cny}。<br/>请问咱们怎么交接比较方便呢？`;
+  const titles = items.map(b => '《' + b.title + '》').join('、');
+  const msgText = `您好！我已经生成了线下交易备案凭证（订单尾号 ${orderData.trade_id.slice(-4)}）。<br/>我想购买您发布的 ${titles}，预估总计 ¥${totalPrice}。<br/>请问咱们怎么交接比较方便呢？`;
+  
   state.messages.push({text: msgText, sender: 'me'});
+  state.currentChatPartner = sellerName;
   
-  state.cart = []; 
-  navigate('messages'); 
+  if (!isDirect) state.cart = [];
+  state.activeTrade = null;
   
-  setTimeout(() => {
-    state.messages.push({text: '收到！你的凭证号我看到了，明天下午在玉泉校区图书馆门口交接可以吗？', sender: 'other'});
-    if(state.currentView === 'messages') renderMessages(document.getElementById('page-content'));
-    alert(`🎉 交易凭证已自动下载保存至本地！\\n已为您自动跳转并连接到了卖家私聊。`); 
-  }, 600);
+  alert(`凭证生成成功！已自动保存到本地，正为您跳转至与 [${sellerName}] 的私聊界面...`);
+  navigate('messages');
 }
+
+
 
 // ========== 登录系统 ==========
 function renderLogin(el) {
@@ -750,12 +815,7 @@ function viewNote(id) {
 
 // ========== 消息模块 (带虚拟交互) ==========
 function renderMessages(el) {
-  let counterpartName = "数学系学霸";
-  if (state.userRole === 'buyer') {
-    counterpartName = "法学大四·卖家测试";
-  } else if (state.userRole === 'seller') {
-    counterpartName = "计科大二·买家测试";
-  }
+  let counterpartName = state.currentChatPartner || (state.userRole === 'buyer' ? "法学大四·卖家测试" : "计科大二·买家测试");
 
   const msgsHtml = state.messages.map(m => 
     m.sender === 'me' 
@@ -926,3 +986,4 @@ window.doSendChat = doSendChat;
 window.doAddWish = doAddWish;
 window.doLogout = doLogout;
 window.processPayment = processPayment;
+window.initiateDirectTrade = initiateDirectTrade;
