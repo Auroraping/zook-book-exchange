@@ -11,10 +11,10 @@
     <div id="root"></div>
     <script>
       window.addEventListener('error', function(e) {
-        document.body.innerHTML += '<div style="color:red; background:white; padding:20px; z-index:9999; position:fixed; top:0; left:0; width:100%;"><h3 style="font-size:20px;">运行崩溃捕获:</h3><pre style="white-space:pre-wrap;">' + e.message + '\n\n' + (e.error ? e.error.stack : '') + '</pre></div>';
+        document.body.innerHTML += '<div style="color:red; background:white; padding:20px; z-index:9999; position:fixed; top:0; left:0; width:100%;"><h3 style="font-size:20px;">运行崩溃捕获:</h3><div style="white-space:pre-wrap;">' + e.message + '\n\n' + (e.error ? e.error.stack : '') + '</div></div>';
       });
       window.addEventListener('unhandledrejection', function(e) {
-        document.body.innerHTML += '<div style="color:red; background:white; padding:20px; z-index:9999; position:fixed; top:0; left:0; width:100%;"><h3 style="font-size:20px;">Promise崩溃捕获:</h3><pre style="white-space:pre-wrap;">' + e.reason + '</pre></div>';
+        document.body.innerHTML += '<div style="color:red; background:white; padding:20px; z-index:9999; position:fixed; top:0; left:0; width:100%;"><h3 style="font-size:20px;">Promise崩溃捕获:</h3><div style="white-space:pre-wrap;">' + e.reason + '</div></div>';
       });
     </script>
     <script type="module" src="/app.js"></script>

@@ -76,7 +76,7 @@ function renderTopbar() {
       </div>
     </div>
     <div class="flex items-center gap-8 ml-12">
-      <div class="btn-premium whitespace-nowrap shadow-2xl cursor-pointer" onclick="navigate('home')">立即开启淘书之旅</div>
+      <div class="btn-premium whitespace-nowrap shadow-2xl cursor-pointer" onclick="navigate('login')">立即登录淘书</div>
     </div>`;
 }
 
@@ -95,6 +95,7 @@ function navigate(page) {
     case 'books': renderBooks(el); break;
     case 'cart': renderCart(el); break;
     case 'ai': renderAI(el); break;
+    case 'login': renderLogin(el); break;
     default: el.innerHTML = `<div class="py-40 text-center"><h2 class="text-4xl font-black text-gray-900 mb-4">${page}</h2><p class="text-gray-400 text-lg">该页面功能开发中，请在 React 版本中查看完整体验。</p></div>`;
   }
   window.scrollTo(0, 0);
@@ -237,7 +238,43 @@ function renderCart(el) {
       </div></div></div></div>`;
 }
 
-function checkout() { alert('交易成功！已购买 ' + state.cart.length + ' 本书籍。'); state.cart = []; navigate('home'); }
+function checkout() { 
+  if (state.cart.length === 0) return;
+  const orderData = { id: 'ORDER_' + Date.now(), date: new Date().toISOString(), items: state.cart, total: state.cart.reduce((s, b) => s + b.price, 0) };
+  const blob = new Blob([JSON.stringify(orderData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'zook_order_' + orderData.id + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  alert('交易成功！您的订单数据已作为文件保存下载。'); 
+  state.cart = []; 
+  navigate('home'); 
+}
+
+// ========== 登录系统 ==========
+function renderLogin(el) {
+  el.innerHTML = `
+    <div class="py-20 flex justify-center animate-google-in">
+      <div class="bg-white p-12 rounded-[32px] shadow-xl w-96 border border-gray-100 flex flex-col gap-6">
+        <h2 class="text-2xl font-black text-center mb-4 text-gray-900">欢迎来到浙里淘书</h2>
+        <div class="flex flex-col gap-4">
+          <input type="text" id="login-user" placeholder="买家/卖家账号" class="h-12 border border-gray-200 rounded-lg px-4 outline-none focus:border-blue-500" />
+          <input type="password" placeholder="密码" class="h-12 border border-gray-200 rounded-lg px-4 outline-none focus:border-blue-500" />
+          <div class="bg-blue-600 text-white text-center py-4 rounded-[16px] font-bold cursor-pointer mt-4 shadow-lg hover:bg-blue-700 transition-all" onclick="doLogin()">登录账户</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function doLogin() {
+  const user = document.getElementById('login-user').value;
+  alert('登录成功！欢迎 ' + (user || '求是学子'));
+  navigate('home');
+}
 
 // ========== 桃酥 AI ==========
 function renderAI(el) {
@@ -277,3 +314,4 @@ window.addToCart = addToCart;
 window.checkout = checkout;
 window.sendMsg = sendMsg;
 window.sortBooks = sortBooks;
+window.doLogin = doLogin;
