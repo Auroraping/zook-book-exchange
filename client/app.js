@@ -271,7 +271,7 @@ function checkout() {
         
         <div class="bg-gray-50 rounded-2xl p-6 mb-6 text-center border border-gray-100">
            <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-2">订单预估总额</p>
-           <p class="text-4xl font-black text-rose-500">¥\${total.toFixed(2)}</p>
+           <p class="text-4xl font-black text-rose-500">¥${total.toFixed(2)}</p>
         </div>
 
         <div class="flex flex-col gap-3 mb-8">
@@ -335,9 +335,18 @@ function finishCheckoutTransaction() {
   const modal = document.getElementById('payment-modal');
   if (modal) modal.remove();
   
-  alert(`🎉 交易意向已备案，凭证已下载至本地！\\n接下来系统将为您自动跳转至【消息中心】，请您拿着该凭证与卖家私聊沟通线下交接事宜。`); 
+  const titles = state.cart.map(b => '《' + b.title + '》').join('、');
+  const msgText = `您好！我已经生成了线下交易备案凭证（订单尾号 ${orderData.trade_id.slice(-4)}）。<br/>我想购买 ${titles}，预估总计 ¥${orderData.total_estimated_cny}。<br/>请问什么时候方便当面交接呢？`;
+  state.messages.push({text: msgText, sender: 'me'});
+  
   state.cart = []; 
   navigate('messages'); 
+  
+  setTimeout(() => {
+    state.messages.push({text: '收到！你的凭证号我看到了，明天下午在玉泉校区图书馆门口交接可以吗？', sender: 'other'});
+    if(state.currentView === 'messages') renderMessages(document.getElementById('page-content'));
+    alert(`🎉 交易凭证已自动下载保存至本地！\\n已为您自动跳转并连接到了卖家私聊。`); 
+  }, 600);
 }
 
 // ========== 登录系统 ==========
