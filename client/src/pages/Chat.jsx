@@ -105,12 +105,14 @@ const Chat = () => {
     const onSearchResults = (results) => {
       console.log('[Chat] Received search_results:', results);
       setIsSearching(false);
-      if (results && results.length > 0) {
-        setSearchResults(results);
-      } else {
-        alert(`未找到匹配的结果。提示：对方必须已登录且进入过此页面才能被搜到。`);
-        setSearchResults([]);
+      setSearchResults(results || []);
+      if (!results || results.length === 0) {
+        alert("未找到匹配用户。");
       }
+    };
+
+    const onPong = () => {
+      alert("服务器响应：通讯正常 (Pong!)");
     };
 
     socket.on('connect', onConnect);
@@ -118,6 +120,7 @@ const Chat = () => {
     socket.on('receive_history', onHistory);
     socket.on('receive_message', onMessage);
     socket.on('search_results', onSearchResults);
+    socket.on('pong_test', onPong);
 
     return () => {
       socket.off('connect', onConnect);
@@ -125,8 +128,14 @@ const Chat = () => {
       socket.off('receive_history', onHistory);
       socket.off('receive_message', onMessage);
       socket.off('search_results', onSearchResults);
+      socket.off('pong_test', onPong);
     };
   }, [activeChat.id]);
+
+  const testConnection = () => {
+    console.log('[Chat] Testing connection...');
+    socket.emit('ping_test');
+  };
 
   const handleSend = (e) => {
     e.preventDefault();
@@ -195,8 +204,8 @@ const Chat = () => {
         <div className="sidebar-header">
           <div className="title-row">
             <h2>消息中心</h2>
-            <span className={`conn-status ${isConnected ? 'online' : 'offline'}`}>
-              {isConnected ? '已连接' : '连接中...'}
+            <span className={`conn-status ${isConnected ? 'online' : 'offline'}`} onClick={testConnection} style={{cursor:'pointer'}}>
+              {isConnected ? '已连接 (点我测试)' : '连接中...'}
             </span>
           </div>
           <div className="current-user-tag">

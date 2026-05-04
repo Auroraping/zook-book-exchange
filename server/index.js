@@ -35,7 +35,14 @@ io.on('connection', (socket) => {
       const displayName = user.name || user.username || '匿名用户';
       users.set(user.id, displayName);
       console.log(`[Socket] User registered: ${displayName} (${user.id})`);
+      console.log(`[Socket] Current registry:`, Array.from(users.values()));
     }
+  });
+
+  // 诊断测试
+  socket.on('ping_test', () => {
+    console.log(`[Socket] Received ping from ${socket.id}`);
+    socket.emit('pong_test');
   });
 
   // 搜索用户
