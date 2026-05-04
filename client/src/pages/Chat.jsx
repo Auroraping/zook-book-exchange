@@ -14,85 +14,67 @@ const socket = io('http://localhost:3001', {
 });
 
 const Chat = () => {
-  const [messages, setMessages] = useState([]);
-  const [inputText, setInputText] = useState('');
-  const [currentUser, setCurrentUser] = useState(null);
-  const [chats, setChats] = useState(INITIAL_CHATS);
-  const [activeChat, setActiveChat] = useState(INITIAL_CHATS[0]);
-  const [isConnected, setIsConnected] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const messagesEndRef = useRef(null);
+  // 生成唯一的房间 ID (确保 A->B 和 B->A 进入同一个房间)
+  const getRoomId = (id1, id2) => {
+    const sortedIds = [id1, id2].sort();
+    return `chat_${sortedIds[0]}_${sortedIds[1]}`;
+  };
 
   useEffect(() => {
     let user = JSON.parse(localStorage.getItem('user'));
     if (!user) {
       user = { username: 'Guest_' + Math.floor(Math.random() * 1000), id: 'U' + Math.floor(Math.random() * 1000000) };
     } else if (!user.id || user.id === 'me') {
-      // 为旧用户或占位符 ID 补全真正唯一的 ID
       user.id = 'U' + Math.floor(Math.random() * 1000000);
       localStorage.setItem('user', JSON.stringify(user));
     }
     setCurrentUser(user);
 
-    // 1. 始终加入自己的 ID 房间，以便接收别人发给我的消息
+    // 始终加入自己的通知房间 (用于接收“新聊天”提醒)
     if (user && user.id) {
-      socket.emit('join_room', `room_${user.id}`);
-    }
-
-    // 2. 如果已经连接，立即更新状态
-    if (socket.connected) {
-      setIsConnected(true);
-      socket.emit('join_room', activeChat.id);
+      socket.emit('join_room', `notify_${user.id}`);
     }
 
     const onConnect = () => {
-      console.log('Connected to chat server');
+      console.log('[Chat] Socket connected');
       setIsConnected(true);
-      socket.emit('join_room', activeChat.id);
-      if (user && user.id) {
-        socket.emit('join_room', `room_${user.id}`);
-      }
+      if (activeChat) socket.emit('join_room', activeChat.id);
+      if (user?.id) socket.emit('join_room', `notify_${user.id}`);
     };
 
     const onDisconnect = () => {
-      console.log('Disconnected from chat server');
+      console.log('[Chat] Socket disconnected');
       setIsConnected(false);
     };
 
     const onHistory = (history) => {
-      console.log('Received history:', history);
-      setIsConnected(true);
+      console.log('[Chat] Received history:', history);
       setMessages(history);
     };
 
     const onMessage = (data) => {
-      console.log('Received message:', data);
+      console.log('[Chat] Received message:', data);
       
-      // 如果消息属于当前活跃聊天，或者是我自己的 ID 房间（别人发给我的）
-      if (data.roomId === activeChat.id || data.roomId === `room_${user.id}`) {
-        
-        // 如果是别人发给我的（roomId 是我的 ID），且不在当前聊天列表中，自动添加
-        if (data.roomId === `room_${user.id}` && data.sender !== user.username) {
-          setChats(prev => {
-            const exists = prev.find(c => c.id === data.roomId);
-            if (exists) return prev;
-            return [{
-              id: data.roomId,
-              name: data.sender,
-              avatar: data.sender.charAt(0).toUpperCase(),
-              lastMsg: data.text
-            }, ...prev];
-          });
-        }
-
-        // 如果当前窗口正好是这条消息的房间，则显示消息
-        if (data.roomId === activeChat.id) {
-          setMessages((prev) => {
-            const exists = prev.some(m => m.id === data.id || (m.text === data.text && m.sender === data.sender && Math.abs(new Date(m.timestamp) - new Date(data.timestamp)) < 1000));
-            if (exists) return prev;
-            return [...prev, data];
-          });
-        }
+      // 如果收到的是当前聊天的消息
+      if (data.roomId === activeChat.id) {
+        setMessages((prev) => {
+          const exists = prev.some(m => m.id === data.id);
+          if (exists) return prev;
+          return [...prev, data];
+        });
+      } else {
+        // 如果收到的是发给我的消息，但不在当前聊天窗口
+        // 这里可以通过通知系统处理，或者直接在侧边栏提示
+        setChats(prev => {
+          const exists = prev.find(c => c.id === data.roomId);
+          if (exists) return prev;
+          return [{
+            id: data.roomId,
+            name: data.sender,
+            avatar: data.sender.charAt(0).toUpperCase(),
+            lastMsg: data.text
+          }, ...prev];
+        });
       }
     };
 
@@ -100,9 +82,6 @@ const Chat = () => {
     socket.on('disconnect', onDisconnect);
     socket.on('receive_history', onHistory);
     socket.on('receive_message', onMessage);
-
-    // 切换房间时重新加入
-    socket.emit('join_room', activeChat.id);
 
     return () => {
       socket.off('connect', onConnect);
@@ -112,59 +91,58 @@ const Chat = () => {
     };
   }, [activeChat.id]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
   const handleSend = (e) => {
     e.preventDefault();
     if (!inputText.trim() || !currentUser) return;
 
     const messageData = {
-      id: Date.now().toString(), // 添加唯一 ID
+      id: `${currentUser.id}_${Date.now()}`,
       roomId: activeChat.id,
       sender: currentUser.username,
+      senderId: currentUser.id,
       text: inputText,
       timestamp: new Date().toISOString()
     };
 
-    console.log('Sending message:', messageData);
-    
-    // 1. 立即在前端显示（解决消失问题）
-    setMessages((prev) => [...prev, messageData]);
-    
-    // 2. 发送给后端
+    console.log('[Chat] Emitting send_message:', messageData);
     socket.emit('send_message', messageData);
-    
     setInputText('');
   };
 
   const switchChat = (chat) => {
     setActiveChat(chat);
-    setMessages([]);
+    setMessages([]); // 切换时先清空，等待 receive_history
     socket.emit('join_room', chat.id);
   };
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim() || !currentUser) return;
 
-    // 模拟搜索逻辑：如果是新 ID，则创建一个新聊天会话
-    // 在真实应用中，这里应该请求后端查询用户是否存在
-    const newChatId = searchQuery.startsWith('room_') ? searchQuery : `room_${searchQuery}`;
-    const existingChat = chats.find(c => c.id === newChatId || c.name === searchQuery);
+    const targetId = searchQuery.startsWith('U') ? searchQuery : null;
+    const targetName = searchQuery;
 
+    // 生成唯一的 1对1 房间 ID
+    let roomId;
+    if (targetId) {
+      if (targetId === currentUser.id) {
+        alert("不能和自己聊天哦");
+        return;
+      }
+      roomId = getRoomId(currentUser.id, targetId);
+    } else {
+      // 如果搜的是名字，暂时回退到旧逻辑或提示
+      roomId = `room_${targetName}`;
+    }
+
+    const existingChat = chats.find(c => c.id === roomId);
     if (existingChat) {
       switchChat(existingChat);
     } else {
       const newChat = {
-        id: newChatId,
-        name: searchQuery,
-        avatar: searchQuery.charAt(0).toUpperCase(),
+        id: roomId,
+        name: targetId ? `书友 (${targetId})` : targetName,
+        avatar: targetName.charAt(0).toUpperCase(),
         lastMsg: '新发起的聊天'
       };
       setChats(prev => [newChat, ...prev]);

@@ -21,29 +21,33 @@ const messages = [];
 
 // Socket.io 逻辑
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+  console.log('[Socket] User connected:', socket.id);
 
-  // 监听加入房间 (以买卖双方 ID 组合为房间名)
+  // 监听加入房间
   socket.on('join_room', (roomId) => {
     socket.join(roomId);
-    console.log(`User ${socket.id} joined room: ${roomId}`);
-    // 发送历史消息
+    console.log(`[Socket] ${socket.id} joined room: ${roomId}`);
+    
+    // 发送该房间的历史消息
     const history = messages.filter(m => m.roomId === roomId);
+    console.log(`[Socket] Sending ${history.length} history messages for room: ${roomId}`);
     socket.emit('receive_history', history);
   });
 
   // 监听发送消息
   socket.on('send_message', (data) => {
+    console.log(`[Socket] Message from ${data.sender} in room ${data.roomId}: ${data.text}`);
     const messageData = {
       ...data,
       timestamp: new Date().toISOString()
     };
     messages.push(messageData);
+    // 广播给房间内的所有人（包括发送者自己，以确认发送成功）
     io.to(data.roomId).emit('receive_message', messageData);
   });
 
   socket.on('disconnect', () => {
-    console.log('User disconnected');
+    console.log('[Socket] User disconnected');
   });
 });
 
