@@ -121,17 +121,6 @@ function navigate(page) {
   }
 }
 
-// ========== 退出登录 ==========
-function doLogout() {
-  state.user = null;
-  state.userRole = null;
-  state.cart = [];
-  state.orders = [];
-  state.published = [];
-  renderTopbar();
-  navigate('home');
-}
-
 // ========== 首页 ==========
 function renderHome(el) {
   const hotBooks = state.books.slice(0, 4);
@@ -919,18 +908,6 @@ function renderProfile(el) {
        </div>
     </div>
   `;
-}
-
-function processPayment() {
-  const btn = document.getElementById('pay-btn');
-  if(btn) {
-    btn.innerText = '正在生成交易备案凭证...';
-    btn.style.backgroundColor = '#4b5563';
-    btn.style.pointerEvents = 'none';
-  }
-  setTimeout(() => {
-    finishCheckoutTransaction();
-  }, 1200);
 }
 
 // 暴露到全局
