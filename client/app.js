@@ -64,15 +64,19 @@ function renderSidebar() {
 }
 
 function renderTopbar() {
+  const roleBadge = state.userRole === 'seller' 
+    ? `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-black">卖家</span>`
+    : `<span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-black">买家</span>`;
+
   const userHtml = state.user 
     ? `<div class="flex items-center gap-3 cursor-pointer group" onclick="navigate('profile')" title="进入个人主页">
-         <div class="w-10 h-10 rounded-full bg-blue-100 border-blue-200 text-blue-600 flex items-center justify-center font-black text-xl overflow-hidden group-hover:scale-110 transition-transform">👨‍🎓</div>
+         <div class="w-10 h-10 rounded-full ${state.userRole === 'seller' ? 'bg-emerald-100 text-emerald-600 border-emerald-200' : 'bg-blue-100 text-blue-600 border-blue-200'} flex items-center justify-center font-black text-xl overflow-hidden group-hover:scale-110 transition-transform">👨‍🎓</div>
          <div class="flex flex-col hidden lg:flex">
-           <span class="text-sm font-black text-gray-900">${state.user}</span>
-           <span class="text-[10px] font-bold text-blue-600 group-hover:text-blue-800 transition-colors">个人中心 ➜</span>
+           <div class="flex items-center gap-1"><span class="text-sm font-black text-gray-900">${state.user}</span>${roleBadge}</div>
+           <span class="text-[10px] font-bold text-gray-400 group-hover:text-blue-600 transition-colors">个人中心 ➜</span>
          </div>
        </div>`
-    : `<div class="btn-premium whitespace-nowrap shadow-2xl cursor-pointer" onclick="navigate('login')">登录淘书通行证</div>`;
+    : `<div class="btn-premium whitespace-nowrap shadow-2xl cursor-pointer" onclick="navigate('login')">选择角色登录</div>`;
 
   document.getElementById('topbar').innerHTML = `
     <div class="flex-1 max-w-3xl">
@@ -257,8 +261,12 @@ function renderCart(el) {
 function checkout() { 
   if (state.cart.length === 0) return;
   if (!state.user) {
-    alert('⚠️ 交易拦截：请先在右上角登录账号后再发起交易！');
+    alert('⚠️ 交易拦截：请先选择【买家】角色登录后再发起交易！');
     navigate('login');
+    return;
+  }
+  if (state.userRole !== 'buyer') {
+    alert('⚠️ 角色拦截：您当前登录的是卖家测试账户。为了符合模拟逻辑，请退出并切换为【买家】角色后再购买！');
     return;
   }
   
@@ -358,24 +366,60 @@ function finishCheckoutTransaction() {
 function renderLogin(el) {
   el.innerHTML = `
     <div class="py-20 flex justify-center animate-google-in">
-      <div class="bg-white p-12 rounded-[32px] shadow-xl w-[440px] border border-gray-100 flex flex-col gap-6">
-        <h2 class="text-2xl font-black text-center mb-2 text-gray-900">统一身份认证系统</h2>
-        <p class="text-center text-sm text-gray-500 mb-4 bg-blue-50 p-3 rounded-xl border border-blue-100">请登录您的学工号。每个账户既可作为买家购买，也可作为卖家发布。</p>
-        <div class="flex flex-col gap-4">
-          <input type="text" id="login-user" placeholder="输入模拟账号名 (例如: 计科王同学)" value="计科王同学" class="h-12 border border-gray-200 rounded-lg px-4 outline-none focus:border-blue-500 text-center font-bold" />
-          
-          <div class="w-full bg-blue-600 text-white text-center py-4 rounded-[16px] font-black cursor-pointer shadow-lg hover:bg-blue-700 transition-all text-lg mt-2" onclick="doLogin()">
-            一键登录系统
+      <div class="bg-white p-12 rounded-[32px] shadow-xl w-[480px] border border-gray-100 flex flex-col gap-6">
+        <h2 class="text-2xl font-black text-center mb-2 text-gray-900">角色模拟登录 (作业要求)</h2>
+        <p class="text-center text-sm text-gray-500 mb-4 bg-yellow-50 p-3 rounded-xl border border-yellow-100">为满足作业“模拟完整的买家、卖家账户及交易流程”的要求，请选择测试角色。</p>
+        
+        <div class="flex gap-4 mt-2">
+          <div class="flex-1 bg-blue-600 text-white text-center py-6 rounded-[24px] font-bold cursor-pointer shadow-lg hover:bg-blue-700 transition-all flex flex-col items-center justify-center gap-2" onclick="doLogin('buyer')">
+            <span class="text-4xl">🛒</span>
+            <span class="text-lg">作为买家登录</span>
+            <span class="text-xs text-blue-200 font-normal mt-1">内置测试购物车与购买记录</span>
+          </div>
+          <div class="flex-1 bg-emerald-600 text-white text-center py-6 rounded-[24px] font-bold cursor-pointer shadow-lg hover:bg-emerald-700 transition-all flex flex-col items-center justify-center gap-2" onclick="doLogin('seller')">
+            <span class="text-4xl">🏪</span>
+            <span class="text-lg">作为卖家登录</span>
+            <span class="text-xs text-emerald-200 font-normal mt-1">内置测试发布与上架记录</span>
           </div>
         </div>
       </div>
     </div>`;
 }
 
-function doLogin() {
-  const user = document.getElementById('login-user').value || '计科王同学';
-  state.user = user;
-  alert(`登录成功！欢迎回到淘书，【${user}】`);
+function doLogin(role) {
+  state.userRole = role;
+  if (role === 'buyer') {
+    state.user = '计科大二·买家测试';
+    state.orders = [
+      {
+        trade_id: 'TRADE_99812731',
+        total_estimated_cny: 45.00,
+        items_intended: [{title: '离散数学（第2版）'}, {title: '大学英语综合教程'}],
+        handover_method: "私聊协商决定",
+        trade_status: "INTENTION_CONFIRMED (意向已确认，待线下交易)"
+      }
+    ];
+    state.published = [];
+    state.cart = [{ id: 101, title: 'C++ Primer Plus (全新未拆封)', price: 68.00 }];
+  } else {
+    state.user = '法学大四·卖家测试';
+    state.orders = [];
+    state.cart = [];
+    state.published = [
+      {
+        product_id: 'PUB_88716233',
+        product_info: { title: '考研政治核心考案', price: 15.00, condition: '9成新，带笔记' },
+        system_status: "PUBLISHED (审核通过·已上架)"
+      },
+      {
+        product_id: 'PUB_88716234',
+        product_info: { title: '法理学（第四版）', price: 25.00, condition: '全新未拆封' },
+        system_status: "PUBLISHED (审核通过·已上架)"
+      }
+    ];
+  }
+  
+  alert(`登录成功！已为您初始化为【${role === 'buyer' ? '买家' : '卖家'}】测试账户。`);
   renderTopbar();
   navigate('home');
 }
@@ -453,8 +497,12 @@ function renderPublish(el) {
 
 function doPublish() {
   if (!state.user) {
-    alert('⚠️ 发布拦截：请先在右上角登录账号后再发布二手书！');
+    alert('⚠️ 发布拦截：请先选择【卖家】角色登录后再发布二手书！');
     navigate('login');
+    return;
+  }
+  if (state.userRole !== 'seller') {
+    alert('⚠️ 角色拦截：您当前登录的是买家测试账户。为了符合模拟逻辑，请退出并切换为【卖家】角色后再发布！');
     return;
   }
 
@@ -772,7 +820,7 @@ function renderProfile(el) {
   }
 
   const ordersHtml = state.orders.length === 0 
-    ? `<div class="text-center text-gray-400 py-12 text-sm bg-gray-50 rounded-2xl border border-dashed border-gray-200">暂无买家交易记录</div>`
+    ? `<div class="text-center text-gray-400 py-12 text-sm bg-gray-50 rounded-2xl border border-dashed border-gray-200">${state.userRole === 'seller' ? '当前为卖家测试账号，因此无购买记录' : '暂无买家交易记录'}</div>`
     : state.orders.map(o => `
       <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100 flex justify-between items-center mb-4 animate-google-in hover:shadow-md transition-shadow">
         <div>
@@ -787,7 +835,7 @@ function renderProfile(el) {
     `).join('');
 
   const publishedHtml = state.published.length === 0
-    ? `<div class="text-center text-gray-400 py-12 text-sm bg-gray-50 rounded-2xl border border-dashed border-gray-200">暂无卖家发布记录</div>`
+    ? `<div class="text-center text-gray-400 py-12 text-sm bg-gray-50 rounded-2xl border border-dashed border-gray-200">${state.userRole === 'buyer' ? '当前为买家测试账号，因此无发布记录' : '暂无卖家发布记录'}</div>`
     : state.published.map(p => `
       <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100 flex justify-between items-center mb-4 animate-google-in hover:shadow-md transition-shadow">
         <div>
@@ -808,7 +856,7 @@ function renderProfile(el) {
           <div class="w-24 h-24 rounded-full bg-blue-100 border-4 border-blue-50 text-blue-600 flex items-center justify-center text-5xl font-black relative z-10 shadow-inner">👨‍🎓</div>
           <div class="flex-1 text-center md:text-left relative z-10">
              <h1 class="text-3xl font-black text-gray-900 mb-2">${state.user}</h1>
-             <p class="text-blue-600 font-bold text-sm bg-blue-50 inline-block px-4 py-1.5 rounded-full border border-blue-100">统一身份认证·求是学子</p>
+             <p class="${state.userRole === 'seller' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-blue-600 bg-blue-50 border-blue-100'} font-bold text-sm inline-block px-4 py-1.5 rounded-full border">虚拟测试账户</p>
           </div>
           <div class="px-8 py-3.5 bg-rose-50 text-rose-600 rounded-full font-bold cursor-pointer hover:bg-rose-600 hover:text-white transition-all shadow-sm relative z-10" onclick="doLogout()">退出登录系统</div>
        </div>
