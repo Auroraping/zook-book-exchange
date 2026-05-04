@@ -39,22 +39,23 @@ io.on('connection', (socket) => {
 
   // 搜索用户
   socket.on('search_user', (query, callback) => {
-    console.log(`[Socket] Searching for: ${query}`);
-    const results = [];
+    if (!query) return callback([]);
     
+    console.log(`[Socket] Searching for: "${query}"`);
+    const results = [];
     const lowerQuery = query.toLowerCase();
 
-    for (const [id, name] of users.entries()) {
+    // 遍历用户表进行匹配
+    users.forEach((name, id) => {
       if (
-        id.toLowerCase() === lowerQuery || 
-        name.toLowerCase() === lowerQuery || 
+        id.toLowerCase().includes(lowerQuery) || 
         name.toLowerCase().includes(lowerQuery)
       ) {
         results.push({ id, name });
       }
-    }
+    });
     
-    // 限制返回数量，防止列表过长
+    console.log(`[Socket] Found ${results.length} matches for "${query}"`);
     callback(results.slice(0, 10));
   });
 

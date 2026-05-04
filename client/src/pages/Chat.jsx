@@ -137,7 +137,9 @@ const Chat = () => {
     e.preventDefault();
     if (!searchQuery.trim() || !currentUser) return;
 
+    console.log('[Chat] Initiating search for:', searchQuery);
     socket.emit('search_user', searchQuery, (results) => {
+      console.log('[Chat] Search response received:', results);
       if (results && results.length > 0) {
         setSearchResults(results);
       } else {
