@@ -60,7 +60,7 @@ function renderSidebar() {
         <img src="/taosu.png" class="w-8 h-8 object-contain" /><span class="text-[10px] font-bold text-gray-400">桃酥</span>
       </div>
     </div>
-    <div class="w-12 h-12 bg-gray-900 rounded-[16px] flex items-center justify-center text-white shadow-2xl hover:scale-110 transition-transform cursor-pointer text-2xl" onclick="alert('发布功能开发中')">+</div>`;
+    <div class="w-12 h-12 bg-gray-900 rounded-[16px] flex items-center justify-center text-white shadow-2xl hover:scale-110 transition-transform cursor-pointer text-2xl" onclick="navigate('publish')">+</div>`;
 }
 
 function renderTopbar() {
@@ -96,7 +96,8 @@ function navigate(page) {
     case 'cart': renderCart(el); break;
     case 'ai': renderAI(el); break;
     case 'login': renderLogin(el); break;
-    default: el.innerHTML = `<div class="py-40 text-center"><h2 class="text-4xl font-black text-gray-900 mb-4">${page}</h2><p class="text-gray-400 text-lg">该页面功能开发中，请在 React 版本中查看完整体验。</p></div>`;
+    case 'publish': renderPublish(el); break;
+    default: el.innerHTML = `<div class="py-40 flex flex-col items-center text-center animate-google-in"><div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center text-gray-300 mb-8 text-4xl">🚧</div><h2 class="text-3xl font-black text-gray-900 mb-4">${page.toUpperCase()} 模块模拟</h2><p class="text-gray-500 max-w-sm text-lg">这是一个虚拟的原型占位页面。</p></div>`;
   }
   window.scrollTo(0, 0);
 }
@@ -117,7 +118,7 @@ function renderHome(el) {
           </p>
           <div class="flex items-center gap-6">
             <div class="btn-premium !px-12 !py-6 text-xl flex items-center gap-3 cursor-pointer" onclick="navigate('books')">立即探索广场 →</div>
-            <div class="px-10 py-5 rounded-full border-2 border-gray-900 font-bold text-gray-900 hover:bg-gray-900 hover:text-white transition-all text-xl cursor-pointer" onclick="alert('发布功能开发中')">我要出书</div>
+            <div class="px-10 py-5 rounded-full border-2 border-gray-900 font-bold text-gray-900 hover:bg-gray-900 hover:text-white transition-all text-xl cursor-pointer" onclick="navigate('publish')">我要出书</div>
           </div>
           <div class="mt-20 flex flex-col items-center cursor-pointer" onclick="navigate('ai')">
             <div class="relative"><div class="absolute inset-0 bg-orange-400 blur-2xl opacity-20 rounded-full"></div>
@@ -306,6 +307,54 @@ function sendMsg() {
   }, 600);
 }
 
+// ========== 卖家发布流程 ==========
+function renderPublish(el) {
+  el.innerHTML = `
+    <div class="py-12 max-w-2xl mx-auto animate-google-in">
+      <div class="bg-white p-12 rounded-[32px] shadow-xl border border-gray-100">
+        <h2 class="text-3xl font-black text-gray-900 mb-8">发布二手书</h2>
+        <div class="flex flex-col gap-6">
+          <div>
+            <p class="text-sm font-bold text-gray-500 mb-2">书名</p>
+            <input type="text" id="pub-title" placeholder="例如：高等数学（第七版）" class="w-full h-12 border border-gray-200 rounded-lg px-4 outline-none focus:border-blue-500" />
+          </div>
+          <div class="flex gap-4">
+             <div class="flex-1">
+               <p class="text-sm font-bold text-gray-500 mb-2">作者</p>
+               <input type="text" id="pub-author" placeholder="作者姓名" class="w-full h-12 border border-gray-200 rounded-lg px-4 outline-none focus:border-blue-500" />
+             </div>
+             <div class="flex-1">
+               <p class="text-sm font-bold text-gray-500 mb-2">价格 (¥)</p>
+               <input type="text" id="pub-price" placeholder="出售价格" class="w-full h-12 border border-gray-200 rounded-lg px-4 outline-none focus:border-blue-500" />
+             </div>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-gray-500 mb-2">新旧程度</p>
+            <input type="text" id="pub-condition" placeholder="例如：9成新" class="w-full h-12 border border-gray-200 rounded-lg px-4 outline-none focus:border-blue-500" />
+          </div>
+          <div class="bg-gray-900 text-white text-center py-4 rounded-[16px] font-bold cursor-pointer mt-6 shadow-xl hover:scale-105 transition-transform" onclick="doPublish()">确认发布</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function doPublish() {
+  const title = document.getElementById('pub-title').value || '未命名书籍';
+  const price = document.getElementById('pub-price').value || '0';
+  const bookData = { id: 'PUB_' + Date.now(), title: title, price: parseFloat(price), date: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(bookData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'zook_published_' + bookData.id + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  alert('书籍《' + title + '》发布成功！商品数据已通过文件保存。');
+  navigate('books');
+}
+
 // 暴露到全局
 window.navigate = navigate;
 window.doSearch = doSearch;
@@ -315,3 +364,4 @@ window.checkout = checkout;
 window.sendMsg = sendMsg;
 window.sortBooks = sortBooks;
 window.doLogin = doLogin;
+window.doPublish = doPublish;
