@@ -4,17 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>zook | 浙里淘书</title>
+    <link rel="stylesheet" href="/compiled-tailwind.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   </head>
   <body class="bg-gray-50 text-gray-800 font-sans antialiased">
     <div id="root"></div>
     <script>
       window.addEventListener('error', function(e) {
-        document.body.innerHTML += '<div style="color:red; background:white; padding:20px; z-index:9999; position:fixed; top:0; left:0; width:100%;"><h3 style="font-size:20px;">运行崩溃捕获:</h3><pre style="white-space:pre-wrap;">' + e.message + '\n\n' + e.error.stack + '</pre></div>';
+        document.body.innerHTML += '<div style="color:red; background:white; padding:20px; z-index:9999; position:fixed; top:0; left:0; width:100%;"><h3 style="font-size:20px;">运行崩溃捕获:</h3><pre style="white-space:pre-wrap;">' + e.message + '\n\n' + (e.error ? e.error.stack : '') + '</pre></div>';
       });
       window.addEventListener('unhandledrejection', function(e) {
         document.body.innerHTML += '<div style="color:red; background:white; padding:20px; z-index:9999; position:fixed; top:0; left:0; width:100%;"><h3 style="font-size:20px;">Promise崩溃捕获:</h3><pre style="white-space:pre-wrap;">' + e.reason + '</pre></div>';
       });
     </script>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/app.js"></script>
   </body>
 </html>
