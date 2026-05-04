@@ -56,9 +56,14 @@ const Chat = () => {
       if (activeChat) socket.emit('join_room', activeChat.id);
       if (user?.id) {
         socket.emit('join_room', `notify_${user.id}`);
-        socket.emit('register_user', user); // 连接成功后立即注册
+        socket.emit('register_user', user);
       }
     };
+
+    // 如果已经连接，立即同步状态
+    if (socket.connected) {
+      onConnect();
+    }
 
     const onDisconnect = () => {
       console.log('[Chat] Socket disconnected');
