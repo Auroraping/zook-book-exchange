@@ -276,12 +276,15 @@ function checkout() {
         </div>
 
         <div class="flex flex-col gap-3 mb-8">
-           <div class="flex items-center justify-between p-4 border-2 border-blue-600 bg-blue-50 rounded-xl cursor-pointer">
-              <div class="flex items-center gap-3"><span class="text-2xl">🤝</span><span class="font-bold text-blue-900">当面交接 (线下验书后付款)</span></div>
+           <div class="flex items-center justify-between p-4 border-2 border-blue-600 bg-blue-50 rounded-xl cursor-default">
+              <div class="flex items-center gap-3">
+                 <span class="text-2xl">💬</span>
+                 <div class="flex flex-col">
+                    <span class="font-bold text-blue-900">私聊协商交接方式</span>
+                    <span class="text-xs text-blue-600 mt-1">具体时间、地点与付款方式由双方沟通决定</span>
+                 </div>
+              </div>
               <div class="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs">✓</div>
-           </div>
-           <div class="flex items-center justify-between p-4 border border-gray-100 rounded-xl cursor-pointer opacity-80">
-              <div class="flex items-center gap-3"><span class="text-2xl">📍</span><span class="font-bold text-gray-600">定点自提 (私聊发微信收款码)</span></div>
            </div>
         </div>
 
@@ -318,7 +321,7 @@ function finishCheckoutTransaction() {
     record_date: new Date().toLocaleString(),
     items_intended: state.cart.map(b => ({ book_id: b.id, title: b.title, price: b.price })),
     total_estimated_cny: state.cart.reduce((s, b) => s + b.price, 0),
-    handover_method: "当面交接 (线下验书付款)",
+    handover_method: "私聊协商决定",
     trade_status: "INTENTION_CONFIRMED (意向已确认，待线下交易)"
   };
   
@@ -338,7 +341,7 @@ function finishCheckoutTransaction() {
   if (modal) modal.remove();
   
   const titles = state.cart.map(b => '《' + b.title + '》').join('、');
-  const msgText = `您好！我已经生成了线下交易备案凭证（订单尾号 ${orderData.trade_id.slice(-4)}）。<br/>我想购买 ${titles}，预估总计 ¥${orderData.total_estimated_cny}。<br/>请问什么时候方便当面交接呢？`;
+  const msgText = `您好！我已经生成了线下交易备案凭证（订单尾号 ${orderData.trade_id.slice(-4)}）。<br/>我想购买 ${titles}，预估总计 ¥${orderData.total_estimated_cny}。<br/>请问咱们怎么交接比较方便呢？`;
   state.messages.push({text: msgText, sender: 'me'});
   
   state.cart = []; 
