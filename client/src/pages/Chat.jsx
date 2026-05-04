@@ -27,8 +27,8 @@ const Chat = () => {
     let user = JSON.parse(localStorage.getItem('user'));
     if (!user) {
       user = { username: 'Guest_' + Math.floor(Math.random() * 1000), id: 'U' + Math.floor(Math.random() * 1000000) };
-    } else if (!user.id) {
-      // 为旧用户补全 ID
+    } else if (!user.id || user.id === 'me') {
+      // 为旧用户或占位符 ID 补全真正唯一的 ID
       user.id = 'U' + Math.floor(Math.random() * 1000000);
       localStorage.setItem('user', JSON.stringify(user));
     }
