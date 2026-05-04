@@ -401,6 +401,12 @@ function doLogin(role) {
     ];
     state.published = [];
     state.cart = [{ id: 101, title: 'C++ Primer Plus (全新未拆封)', price: 68.00 }];
+    state.messages = [
+      {text: '你好，学长！请问你挂在上面那本《法理学》还在吗？我看成色很新。', sender: 'me'},
+      {text: '在的，那本书我就考前翻了几次，基本没划痕。', sender: 'other'},
+      {text: '太好了，那明天下午玉泉图书馆见可以吗？', sender: 'me'},
+      {text: '没问题，下午两点到四点我都在那边。', sender: 'other'}
+    ];
   } else {
     state.user = '法学大四·卖家测试';
     state.orders = [];
@@ -416,6 +422,12 @@ function doLogin(role) {
         product_info: { title: '法理学（第四版）', price: 25.00, condition: '全新未拆封' },
         system_status: "PUBLISHED (审核通过·已上架)"
       }
+    ];
+    state.messages = [
+      {text: '你好，学长！请问你挂在上面那本《法理学》还在吗？我看成色很新。', sender: 'other'},
+      {text: '在的，那本书我就考前翻了几次，基本没划痕。', sender: 'me'},
+      {text: '太好了，那明天下午玉泉图书馆见可以吗？', sender: 'other'},
+      {text: '没问题，下午两点到四点我都在那边。', sender: 'me'}
     ];
   }
   
