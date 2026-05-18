@@ -1,0 +1,11 @@
+[
+  { "id": "n1", "title": "高数上册期末突击复习提纲（手写扫描版）", "course": "高等数学 I", "author": "考研上岸学姐", "likes": 1245, "isPaid": false, "desc": "涵盖极限、导数、积分三大板块的核心公式和解题思路总结，适合考前两周突击。" },
+  { "id": "n2", "title": "数据结构历年PAT过题代码解析与避坑", "course": "数据结构基础", "author": "玉泉ACM大牛", "likes": 899, "isPaid": true, "desc": "30+道经典PAT题全部AC代码，含详细时间复杂度分析和常见错误归纳。" },
+  { "id": "n3", "title": "微观经济学全本名词解释汇总（考试必背）", "course": "微观经济学", "author": "经济1901_张同学", "likes": 342, "isPaid": false, "desc": "从供需曲线到博弈论，所有可能出名词解释的考点全覆盖。" },
+  { "id": "n4", "title": "线性代数期末考试高频题型全解析", "course": "线性代数", "author": "数学系大佬", "likes": 1087, "isPaid": false, "desc": "行列式、矩阵、特征值三大章节各5道经典高频考题详解。" },
+  { "id": "n5", "title": "大学物理电磁学部分公式推导笔记", "course": "大学物理", "author": "物理系学霸", "likes": 756, "isPaid": true, "desc": "从麦克斯韦方程组到感应电动势，全部公式推导过程手写扫描。" },
+  { "id": "n6", "title": "概率论与数理统计重点知识思维导图", "course": "概率论与数理统计", "author": "统计系小王", "likes": 623, "isPaid": false, "desc": "用XMind制作的全本知识图谱，一张图看清概率论所有考点。" },
+  { "id": "n7", "title": "计算机组成原理流水线与Cache专题", "course": "计算机组成原理", "author": "保研计科生", "likes": 534, "isPaid": true, "desc": "这两部分每年必考大题，笔记含3套真题详解。" },
+  { "id": "n8", "title": "马克思主义基本原理背诵手册", "course": "思想政治", "author": "文科状元选手", "likes": 2100, "isPaid": false, "desc": "全部考试要点浓缩成30页，考前一周背完稳过。" },
+  { "id": "n9", "title": "操作系统进程调度算法图解笔记", "course": "操作系统", "author": "系统架构师", "likes": 478, "isPaid": false, "desc": "FCFS、SJF、优先级、时间片轮转四大算法配图讲解。" }
+]

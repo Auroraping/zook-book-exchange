@@ -1,0 +1,10 @@
+[
+  { "id": "w1", "userId": "u1", "userName": "计科王学长", "title": "数字图像处理 (第4版)", "author": "冈萨雷斯", "priceRange": "30-50", "status": "seeking", "tags": ["教材", "硬核"], "timestamp": "2026-04-21", "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=u1" },
+  { "id": "w2", "userId": "u2", "userName": "经管李学姐", "title": "深度学习", "author": "Ian Goodfellow", "priceRange": "50-80", "status": "seeking", "tags": ["人工智能", "圣经"], "timestamp": "2026-04-22", "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=u2" },
+  { "id": "w3", "userId": "u3", "userName": "软件小哥", "title": "编译原理", "author": "Alfred V. Aho", "priceRange": "20-40", "status": "fulfilled", "tags": ["教材", "龙书"], "timestamp": "2026-04-23", "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=u3" },
+  { "id": "w4", "userId": "u4", "userName": "艺术系小美", "title": "现代艺术150年", "author": "威尔·贡培兹", "priceRange": "30-45", "status": "seeking", "tags": ["课外书", "艺术"], "timestamp": "2026-04-24", "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=u4" },
+  { "id": "w5", "userId": "u5", "userName": "物理系老张", "title": "量子力学教程", "author": "曾谨言", "priceRange": "15-25", "status": "seeking", "tags": ["物理", "考研"], "timestamp": "2026-04-25", "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=u5" },
+  { "id": "w6", "userId": "u1", "userName": "计科王学长", "title": "计算机网络：自顶向下方法", "author": "James F. Kurose", "priceRange": "30-40", "status": "seeking", "tags": ["网安", "经典"], "timestamp": "2026-04-26", "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=u1" },
+  { "id": "w7", "userId": "u6", "userName": "数学系学霸", "title": "高等数学 (第七版)", "author": "同济大学数学系", "priceRange": "10-20", "status": "seeking", "tags": ["数学", "公共课"], "timestamp": "2026-04-27", "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=u6" },
+  { "id": "w8", "userId": "u7", "userName": "理学院小周", "title": "线性代数及其应用", "author": "David C. Lay", "priceRange": "30-45", "status": "seeking", "tags": ["数学", "必修"], "timestamp": "2026-04-28", "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=u7" }
+]
