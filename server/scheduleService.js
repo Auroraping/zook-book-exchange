@@ -20,6 +20,46 @@ function modPow(base, exp, mod) {
   return res;
 }
 
+function getAcademicYearCode() {
+  const now = new Date();
+  const yearStart = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+  return `${yearStart}-${yearStart + 1}`;
+}
+
+function cleanHtmlText(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function writeCrawlerDebugFile(fileName, data) {
+  if (process.env.DEBUG_CRAWLER !== '1') return;
+  fs.writeFileSync(fileName, typeof data === 'string' ? data : JSON.stringify(data, null, 2));
+}
+
+function toAbsoluteJwglxtUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  const normalized = url.startsWith('/jwglxt') ? url : `/jwglxt${url.startsWith('/') ? url : `/${url}`}`;
+  return `https://zdbk.zju.edu.cn${normalized}`;
+}
+
+function withMenuParams(url, username) {
+  const target = new URL(url);
+  if (!target.searchParams.has('gnmkdm')) target.searchParams.set('gnmkdm', 'N253535');
+  if (!target.searchParams.has('su')) target.searchParams.set('su', username);
+  return target.toString();
+}
+
 /**
  * 校验当前会话连接是否依然有效
  */
@@ -137,9 +177,7 @@ export async function fetchSchedule(username, password) {
   const instance = await getAuthenticatedInstance(username, password);
 
   // ===== 5. 自动获取学年码 =====
-  const now = new Date();
-  const yearStart = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
-  const xnm = `${yearStart}-${yearStart + 1}`; // 如 "2025-2026"
+  const xnm = getAcademicYearCode(); // 如 "2025-2026"
 
   const scheduleUrl = `https://zdbk.zju.edu.cn/jwglxt/kbcx/xskbcx_cxXsKb.html?gnmkdm=N253508&su=${username}`;
   console.log(`[Schedule] 正在拉取用户 ${username} 的全年课表 (学年码:${xnm})...`);
@@ -181,9 +219,9 @@ export async function fetchSchedule(username, password) {
 export async function fetchTextbooks(username, password) {
   const instance = await getAuthenticatedInstance(username, password);
 
-  // ===== 5. 抓取教材预订物理页面 =====
-  const textbookUrl = `https://zdbk.zju.edu.cn/jwglxt/xsxjc/xsxjc_cxXsjcIndex.html?gnmkdm=N253535&layout=default&su=${username}`;
-  console.log(`[Textbooks] 正在请求教材预订结果页面 (${textbookUrl})...`);
+  // ===== 5. 抓取教材预订入口页：路径必须是 XsxjcIndex，不能写成 XsjcIndex =====
+  const textbookUrl = `https://zdbk.zju.edu.cn/jwglxt/xsxjc/xsxjc_cxXsxjcIndex.html?gnmkdm=N253535&layout=default&su=${username}`;
+  console.log(`[Textbooks] 正在请求教材预订入口页面 (${textbookUrl})...`);
 
   const textbookResponse = await instance.get(textbookUrl, {
     headers: {
@@ -192,14 +230,32 @@ export async function fetchTextbooks(username, password) {
     validateStatus: (s) => s >= 200 && s < 500,
   });
 
-  // 落盘保存
-  fs.writeFileSync('raw_textbooks.html', textbookResponse.data);
+  // 调试时可通过 DEBUG_CRAWLER=1 落盘保存原始页面
+  writeCrawlerDebugFile('raw_textbooks.html', textbookResponse.data);
   console.log(`[Textbooks] 成功拉取真实教材网页 HTML，大小: ${textbookResponse.data.length} 字节`);
 
-  const textbooks = parseTextbooksHtml(textbookResponse.data);
-  console.log(`[Textbooks] 成功通过正则引擎在教务系统中清洗出 ${textbooks.length} 条真实教材数据`);
+  const unavailableReason = extractTextbookUnavailableReason(textbookResponse.data);
+  let textbooks = parseTextbooksHtml(textbookResponse.data);
+  let gridResult = { textbooks: [], unavailableReason: '' };
+  if (textbooks.length === 0) {
+    gridResult = await fetchTextbooksFromGridApis(instance, username, textbookResponse.data);
+    textbooks = gridResult.textbooks;
+  }
+  console.log(`[Textbooks] 成功清洗出 ${textbooks.length} 条真实教材数据`);
 
-  return { textbooks };
+  const usableCount = textbooks.filter(hasConcreteTextbookName).length;
+  const message = usableCount > 0
+    ? `已从教务网同步 ${usableCount} 条官方教材记录`
+    : textbooks.length > 0
+      ? `教务网已返回 ${textbooks.length} 门课程，但教材名称、作者、出版社等详情字段为空，可能尚未开放预订或任课教师未填写教材。`
+    : (gridResult.unavailableReason || unavailableReason || '当前没有从教务网同步到官方教材记录');
+
+  return {
+    textbooks,
+    sourceUrl: textbookUrl,
+    unavailableReason: usableCount > 0 ? '' : message,
+    message,
+  };
 }
 
 /**
@@ -207,7 +263,7 @@ export async function fetchTextbooks(username, password) {
  */
 function parseScheduleData(rawData, username) {
   const kbList = rawData.kbList || rawData.kblist || [];
-  fs.writeFileSync('raw_schedule.json', JSON.stringify(rawData, null, 2));
+  writeCrawlerDebugFile('raw_schedule.json', rawData);
 
   if (!kbList || kbList.length === 0) {
     console.log('[Schedule] 课表数据为空，可能是学期尚未开始或选课未完成');
@@ -316,19 +372,359 @@ function parseScheduleData(rawData, username) {
 /**
  * 解析教务系统教材预订 HTML 结构
  */
+function extractTextbookUnavailableReason(html) {
+  const text = cleanHtmlText(html);
+  if (text.includes('现在不是预定教材时间')) {
+    return '教务网提示：现在不是预定教材时间，官方教材预订列表暂未开放。';
+  }
+  if (text.includes('运行异常') || text.includes('系统异常')) {
+    return '教务网教材页面当前返回系统异常，暂时无法同步官方教材。';
+  }
+  return '';
+}
+
+async function fetchTextbookScripts(instance, indexHtml) {
+  const scripts = [];
+  const scriptRegex = /<script[^>]+src=["']([^"']*xsxjc[^"']*\.js[^"']*)["'][^>]*>/gi;
+  let match;
+  while ((match = scriptRegex.exec(indexHtml)) !== null) {
+    const url = toAbsoluteJwglxtUrl(match[1]);
+    try {
+      const response = await instance.get(url, {
+        validateStatus: (s) => s >= 200 && s < 500,
+      });
+      if (response.status === 200 && typeof response.data === 'string') {
+        scripts.push(response.data);
+      }
+    } catch (e) {
+      console.warn(`[Textbooks] 教材业务脚本读取失败 ${url}: ${e.message}`);
+    }
+  }
+  return scripts;
+}
+
+async function fetchTextbooksFromGridApis(instance, username, indexHtml) {
+  const base = 'https://zdbk.zju.edu.cn/jwglxt';
+  const xnm = getAcademicYearCode();
+  const endpointSet = new Set([
+    '/xsxjc/xsxjc_cxXsxjcIndex.html?doType=query',
+    '/xsxjc/xsxjc_cxXsxjc.html',
+    '/xsxjc/xsxjc_cxXsXjc.html',
+    '/xsxjc/xsxjc_cxXsxjcxx.html',
+    '/xsxjc/xsxjc_cxXsxjcList.html',
+  ]);
+
+  const scripts = await fetchTextbookScripts(instance, indexHtml);
+  const searchableText = [indexHtml, ...scripts].join('\n');
+  const urlRegex = /(?:url|href|action)\s*[:=]\s*['"]([^'"]*xsxjc[^'"]*)['"]/gi;
+  let match;
+  while ((match = urlRegex.exec(searchableText)) !== null) {
+    endpointSet.add(match[1]);
+  }
+
+  const pathRegex = /['"]([^'"]*\/xsxjc\/[^'"]+)['"]/gi;
+  while ((match = pathRegex.exec(searchableText)) !== null) {
+    endpointSet.add(match[1]);
+  }
+
+  const endpoints = Array.from(endpointSet).map((item) => {
+    if (item.startsWith('http')) return item;
+    const path = item.startsWith('/jwglxt') ? item.slice('/jwglxt'.length) : item;
+    return `${base}${path.startsWith('/') ? path : `/${path}`}`;
+  });
+
+  const postData = {
+    xnm,
+    xqm: '',
+    page: 1,
+    rows: 200,
+    sidx: '',
+    sord: 'asc',
+    _search: false,
+    nd: Date.now()
+  };
+
+  for (const endpoint of endpoints) {
+    if (!endpoint.includes('cxXsxjcIndex') && !endpoint.includes('doType=query')) continue;
+    const url = withMenuParams(endpoint, username);
+    try {
+      for (const method of ['post', 'get']) {
+        const response = method === 'post'
+          ? await instance.post(url, new URLSearchParams(postData).toString(), {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Referer': `https://zdbk.zju.edu.cn/jwglxt/xsxjc/xsxjc_cxXsxjcIndex.html?gnmkdm=N253535&layout=default&su=${username}`,
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            validateStatus: (s) => s >= 200 && s < 500,
+          })
+          : await instance.get(url, {
+            params: postData,
+            headers: {
+              'Referer': `https://zdbk.zju.edu.cn/jwglxt/xsxjc/xsxjc_cxXsxjcIndex.html?gnmkdm=N253535&layout=default&su=${username}`,
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            validateStatus: (s) => s >= 200 && s < 500,
+          });
+
+        writeCrawlerDebugFile('raw_textbooks_grid.json', response.data);
+
+        const courses = typeof response.data === 'object' ? parseTextbookCourseRows(response.data) : [];
+        if (courses.length > 0) {
+          console.log(`[Textbooks] 教材 jqGrid 接口命中: ${method.toUpperCase()} ${url}，课程 ${courses.length} 条`);
+          const details = await fetchTextbookDetails(instance, username, courses);
+          if (details.length > 0) return { textbooks: details, unavailableReason: '' };
+          return {
+            textbooks: courses.map(courseToUnavailableTextbook),
+            unavailableReason: '教务网返回了课程列表，但教材详情为空，可能仍未开放预订或该课程未指定教材。',
+          };
+        }
+
+        const parsed = typeof response.data === 'object'
+          ? parseTextbooksJson(response.data)
+          : parseTextbooksHtml(String(response.data || ''));
+
+        if (parsed.length > 0) {
+          console.log(`[Textbooks] 教材 jqGrid 接口命中: ${method.toUpperCase()} ${url}`);
+          return { textbooks: parsed, unavailableReason: '' };
+        }
+      }
+    } catch (e) {
+      console.warn(`[Textbooks] 尝试教材接口失败 ${url}: ${e.message}`);
+    }
+  }
+
+  return { textbooks: [], unavailableReason: extractTextbookUnavailableReason(indexHtml) };
+}
+
+function parseTextbooksJson(data) {
+  const rows = Array.isArray(data)
+    ? data
+    : (data.rows || data.items || data.list || data.data || []);
+
+  return rows
+    .map((row) => normalizeTextbookRow(row))
+    .filter((item) => item && item.courseName && item.bookName);
+}
+
+function getGridRows(data) {
+  if (Array.isArray(data)) return data;
+  return data?.rows || data?.items || data?.list || data?.data || [];
+}
+
+function parseTextbookCourseRows(data) {
+  return getGridRows(data)
+    .map((row) => normalizeTextbookCourseRow(row))
+    .filter((course) => course.xkkh && course.courseName);
+}
+
+function normalizeTextbookCourseRow(row) {
+  const source = Array.isArray(row?.cell) ? row.cell : row;
+  if (Array.isArray(source)) {
+    return {
+      xkkh: cleanHtmlText(source[0] || row?.id || ''),
+      reserved: cleanHtmlText(source[1] || ''),
+      teacher: cleanHtmlText(source[2] || ''),
+      courseName: cleanHtmlText(source[3] || ''),
+      term: cleanHtmlText(source[4] || ''),
+      classTime: cleanHtmlText(source[5] || ''),
+      location: cleanHtmlText(source[6] || ''),
+      orderTime: cleanHtmlText(source[7] || ''),
+    };
+  }
+
+  const pick = (...keys) => {
+    for (const key of keys) {
+      if (source && source[key] !== undefined && source[key] !== null && cleanHtmlText(source[key])) {
+        return cleanHtmlText(source[key]);
+      }
+    }
+    return '';
+  };
+
+  return {
+    xkkh: pick('xkkh', 'id'),
+    reserved: pick('jcyd'),
+    teacher: pick('jsxm', 'xm', 'teacher', 'rkjs'),
+    courseName: pick('kcmc', 'courseName'),
+    term: pick('xxq', 'xqmmc'),
+    classTime: pick('sksj'),
+    location: pick('skdd'),
+    orderTime: pick('jcydsj', 'ydsj'),
+  };
+}
+
+function courseToUnavailableTextbook(course) {
+  return {
+    courseName: course.courseName,
+    teacher: course.teacher || '暂无',
+    bookName: '教材详情暂未填写',
+    author: '暂无',
+    press: '暂无',
+    version: '暂无',
+    status: course.reserved === '1' ? '已预订' : '未预订',
+    orderTime: course.orderTime || '',
+    xkkh: course.xkkh,
+  };
+}
+
+function hasConcreteTextbookName(item) {
+  const name = cleanHtmlText(item?.bookName);
+  return Boolean(name && name !== '无教材' && name !== '暂无教材详情' && name !== '教材详情暂未填写');
+}
+
+async function fetchTextbookDetails(instance, username, courses) {
+  const detailUrl = withMenuParams('https://zdbk.zju.edu.cn/jwglxt/xsxjc/xsxjc_cxJcxx.html', username);
+  const textbooks = [];
+
+  for (const course of courses.slice(0, 120)) {
+    try {
+      const response = await instance.post(detailUrl, new URLSearchParams({ xkkh: course.xkkh }).toString(), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Referer': `https://zdbk.zju.edu.cn/jwglxt/xsxjc/xsxjc_cxXsxjcIndex.html?gnmkdm=N253535&layout=default&su=${username}`,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        validateStatus: (s) => s >= 200 && s < 500,
+      });
+
+      const parsed = parseTextbookDetailHtml(String(response.data || ''), course);
+      if (process.env.DEBUG_CRAWLER === '1' && textbooks.length === 0) {
+        writeCrawlerDebugFile('raw_textbook_detail.html', String(response.data || ''));
+      }
+      textbooks.push(...parsed);
+    } catch (e) {
+      console.warn(`[Textbooks] 教材详情读取失败 ${course.courseName}: ${e.message}`);
+    }
+  }
+
+  return textbooks.filter((item) => item.courseName && item.bookName);
+}
+
+function parseTextbookDetailHtml(html, course) {
+  const fromTable = parseTextbookDetailTable(html, course);
+  if (fromTable.length > 0) return fromTable;
+
+  const extracted = extractTextbookFromText(cleanHtmlText(html));
+  if (!extracted.bookName || extracted.bookName === '无教材') return [];
+
+  return [{
+    courseName: course.courseName,
+    teacher: course.teacher || extracted.teacher || '暂无',
+    bookName: extracted.bookName,
+    author: extracted.author || '暂无',
+    press: extracted.press || '暂无',
+    version: extracted.version || '暂无',
+    status: course.reserved === '1' ? '已预订' : '未预订',
+    orderTime: course.orderTime || extracted.orderTime || '',
+    isbn: extracted.isbn || '',
+    price: extracted.price || '',
+    xkkh: course.xkkh,
+  }];
+}
+
+function parseTextbookDetailTable(html, course) {
+  const rows = [];
+  const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+  let match;
+
+  while ((match = trRegex.exec(html)) !== null) {
+    const cells = [];
+    const cellRegex = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi;
+    let cellMatch;
+    while ((cellMatch = cellRegex.exec(match[1])) !== null) {
+      cells.push(cleanHtmlText(cellMatch[1]));
+    }
+
+    const joined = cells.join(' ');
+    if (!joined || /教材名称|作者|出版社|版本/.test(joined)) continue;
+    if (cells.length < 2) continue;
+
+    const extracted = extractTextbookFromText(joined, cells);
+    const bookName = extracted.bookName || cells.find((cell) => cell && !cell.includes(course.courseName) && !cell.includes(course.teacher)) || '';
+    if (!bookName || bookName.includes('暂无') || bookName.includes('无教材')) continue;
+
+    rows.push({
+      courseName: course.courseName,
+      teacher: course.teacher || extracted.teacher || '暂无',
+      bookName,
+      author: extracted.author || cells[1] || '暂无',
+      press: extracted.press || cells[2] || '暂无',
+      version: extracted.version || cells[3] || '暂无',
+      status: course.reserved === '1' ? '已预订' : '未预订',
+      orderTime: course.orderTime || extracted.orderTime || '',
+      isbn: extracted.isbn || '',
+      price: extracted.price || '',
+      xkkh: course.xkkh,
+    });
+  }
+
+  return rows;
+}
+
+function normalizeTextbookRow(row) {
+  const source = Array.isArray(row?.cell) ? row.cell : row;
+  if (Array.isArray(source)) {
+    const text = source.map(cleanHtmlText).join(' ');
+    return extractTextbookFromText(text, source);
+  }
+
+  const pick = (...keys) => {
+    for (const key of keys) {
+      if (source && source[key] !== undefined && source[key] !== null && cleanHtmlText(source[key])) {
+        return cleanHtmlText(source[key]);
+      }
+    }
+    return '';
+  };
+
+  const joined = Object.values(source || {}).map(cleanHtmlText).join(' ');
+  const extracted = extractTextbookFromText(joined);
+  const bookName = pick('jcmc', 'jcmcText', 'jcmcstr', 'jcxx', 'textbookName', 'bookName') || extracted.bookName;
+  const courseName = pick('kcmc', 'kch', 'courseName', 'kcmcText') || extracted.courseName;
+
+  if (!bookName && !courseName) return null;
+  return {
+    courseName,
+    teacher: pick('jsxm', 'xm', 'teacher', 'rkjs') || extracted.teacher,
+    bookName: bookName || '无教材',
+    author: pick('zz', 'author', 'jczz') || extracted.author || '暂无',
+    press: pick('cbs', 'press', 'publisher') || extracted.press || '暂无',
+    version: pick('bb', 'bc', 'version') || extracted.version || '1',
+    status: pick('zt', 'sfyd', 'ydzt', 'status') || extracted.status || '未预定',
+    orderTime: pick('ydsj', 'orderTime') || extracted.orderTime || '',
+    isbn: pick('isbn', 'ISBN') || extracted.isbn || '',
+    price: pick('dj', 'jcdj', 'price') || extracted.price || ''
+  };
+}
+
+function extractTextbookFromText(text, cells = []) {
+  const cleaned = cleanHtmlText(text);
+  const take = (labels) => {
+    const labelGroup = labels.join('|');
+    const regex = new RegExp(`(?:${labelGroup})[：:]\\s*(.*?)(?=\\s*(教材名称|课程名称|课程|教师|任课教师|作者|出版社|版本|ISBN|定价|价格|状态|预订|$))`, 'i');
+    const match = cleaned.match(regex);
+    return match ? match[1].trim() : '';
+  };
+
+  return {
+    courseName: take(['课程名称', '课程']) || cleanHtmlText(cells[1]),
+    teacher: take(['任课教师', '教师']) || cleanHtmlText(cells[0]),
+    bookName: take(['教材名称', '教材', '书名']) || cleanHtmlText(cells[3]),
+    author: take(['作者']),
+    press: take(['出版社']),
+    version: take(['版本', '版次']),
+    status: take(['状态', '预订状态']),
+    orderTime: take(['预订时间', '时间']),
+    isbn: take(['ISBN', 'isbn']),
+    price: take(['定价', '价格'])
+  };
+}
+
 function parseTextbooksHtml(html) {
   const textbooks = [];
   const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
   let match;
-  
-  const clean = (str) => {
-    if (!str) return '';
-    return str
-      .replace(/<[^>]+>/g, '')
-      .replace(/&nbsp;/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  };
   
   while ((match = trRegex.exec(html)) !== null) {
     const trContent = match[1];
@@ -350,12 +746,12 @@ function parseTextbooksHtml(html) {
       
       if (detailsIndex !== -1) {
         const detailsRaw = tds[detailsIndex];
-        const text = clean(detailsRaw);
+        const text = cleanHtmlText(detailsRaw);
         
-        const courseName = clean(tds[detailsIndex - 2] || tds[1] || '');
-        const teacher = clean(tds[detailsIndex - 3] || tds[0] || '');
-        const orderTime = clean(tds[detailsIndex - 1] || tds[2] || '');
-        const status = clean(tds[detailsIndex + 1] || tds[4] || '未预定');
+        const courseName = cleanHtmlText(tds[detailsIndex - 2] || tds[1] || '');
+        const teacher = cleanHtmlText(tds[detailsIndex - 3] || tds[0] || '');
+        const orderTime = cleanHtmlText(tds[detailsIndex - 1] || tds[2] || '');
+        const status = cleanHtmlText(tds[detailsIndex + 1] || tds[4] || '未预定');
         
         if (courseName && !courseName.includes('课程') && !courseName.includes('教师')) {
           const nameMatch = text.match(/教材名称[：:]\s*(.*?)(?=\s*(作者|出版社|版本|$))/i);

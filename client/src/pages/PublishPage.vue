@@ -1,11 +1,16 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Camera, UploadCloud, Info, BookOpen, CheckCircle2 } from 'lucide-vue-next'
 
 const publishMode = ref('scan')
 const isSuccess = ref(false)
+const tags = ref([])
 
-const tags = ['全新未拆封', '有划线笔记', '9成新', '学霸笔记版']
+onMounted(async () => {
+  const res = await fetch('/data/ui.json')
+  const ui = await res.json()
+  tags.value = ui.publishTags || []
+})
 </script>
 
 <template>

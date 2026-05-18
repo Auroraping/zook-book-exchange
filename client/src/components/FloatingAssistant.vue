@@ -1,14 +1,21 @@
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 import { X, Send, Sparkles } from 'lucide-vue-next'
+import { postJson } from '../composables/useApi.js'
 
 const isOpen = ref(false)
-const messages = ref([
-  { role: 'ai', content: '你好！我是桃酥，你的浙大淘书智库。有什么我可以帮你的吗？' }
-])
+const messages = ref([])
 const input = ref('')
 const isTyping = ref(false)
 const messagesEnd = ref(null)
+const offlineReply = ref('')
+
+onMounted(async () => {
+  const res = await fetch('/data/ui.json')
+  const ui = await res.json()
+  messages.value = ui.floatingAssistant?.messages || []
+  offlineReply.value = ui.floatingAssistant?.offlineReply || ''
+})
 
 const scrollToBottom = () => {
   nextTick(() => {
@@ -26,15 +33,10 @@ const handleSend = async () => {
   scrollToBottom()
 
   try {
-    const response = await fetch('http://localhost:3001/api/ai/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: msg })
-    })
-    const data = await response.json()
+    const data = await postJson('/api/ai/chat', { message: msg, history: messages.value.slice(0, -1) })
     messages.value.push({ role: 'ai', content: data.reply })
   } catch {
-    messages.value.push({ role: 'ai', content: '抱歉，我的脑子好像断网了...请稍后再试。' })
+    messages.value.push({ role: 'ai', content: offlineReply.value })
   } finally {
     isTyping.value = false
     scrollToBottom()

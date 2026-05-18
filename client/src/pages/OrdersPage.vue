@@ -5,19 +5,17 @@ import { Package, MapPin, CheckCircle2, Clock, XCircle, CreditCard, Star } from 
 
 const router = useRouter()
 const orders = ref([])
+const tabs = ref([])
+const statusInfo = ref({})
 
 onMounted(async () => {
-  const res = await fetch('/data/orders.json')
-  orders.value = await res.json()
+  const [ordersRes, uiRes] = await Promise.all([fetch('/data/orders.json'), fetch('/data/ui.json')])
+  const ui = await uiRes.json()
+  orders.value = await ordersRes.json()
+  tabs.value = ui.orders?.tabs || []
+  statusInfo.value = ui.orders?.statusInfo || {}
 })
 
-const tabs = [
-  { id: 'all', label: '全部订单' },
-  { id: 'unpaid', label: '待支付' },
-  { id: 'pending', label: '待收货' },
-  { id: 'completed', label: '已完成' },
-  { id: 'cancelled', label: '已取消' }
-]
 const activeTab = ref('all')
 
 const filteredOrders = computed(() => {
@@ -26,13 +24,7 @@ const filteredOrders = computed(() => {
 })
 
 const getStatusInfo = (status) => {
-  const map = {
-    unpaid: { label: '待支付', color: 'text-orange-500', bg: 'bg-orange-50', border: 'border-orange-100' },
-    pending: { label: '待收货', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-    completed: { label: '交易完成', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100' },
-    cancelled: { label: '已关闭', color: 'text-gray-400', bg: 'bg-gray-50', border: 'border-gray-100' }
-  }
-  return map[status] || map.cancelled
+  return statusInfo.value[status] || statusInfo.value.cancelled || {}
 }
 </script>
 

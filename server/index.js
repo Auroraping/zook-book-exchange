@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { authenticateZJU } from './authService.js';
 import { fetchSchedule, fetchTextbooks } from './scheduleService.js';
+import { askTaosu } from './aiService.js';
 import { Server } from 'socket.io';
 import http from 'http';
 
@@ -16,6 +17,23 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.json());
+
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    service: 'ZJU Used Book Backend',
+    message: '后端服务运行中。前端请访问 http://127.0.0.1:5173',
+    endpoints: ['/api/health', '/api/login', '/api/schedule', '/api/textbooks', '/api/ai/chat'],
+  });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    service: 'ZJU Used Book Backend',
+    aiModel: process.env.DEEPSEEK_MODEL || 'deepseek-v4-pro',
+  });
+});
 
 // 简单的内存存储
 const messages = [];
@@ -183,27 +201,23 @@ app.post('/api/textbooks', async (req, res) => {
   }
 });
 
-// AI 聊天接口 (模拟)
+// AI 聊天接口：密钥只放在后端环境变量中，前端永不接触
 app.post('/api/ai/chat', async (req, res) => {
-  const { message } = req.body;
-  console.log(`[AI] Thinking about: ${message}`);
-
-  // 模拟 AI 的延迟思考
-  setTimeout(() => {
-    let reply = "";
-    if (message.includes("高数")) {
-      reply = "高数是浙大理科的‘四大天王’之首。学长建议：一定要买带笔记的，尤其是那种大面积红笔纠错的，那都是学霸的血泪经验。";
-    } else if (message.includes("计科") || message.includes("编程")) {
-      reply = "计科的课教材只是参考，最重要的还是多刷 PAT。不过那本《数据结构》的学霸笔记确实很抢手，看到 20 元以下的可以直接秒杀。";
-    } else if (message.includes("你好") || message.includes("在吗")) {
-      reply = "你好呀！我是你的淘书助手‘桃酥’。你可以问我关于教材选择、课程难度或者是省钱攻略的问题哦！";
-    } else {
-      reply = "这个问题很有趣！根据目前的‘浙里淘书’大数据，这本书在紫金港校区的流通率很高，建议你找同校区的卖家，还能省个运费。";
-    }
-    res.json({ reply });
-  }, 1000);
+  try {
+    const result = await askTaosu(req.body || {});
+    res.json({ success: true, ...result });
+  } catch (error) {
+    const status = error.status || 502;
+    console.error('[AI] DeepSeek request failed:', error.message);
+    res.status(status).json({
+      success: false,
+      message: status === 503 ? error.message : '桃酥暂时无法连接模型服务，请稍后再试',
+    });
+  }
 });
 
-server.listen(3001, () => {
-  console.log('ZJU Auth & Chat Proxy Server running at http://localhost:3001');
+const PORT = process.env.PORT || 3001;
+
+server.listen(PORT, () => {
+  console.log(`ZJU Auth & Chat Proxy Server running at http://localhost:${PORT}`);
 });

@@ -1,39 +1,27 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
 import { Send } from 'lucide-vue-next'
 import ChatContactList from '../components/ChatContactList.vue'
 import ChatWindowHeader from '../components/ChatWindowHeader.vue'
 
-const route = useRoute()
 const books = ref([])
 const activeChatId = ref(1)
 const draft = ref('')
 const messagesEnd = ref(null)
+const chats = ref([])
+const chatMessages = ref({})
+const activeChat = ref(null)
+const autoReplies = ref([])
 
 onMounted(async () => {
-  const res = await fetch('/data/books.json')
-  books.value = await res.json()
+  const [booksRes, uiRes] = await Promise.all([fetch('/data/books.json'), fetch('/data/ui.json')])
+  const ui = await uiRes.json()
+  books.value = await booksRes.json()
+  chats.value = ui.chat?.contacts || []
+  chatMessages.value = ui.chat?.messages || {}
+  autoReplies.value = ui.chat?.autoReplies || []
+  activeChat.value = chats.value[0] || null
 })
-
-const chats = ref([
-  { id: 1, name: '计科王学长', time: '10分钟前', unread: 1, bookIdx: 0 },
-  { id: 2, name: '管院小张', time: '1小时前', unread: 0, bookIdx: 3 },
-])
-
-const chatMessages = ref({
-  1: [
-    { id: 'm1', role: 'other', content: '这本高数我确实笔记拉满了，可以再给你便宜 2 块钱。' },
-    { id: 'm2', role: 'me', content: '太感谢了学长！我现在在西区食堂，方便当面买吗？' },
-    { id: 'm3', role: 'other', content: '可以呀，我20分钟后到。紫金港二餐门口见？' },
-  ],
-  2: [
-    { id: 'm4', role: 'other', content: '还在吗？你要的话我就下楼了，紫金港二餐见。' },
-    { id: 'm5', role: 'me', content: '在的在的！马上出发。' },
-  ],
-})
-
-const activeChat = ref(chats.value[0])
 
 const selectChat = (chat) => {
   activeChatId.value = chat.id
@@ -48,8 +36,6 @@ const scrollToBottom = () => {
   })
 }
 
-const currentMessages = ref(chatMessages.value[1])
-
 const sendMessage = () => {
   const text = draft.value.trim()
   if (!text) return
@@ -60,14 +46,7 @@ const sendMessage = () => {
   scrollToBottom()
   // 模拟自动回复
   setTimeout(() => {
-    const replies = [
-      '好的，收到！',
-      '没问题，我一会儿就到。',
-      '这本书确实很不错，你不会后悔的。',
-      '我在紫金港这边，你方便过来吗？',
-      '可以，加我微信详聊吧。',
-    ]
-    const reply = replies[Math.floor(Math.random() * replies.length)]
+    const reply = autoReplies.value[Math.floor(Math.random() * autoReplies.value.length)]
     chatMessages.value[chatId].push({ id: `m-${Date.now() + 1}`, role: 'other', content: reply })
     scrollToBottom()
   }, 1200)

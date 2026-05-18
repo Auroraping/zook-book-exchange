@@ -3,9 +3,11 @@ import { RouterLink, useRoute } from 'vue-router'
 import { Search, Heart, ShoppingCart, CalendarDays, BookOpen, Bell, Plus } from 'lucide-vue-next'
 import { ref, onMounted, onUnmounted } from 'vue'
 import AppLogo from './AppLogo.vue'
+import { useDataLoader } from '../composables/useDataLoader.js'
 
 const route = useRoute()
 const cartCount = ref(0)
+const { data: navItems } = useDataLoader('/data/ui.json', (json) => json.navigation || [])
 
 const updateCart = () => {
   const cart = JSON.parse(localStorage.getItem('cart') || '[]')
@@ -19,16 +21,6 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('cartUpdated', updateCart)
 })
-
-const navItems = [
-  { icon: 'Search', path: '/books', label: '广场', color: 'blue' },
-  { icon: 'Heart', path: '/wish-square', label: '心愿', color: 'purple' },
-  { icon: 'ShoppingCart', path: '/cart', label: '清单', color: 'yellow', hasCount: true },
-  { icon: 'CalendarDays', path: '/schedule', label: '课表', color: 'green' },
-  { icon: 'BookOpen', path: '/community', label: '社区', color: 'blue' },
-  { icon: 'Bell', path: '/chat', label: '消息', color: 'blue' },
-  { icon: 'taosu', path: '/ai-analysis', label: '桃酥', color: 'orange' },
-]
 
 const iconMap = { Search, Heart, ShoppingCart, CalendarDays, BookOpen, Bell }
 

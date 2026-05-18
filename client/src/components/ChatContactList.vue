@@ -1,7 +1,7 @@
 <script setup>
 const props = defineProps({
   chats: { type: Array, required: true },
-  activeChatId: { type: Number, required: true }
+  activeChatId: { type: [Number, String], required: true }
 })
 const emit = defineEmits(['select'])
 </script>

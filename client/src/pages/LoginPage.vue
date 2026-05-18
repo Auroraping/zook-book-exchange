@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Loader2, Info } from 'lucide-vue-next'
 import { useAuth } from '../composables/useAuth.js'
+import { postJson } from '../composables/useApi.js'
 import AppLogo from '../components/AppLogo.vue'
 
 const isLogin = ref(true)
@@ -17,37 +18,28 @@ const handleSubmit = async () => {
   error.value = ''
   isLoading.value = true
   try {
-    const response = await fetch('http://localhost:3001/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: username.value, password: password.value }),
-    })
-    const data = await response.json()
-    if (data.success) {
-      // 保存凭据用于课表拉取
-      localStorage.setItem('zook_username', username.value)
-      localStorage.setItem('zook_password', password.value)
-      
-      // 一键登录实名同步：如果有随登录接口自动带回的实名信息，直接一秒落盘！
-      let displayName = '浙大同学'
-      if (data.user) {
-        if (data.user.realName) {
-          localStorage.setItem('zook_real_name', data.user.realName)
-          displayName = data.user.realName
-        }
-        if (data.user.studentId) localStorage.setItem('zook_student_id', data.user.studentId)
-        if (data.user.college) localStorage.setItem('zook_college', data.user.college)
-        if (data.user.major) localStorage.setItem('zook_major', data.user.major)
-        if (data.user.class) localStorage.setItem('zook_class', data.user.class)
+    const data = await postJson('/api/login', { username: username.value, password: password.value })
+    // 保存凭据用于课表拉取
+    localStorage.setItem('zook_username', username.value)
+    localStorage.setItem('zook_password', password.value)
+
+    // 一键登录实名同步：如果有随登录接口自动带回的实名信息，直接一秒落盘！
+    let displayName = '浙大同学'
+    if (data.user) {
+      if (data.user.realName) {
+        localStorage.setItem('zook_real_name', data.user.realName)
+        displayName = data.user.realName
       }
-      
-      login('user', displayName)
-      router.push('/')
-    } else {
-      error.value = data.message || '学号或密码错误'
+      if (data.user.studentId) localStorage.setItem('zook_student_id', data.user.studentId)
+      if (data.user.college) localStorage.setItem('zook_college', data.user.college)
+      if (data.user.major) localStorage.setItem('zook_major', data.user.major)
+      if (data.user.class) localStorage.setItem('zook_class', data.user.class)
     }
-  } catch {
-    error.value = '无法连接到验证服务器，请确保后端已启动'
+
+    login('user', displayName)
+    router.push('/')
+  } catch (err) {
+    error.value = err.message || '无法连接到验证服务器，请确保后端已启动'
   } finally {
     isLoading.value = false
   }

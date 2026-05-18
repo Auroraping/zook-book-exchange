@@ -19,6 +19,7 @@ const routes = [
       { path: 'schedule', component: () => import('../pages/SchedulePage.vue') },
       { path: 'ai-analysis', component: () => import('../pages/AiAnalysisPage.vue') },
       { path: 'community', component: () => import('../pages/CommunityPage.vue') },
+      { path: 'community/note/:id', component: () => import('../pages/CommunityNotePage.vue') },
       { path: 'achievements', component: () => import('../pages/AchievementsPage.vue') },
       { path: 'admin', component: () => import('../pages/AdminPage.vue') },
       { path: 'cart', component: () => import('../pages/CartPage.vue') },

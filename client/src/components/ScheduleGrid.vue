@@ -1,39 +1,18 @@
 <script setup>
 import { computed } from 'vue'
 import { MapPin, Clock } from 'lucide-vue-next'
+import { useDataLoader } from '../composables/useDataLoader.js'
 
 const props = defineProps({
   courses: { type: Array, required: true },
   selectedCourse: { type: Object, default: null }
 })
 const emit = defineEmits(['select'])
+const { data: scheduleUi } = useDataLoader('/data/ui.json', (json) => json.schedule || {}, {})
 
-// 7 天完整显示 (周一到周日)
-const days = ['一', '二', '三', '四', '五', '六', '日']
-
-// 浙大官方 13 节课时间表
-const periodTimes = {
-  1: '08:00',
-  2: '08:50',
-  3: '10:00',
-  4: '10:50',
-  5: '11:40',
-  6: '13:25',
-  7: '14:15',
-  8: '15:05',
-  9: '16:15',
-  10: '17:05',
-  11: '18:50',
-  12: '19:40',
-  13: '20:30'
-}
-
-const typeColors = {
-  '公共必修': 'bg-blue-50 border-blue-200 text-blue-700',
-  '专业必修': 'bg-purple-50 border-purple-200 text-purple-700',
-  '大类必修': 'bg-emerald-50 border-emerald-200 text-emerald-700',
-  '专业选修': 'bg-orange-50 border-orange-200 text-orange-700',
-}
+const days = computed(() => scheduleUi.value.days || [])
+const periodTimes = computed(() => scheduleUi.value.periodTimes || {})
+const typeColors = computed(() => scheduleUi.value.typeColors || {})
 
 // 智能寻址转换：计算该课程在 1-13 行坐标下的实际起点行 index (1-indexed)
 const getRealStartPeriod = (c) => {

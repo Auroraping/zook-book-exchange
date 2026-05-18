@@ -1,13 +1,15 @@
 <script setup>
+import { ref, onMounted } from 'vue'
 import { Trophy, BookOpen, Star, Flame } from 'lucide-vue-next'
 
-const achievements = [
-  { title: '初出茅庐', desc: '完成第一笔交易', icon: 'Star', unlocked: true },
-  { title: '淘书达人', desc: '累计交易 5 本书籍', icon: 'BookOpen', unlocked: true },
-  { title: '知识传灯人', desc: '累计出售 10 本书籍', icon: 'Flame', unlocked: false },
-  { title: '桃酥好友', desc: '使用 AI 助手 10 次', icon: 'Star', unlocked: false },
-]
+const achievements = ref([])
 const iconMap = { Star, BookOpen, Flame, Trophy }
+
+onMounted(async () => {
+  const res = await fetch('/data/ui.json')
+  const ui = await res.json()
+  achievements.value = ui.achievements || []
+})
 </script>
 
 <template>

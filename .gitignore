@@ -10,9 +10,16 @@ client/dist/
 # Logs
 *.log
 logs/
+server/raw_*.json
+server/raw_*.html
 
 # Local env files
+.env
+.env.*
 .env*.local
+!.env.example
+!server/.env.example
+!client/.env.example
 
 # Editor files
 .vscode/
