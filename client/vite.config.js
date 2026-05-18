@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
-  // No React plugin - pure JS mode
+  plugins: [vue()],
 })

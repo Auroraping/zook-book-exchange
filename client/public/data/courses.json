@@ -1,0 +1,13 @@
+[
+  { "id": "c1", "name": "高等数学 I", "term": "大二春夏学期", "type": "公共必修", "day": 1, "period": 1, "duration": 2, "teacher": "王教授", "location": "紫金港 东1-201", "bookIds": ["b1", "b5"] },
+  { "id": "c2", "name": "微观经济学", "term": "大二春夏学期", "type": "大类必修", "day": 2, "period": 3, "duration": 2, "teacher": "李教授", "location": "西溪 文科楼-302", "bookIds": ["b2"] },
+  { "id": "c3", "name": "数据结构基础", "term": "大二春夏学期", "type": "专业必修", "day": 3, "period": 1, "duration": 2, "teacher": "陈教授", "location": "玉泉 永谦-201", "bookIds": ["b3"] },
+  { "id": "c4_1", "name": "管理信息系统", "term": "大二春夏学期", "type": "专业选修", "day": 4, "period": 5, "duration": 1, "teacher": "张教授", "location": "紫金港 东2-301", "bookIds": ["b4"] },
+  { "id": "c4_2", "name": "管理信息系统", "term": "大二春夏学期", "type": "专业选修", "day": 4, "period": 6, "duration": 1, "teacher": "张教授", "location": "紫金港 东2-301", "bookIds": ["b4"] },
+  { "id": "c5", "name": "线性代数", "term": "大二春夏学期", "type": "公共必修", "day": 1, "period": 3, "duration": 2, "teacher": "刘教授", "location": "紫金港 东1-301", "bookIds": ["b5"] },
+  { "id": "c6", "name": "大学物理学", "term": "大二春夏学期", "type": "公共必修", "day": 5, "period": 1, "duration": 2, "teacher": "马教授", "location": "紫金港 东3-101", "bookIds": ["b6"] },
+  { "id": "c7", "name": "操作系统", "term": "大二春夏学期", "type": "专业必修", "day": 2, "period": 1, "duration": 2, "teacher": "周教授", "location": "玉泉 曹光彪-302", "bookIds": ["b7"] },
+  { "id": "c8", "name": "电路原理", "term": "大二春夏学期", "type": "专业必修", "day": 3, "period": 3, "duration": 2, "teacher": "邱教授", "location": "玉泉 永谦-305", "bookIds": ["b8"] },
+  { "id": "c9", "name": "机器学习导论", "term": "大二春夏学期", "type": "专业选修", "day": 4, "period": 1, "duration": 2, "teacher": "吴教授", "location": "紫金港 东5-201", "bookIds": ["b9"] },
+  { "id": "c10", "name": "离散数学", "term": "大二春夏学期", "type": "专业必修", "day": 5, "period": 3, "duration": 2, "teacher": "赵教授", "location": "紫金港 东1-401", "bookIds": ["b10"] }
+]
