@@ -134,6 +134,13 @@ Set-Content -LiteralPath C:\Users\Flow_Young\Desktop\group1\server\.env.local -V
 ) -Encoding UTF8
 ```
 
+更推荐使用仓库提供的一键配置脚本。它会在本机提示输入密钥，并自动生成 `C:\Users\Flow_Young\Desktop\group1\server\.env.local`：
+
+```powershell
+cd C:\Users\Flow_Young\Desktop\group1\server
+.\setup-env.ps1
+```
+
 仓库中只保留 `server/.env.example` 示例文件，真实的 `.env.local` 已被 `.gitignore` 忽略，不会被推送到远程仓库。
 
 如果没有配置 DeepSeek 密钥，桃酥 AI 接口会返回“后端尚未配置 `DEEPSEEK_API_KEY`”，其他前端页面仍可正常查看模拟数据。
