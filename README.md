@@ -118,11 +118,20 @@ Vite 已配置 `/api` 代理，前端请求会转发到 `http://localhost:3001`�
 
 桃酥 AI 由后端读取环境变量调用 DeepSeek，密钥不要写进前端代码。
 
-本地运行时在 `server/.env.local` 中配置：
+本地运行时在绝对路径 `C:\Users\Flow_Young\Desktop\group1\server\.env.local` 中配置：
 
 ```env
 DEEPSEEK_API_KEY=your_deepseek_api_key_here
 DEEPSEEK_MODEL=deepseek-v4-pro
+```
+
+也可以用 PowerShell 直接写入本机环境文件，注意把示例值替换为自己的 DeepSeek 密钥：
+
+```powershell
+Set-Content -LiteralPath C:\Users\Flow_Young\Desktop\group1\server\.env.local -Value @(
+  'DEEPSEEK_API_KEY=your_deepseek_api_key_here',
+  'DEEPSEEK_MODEL=deepseek-v4-pro'
+) -Encoding UTF8
 ```
 
 仓库中只保留 `server/.env.example` 示例文件，真实的 `.env.local` 已被 `.gitignore` 忽略，不会被推送到远程仓库。
@@ -148,7 +157,7 @@ DEEPSEEK_MODEL=deepseek-v4-pro
 知识社区数据位于：
 
 ```text
-client/public/data/notes.json
+C:\Users\Flow_Young\Desktop\group1\client\public\data\notes.json
 ```
 
 当前已模拟六门课程，每门课程两篇笔记：
