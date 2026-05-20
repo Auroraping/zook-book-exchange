@@ -1,159 +1,227 @@
-# 浙里淘书 (zook)
+# 浙里淘书 zook
 
-_浙大二手书知识流转平台_
-
-<p align="center">
-  <img src="./client/public/logo.png" alt="浙里淘书 zook Logo 图标" width="120" />
-</p>
-
-**“浙里淘书” —— 面向浙江大学师生的校园二手书交易与知识流转平台。**
-
-**Slogan：好书淘不尽，浙里 top three。**
-
-本项目旨在通过“互联网 + 校园知识流转”的模式，解决高校学生教材购买成本高、资源匹配效率低、课程资料分散、交易信任不足等痛点。平台以二手教材交易为主线，连接课表推荐、知识社区、消息通知与 AI 选书助手，核心价值在于：**降低教材成本、提升匹配效率、促进知识复用**。
-
----
-
-## 📂 目录结构说明
-
-本项目采用分层化的目录管理规范，各模块职责定义如下：
-
-- **`client/` (前端系统)**
-  - 基于 **Vite + React + Tailwind CSS** 开发的高保真网页端原型。
-  - 覆盖首页、购书广场、书籍详情、发布书籍、购物清单、消息通知、订单评价、个人中心、课表推荐、知识社区与桃酥 AI 助手等核心页面。
-- **`server/` (后端系统)**
-  - 后续后端 API 服务预留目录。
-  - 计划支持校园认证、教材数据持久化、智能搜索、消息通知、订单流转与 AI/RAG 服务接入。
-- **`prototype/` (原型设计)**
-  - 存放 UI/UX 原型设计文档、网页端截图与课堂展示材料。
-  - 当前包含原始原型文档与新版网页端原型截图文档。
-
----
-
-## ✨ 核心特色主线
-
-1. **校园二手书交易**：针对浙大校区分布（紫金港、玉泉、西溪等）提供同校区面交优先策略，降低线下交易成本。
-2. **课表绑定推荐**：围绕课程匹配教材，而不是只靠关键词找书，支持后续对接教务系统课表。
-3. **桃酥 AI 选书助手**：虚拟 IP **桃酥** 作为 AI 知识小助手，帮助用户判断教材是否必买、按预算和课程优先级做购书建议。
-4. **知识社区沉淀**：整合课程笔记、历年真题、复习提纲与学长学姐经验，让二手书交易延伸为知识流转。
-5. **消息通知闭环**：将私信会话、系统通知、订单动态和心愿提醒统一到消息通知入口，支撑买卖双方沟通与履约。
-
----
-
-## 🎨 品牌视觉与 UI 风格
-
-### Logo 资产
-
-| Logo 图标 | 英文字标 | 桃酥 IP |
-| --- | --- | --- |
-| <img src="./client/public/logo.png" alt="zook logo" width="92" /> | <img src="./client/public/zook_text.png" alt="zook wordmark" width="160" /> | <img src="./client/public/taosu.png" alt="桃酥 IP" width="96" /> |
-
-- **组合关系**：`logo.png` 作为品牌图标，`zook_text.png` 作为英文字标，页面中可继续搭配中文名“浙里淘书”。
-- **图形含义**：蓝色书页和放大镜代表“找书/淘书”，黄绿书页代表“书籍与知识流转”，红色循环箭头代表“二手循环、交易闭环与资源复用”。
-- **使用场景**：侧边栏、浏览器图标和小尺寸入口优先使用图标；首页、登录页、展示页可使用“图标 + zook 字标 + 中文名”的完整组合。
-- **基础色板**：沿用 Google 四色体系与中性色，主蓝 `#1a73e8`，红 `#ea4335`，黄 `#fbbc04`，绿 `#34a853`，正文深灰 `#3c4043`，边框灰 `#dadce0`，浅背景 `#f8f9fa`。
-
-### Google 极简 UI 方向
-
-- **整体气质**：白底、轻边框、低饱和阴影、留白明确，优先保证信息清晰和操作效率。
-- **组件风格**：遵循 Material/Google 风格的圆角、图标按钮、搜索框、浅色卡片和清晰状态反馈。
-- **色彩使用**：蓝色作为主行动色，红黄绿作为状态或品牌点缀，避免大面积厚重渐变和过度装饰。
-- **交互原则**：导航、搜索、发布、购物清单、消息通知和 AI 助手入口保持稳定；新增页面优先复用现有布局、按钮、卡片、表单和图标体系。
-
----
-
-## 🧭 当前业务闭环
-
-### 买书流程
-
-1. 通过顶部全局搜索或购书广场查找教材。
-2. 在书籍详情页查看价格、成色、卖家认证与 AI 选书建议。
-3. 加入购物清单或进入消息通知与卖家沟通。
-4. 完成线下面交、订单确认与评价反馈。
-
-### 卖书流程
-
-1. 进入发布书籍页。
-2. 通过截图识别或手动录入教材信息。
-3. 设置价格、成色和补充说明。
-4. 等待买家咨询并完成交易。
-
-### 知识流转流程
-
-1. 通过课表推荐定位课程所需教材。
-2. 使用桃酥 AI 判断教材必要性。
-3. 在知识社区搜索课程笔记与复习资料。
-4. 将教材、资料和交易评价沉淀为平台知识资产。
-
----
-
-## 🤖 虚拟 IP：桃酥
-
-**桃酥** 是 zook 的 AI 知识小助手，定位为“温暖治愈、可信赖、陪伴式”的选书与学习资源助手。
+浙江大学校园二手书交易与知识流转系统。
 
 <p align="center">
-  <img src="./client/public/taosu.png" alt="桃酥 AI 知识小助手" width="150" />
+  <img src="./client/public/logo.png" alt="浙里淘书 zook Logo" width="120" />
 </p>
 
-### 形象设定
-
-- **外观关键词**：桃子造型、柔和橙粉色、头顶绿叶、白色连帽衫、胸口 zook 小标识。
-- **性格关键词**：真诚、热情、耐心、会解释，不替用户强行做决定，而是帮助用户看清教材价值和课程需求。
-- **核心能力**：爱淘书、善连接、有温度；对应发现好书、连接人与书/资料/经验、提供温暖陪伴。
-- **应用场景**：智能问答、找书推荐、知识流转、温暖陪伴、学习助手；可用于 AI 对话页、空状态、引导卡片和推荐提示。
-
-当前前端原型中，桃酥已经以 Chat 工作台形式呈现，包含：
-
-- 教材是否值得购买的解释型问答
-- 按课表、预算、期末复习目标给出购书建议
-- 本地开源大模型与 RAG 知识增强的预留入口
-- 与教材库、课程关联和知识社区的数据连接展示
+**浙里淘书** 面向浙江大学师生，围绕二手教材交易、课表教材推荐、知识社区、消息通知和桃酥 AI 助手，帮助学生降低教材成本、提升找书效率，并把课程资料和经验沉淀下来。
 
 ---
 
-## 🛠️ 快速上手
+## 当前实现
 
-### 预览前端原型
+- **前端**：`client/`，Vue 3 + Vite + Tailwind CSS，使用 Composition API 和 `<script setup>`。
+- **后端**：`server/`，Express + Socket.IO，提供浙大统一身份认证、课表/教材爬虫代理、消息服务和桃酥 AI 代理。
+- **本地数据**：前端模拟数据集中放在 `client/public/data/*.json`，没有依赖数据库。
+- **AI 助手**：桃酥通过后端调用 DeepSeek API，前端不直接接触密钥。
 
-1. 进入 `client` 目录：
+核心页面包括：首页、购书广场、书籍详情、发布书籍、购物清单、订单、消息、个人中心、课表推荐、知识社区、笔记详情和桃酥 AI 对话页。
 
-   ```powershell
-   cd client
-   ```
+---
 
-2. 安装依赖：
+## 目录结构
 
-   ```powershell
-   npm install
-   ```
-
-3. 启动开发服务器：
-
-   ```powershell
-   npm run dev
-   ```
-
-4. 在浏览器中访问：
-
-   ```text
-   http://localhost:5173
-   ```
-
-### 构建检查
-
-```powershell
-cd client
-npm run build
+```text
+group1/
+├─ client/                 # 前端 Vue 应用
+│  ├─ public/data/         # JSON 模拟数据
+│  ├─ public/              # Logo、桃酥形象等静态资源
+│  └─ src/
+│     ├─ components/       # 页面拆分组件
+│     ├─ composables/      # useAuth、useApi、useDataLoader
+│     ├─ pages/            # 路由页面
+│     ├─ router/           # Vue Router
+│     └─ tailwind.css      # Tailwind 入口样式
+├─ server/                 # 后端 Express 服务
+│  ├─ aiService.js         # DeepSeek 后端代理
+│  ├─ authService.js       # 浙大 CAS 登录
+│  ├─ scheduleService.js   # 课表与教材爬虫
+│  └─ index.js             # API 与 Socket.IO 入口
+└─ prototype/              # 原型、截图和展示材料
 ```
 
 ---
 
-## 🎓 团队与归属
+## 启动系统
 
-- **项目名称**：浙里淘书 (zook)
-- **项目定位**：浙大二手书知识流转平台
+### 环境要求
+
+- Node.js 18 或更高版本
+- npm
+- Windows PowerShell 或任意可运行 npm 的终端
+
+以下命令默认项目位于：
+
+```text
+C:\Users\Flow_Young\Desktop\group1
+```
+
+### 首次安装依赖
+
+首次拉取项目后，分别安装前后端依赖：
+
+```powershell
+cd C:\Users\Flow_Young\Desktop\group1\server
+npm install
+```
+
+```powershell
+cd C:\Users\Flow_Young\Desktop\group1\client
+npm install
+```
+
+### 日常启动
+
+请打开两个终端，分别启动后端和前端。
+
+### 1. 启动后端
+
+```powershell
+cd C:\Users\Flow_Young\Desktop\group1\server
+npm start
+```
+
+后端地址：
+
+```text
+http://localhost:3001
+```
+
+健康检查：
+
+```text
+http://localhost:3001/api/health
+```
+
+### 2. 启动前端
+
+```powershell
+cd C:\Users\Flow_Young\Desktop\group1\client
+npm run dev
+```
+
+前端地址：
+
+```text
+http://127.0.0.1:5173
+```
+
+Vite 已配置 `/api` 代理，前端请求会转发到 `http://localhost:3001`。
+
+如果直接打开 `http://localhost:3001`，看到 JSON 状态信息即表示后端运行正常；真正使用系统请打开前端地址 `http://127.0.0.1:5173`。
+
+---
+
+## DeepSeek 配置
+
+桃酥 AI 由后端读取环境变量调用 DeepSeek，密钥不要写进前端代码。
+
+本地运行时在 `server/.env.local` 中配置：
+
+```env
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
+DEEPSEEK_MODEL=deepseek-v4-pro
+```
+
+仓库中只保留 `server/.env.example` 示例文件，真实的 `.env.local` 已被 `.gitignore` 忽略，不会被推送到远程仓库。
+
+如果没有配置 DeepSeek 密钥，桃酥 AI 接口会返回“后端尚未配置 `DEEPSEEK_API_KEY`”，其他前端页面仍可正常查看模拟数据。
+
+---
+
+## 教务功能
+
+后端提供以下教务相关接口：
+
+- `POST /api/login`：浙大统一身份认证登录。
+- `POST /api/schedule`：拉取真实课表。
+- `POST /api/textbooks`：拉取教材预订页面和 jqGrid 课程列表。
+
+教材预订接口会按照教务网真实页面脚本请求 `xsxjc_cxXsxjcIndex.html?doType=query`。如果教务网返回课程但教材详情字段为空，系统会在前端如实提示“教材详情暂未填写”，不会编造官方教材。
+
+---
+
+## 知识社区
+
+知识社区数据位于：
+
+```text
+client/public/data/notes.json
+```
+
+当前已模拟六门课程，每门课程两篇笔记：
+
+- 微积分
+- 线性代数
+- 微观经济学
+- 宏观经济学
+- 概率论与数理统计
+- 毛概
+
+笔记卡片可点击进入详情页：
+
+```text
+/community/note/:id
+```
+
+---
+
+## 构建与检查
+
+前端构建：
+
+```powershell
+cd C:\Users\Flow_Young\Desktop\group1\client
+npm run build
+```
+
+后端语法检查：
+
+```powershell
+cd C:\Users\Flow_Young\Desktop\group1
+node --check server\index.js
+node --check server\scheduleService.js
+node --check server\aiService.js
+```
+
+作业约束已按当前代码整理：
+
+- Vue 页面使用 Composition API 和 `<script setup>`。
+- 前端业务数据放在 `client/public/data/*.json`。
+- 页面被拆分为多个组件，除根/布局外样式使用 scoped。
+- Vue template 已控制在 50 个非空行以内。
+- `client/src` 与核心后端文件不使用 `var`。
+- 自定义 Tailwind 入口已移到 `client/src/tailwind.css`，`client/src/assets` 不放自定义 CSS。
+- 已删除旧 React 备份和旧版 `client/app.js`。
+
+---
+
+## 品牌与功能
+
+### 品牌资产
+
+| Logo | Wordmark | 桃酥 |
+| --- | --- | --- |
+| <img src="./client/public/logo.png" alt="zook logo" width="92" /> | <img src="./client/public/zook_text.png" alt="zook wordmark" width="160" /> | <img src="./client/public/taosu.png" alt="桃酥" width="96" /> |
+
+### 核心功能
+
+1. **二手书交易**：按校区、价格、成色和课程匹配筛选教材。
+2. **课表推荐**：登录后可同步真实课表，并匹配平台在售二手教材。
+3. **知识社区**：沉淀课程笔记、复习重点和学习经验。
+4. **消息通知**：支持私信、系统通知和订单动态。
+5. **桃酥 AI**：既能回答通用问题，也能在教材、课程、交易场景下给出选书建议。
+
+---
+
+## 团队信息
+
+- **项目名称**：浙里淘书 zook
 - **课程归属**：浙江大学《Web 编程》课程作业 - 第一小组
-- **品牌口号**：好书淘不尽，这里 top three
-- **虚拟 IP**：桃酥
+- **项目定位**：浙大二手书知识流转平台
+- **品牌口号**：好书淘不尽，浙里 top three
+- **AI 助手**：桃酥
 
-© 2026 zook / 浙里淘书 - 浙江大学校园二手书知识流转平台
+© 2026 zook / 浙里淘书
