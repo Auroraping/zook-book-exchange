@@ -52,10 +52,10 @@ group1/
 - npm
 - Windows PowerShell 或任意可运行 npm 的终端
 
-以下命令默认项目位于：
+以下命令默认已经进入项目根目录：
 
 ```text
-C:\Users\Flow_Young\Desktop\group1
+group1/
 ```
 
 ### 首次安装依赖
@@ -63,12 +63,12 @@ C:\Users\Flow_Young\Desktop\group1
 首次拉取项目后，分别安装前后端依赖：
 
 ```powershell
-cd C:\Users\Flow_Young\Desktop\group1\server
+cd server
 npm install
 ```
 
 ```powershell
-cd C:\Users\Flow_Young\Desktop\group1\client
+cd client
 npm install
 ```
 
@@ -79,7 +79,7 @@ npm install
 ### 1. 启动后端
 
 ```powershell
-cd C:\Users\Flow_Young\Desktop\group1\server
+cd server
 npm start
 ```
 
@@ -98,7 +98,7 @@ http://localhost:3001/api/health
 ### 2. 启动前端
 
 ```powershell
-cd C:\Users\Flow_Young\Desktop\group1\client
+cd client
 npm run dev
 ```
 
@@ -118,7 +118,7 @@ Vite 已配置 `/api` 代理，前端请求会转发到 `http://localhost:3001`�
 
 桃酥 AI 由后端读取环境变量调用 DeepSeek，密钥不要写进前端代码。
 
-本地运行时在绝对路径 `C:\Users\Flow_Young\Desktop\group1\server\.env.local` 中配置：
+本地运行时在 `server/.env.local` 中配置：
 
 ```env
 DEEPSEEK_API_KEY=your_deepseek_api_key_here
@@ -128,16 +128,17 @@ DEEPSEEK_MODEL=deepseek-v4-pro
 也可以用 PowerShell 直接写入本机环境文件，注意把示例值替换为自己的 DeepSeek 密钥：
 
 ```powershell
-Set-Content -LiteralPath C:\Users\Flow_Young\Desktop\group1\server\.env.local -Value @(
+cd server
+Set-Content -LiteralPath .env.local -Value @(
   'DEEPSEEK_API_KEY=your_deepseek_api_key_here',
   'DEEPSEEK_MODEL=deepseek-v4-pro'
 ) -Encoding UTF8
 ```
 
-更推荐使用仓库提供的一键配置脚本。它会在本机提示输入密钥，并自动生成 `C:\Users\Flow_Young\Desktop\group1\server\.env.local`：
+更推荐使用仓库提供的一键配置脚本。它会在本机提示输入密钥，并自动生成 `server/.env.local`：
 
 ```powershell
-cd C:\Users\Flow_Young\Desktop\group1\server
+cd server
 .\setup-env.ps1
 ```
 
@@ -164,7 +165,7 @@ cd C:\Users\Flow_Young\Desktop\group1\server
 知识社区数据位于：
 
 ```text
-C:\Users\Flow_Young\Desktop\group1\client\public\data\notes.json
+client/public/data/notes.json
 ```
 
 当前已模拟六门课程，每门课程两篇笔记：
@@ -189,14 +190,13 @@ C:\Users\Flow_Young\Desktop\group1\client\public\data\notes.json
 前端构建：
 
 ```powershell
-cd C:\Users\Flow_Young\Desktop\group1\client
+cd client
 npm run build
 ```
 
 后端语法检查：
 
 ```powershell
-cd C:\Users\Flow_Young\Desktop\group1
 node --check server\index.js
 node --check server\scheduleService.js
 node --check server\aiService.js
