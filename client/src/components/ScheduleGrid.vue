@@ -100,7 +100,7 @@ const isSelected = (course) => {
 
     <!-- 图例 -->
     <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center gap-6 flex-wrap mt-4 rounded-2xl">
-      <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest mr-2">Legend</span>
+      <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest mr-2">图例</span>
       <div v-for="(cls, label) in typeColors" :key="label" class="flex items-center gap-2">
         <div :class="['w-3 h-3 rounded border-2', cls]"></div>
         <span class="text-[10px] font-bold text-gray-500">{{ label }}</span>

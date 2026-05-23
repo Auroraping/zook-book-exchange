@@ -4,27 +4,35 @@ import CartEmpty from '../components/CartEmpty.vue'
 import CartItemList from '../components/CartItemList.vue'
 import CartSuccess from '../components/CartSuccess.vue'
 import CartSummary from '../components/CartSummary.vue'
+import { deleteJson, getJson, postJson } from '../composables/useApi.js'
 
 const cartItems = ref([])
 const isSuccess = ref(false)
 
 onMounted(async () => {
-  const res = await fetch('/data/books.json')
-  const allBooks = await res.json()
   const savedCart = JSON.parse(localStorage.getItem('cart') || '[]')
-  cartItems.value = savedCart.map((id) => allBooks.find((b) => b.id === id)).filter(Boolean)
+  let data = await getJson('/api/cart?userId=me')
+  if (data.bookIds.length === 0 && savedCart.length > 0) {
+    await Promise.all(savedCart.map((bookId) => postJson('/api/cart', { userId: 'me', bookId })))
+    data = await getJson('/api/cart?userId=me')
+  }
+  cartItems.value = data.items
+  localStorage.setItem('cart', JSON.stringify(data.bookIds))
 })
 
-const removeFromCart = (id) => {
+const removeFromCart = async (id) => {
+  const data = await deleteJson(`/api/cart/${id}?userId=me`)
   cartItems.value = cartItems.value.filter((item) => item.id !== id)
-  localStorage.setItem('cart', JSON.stringify(cartItems.value.map((i) => i.id)))
+  localStorage.setItem('cart', JSON.stringify(data.bookIds))
   window.dispatchEvent(new Event('cartUpdated'))
 }
 
 const totalPrice = computed(() => cartItems.value.reduce((sum, item) => sum + item.price, 0))
 
-const submitOrder = () => {
+const submitOrder = async () => {
+  await postJson('/api/cart/checkout', { userId: 'me' })
   isSuccess.value = true
+  cartItems.value = []
   localStorage.setItem('cart', '[]')
   window.dispatchEvent(new Event('cartUpdated'))
 }
@@ -35,7 +43,7 @@ const submitOrder = () => {
   <div v-else class="max-w-6xl mx-auto py-12 animate-google-in">
     <div class="flex items-baseline gap-4 mb-12">
       <h1 class="text-5xl font-normal text-gray-900 tracking-tight">购书清单</h1>
-      <span class="text-xl text-gray-400 font-normal">{{ cartItems.length }} 个项目</span>
+      <span class="text-xl text-gray-400 font-normal">{{ cartItems.length }} 件</span>
     </div>
     <div v-if="cartItems.length > 0" class="grid grid-cols-12 gap-12">
       <CartItemList :items="cartItems" @remove="removeFromCart" />

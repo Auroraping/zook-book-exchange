@@ -10,7 +10,7 @@ const emit = defineEmits(['select'])
   <div class="w-[340px] bg-gray-50/50 border-r border-gray-100 flex flex-col">
     <div class="p-6 border-b border-gray-100">
       <h2 class="font-black text-gray-900">即时通讯</h2>
-      <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Direct Messages</p>
+      <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">私信会话</p>
     </div>
     <div class="flex-1 overflow-y-auto">
       <button

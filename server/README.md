@@ -1,41 +1,75 @@
-# 求书 (ZJU Used Book Platform)—— 后端核心算法与技术规划
+# Flask backend
 
-本项目后端系统计划集成以下核心算法与技术，以实现智能化的校园二手书流通与学术资源管理。
+`server/` 是浙里淘书的后端目录。当前后端使用 Flask，不依赖数据库；可变业务状态通过 `json_store.py` 写入 `client/public/data/*.json`。
 
----
+- `GET /api/health`
+- `POST /api/login`
+- `POST /api/register`
+- `POST /api/schedule`
+- `POST /api/textbooks`
+- `POST /api/ai/chat`
+- `GET /api/ai/config`
+- `POST /api/ai/config`
+- `GET|POST|PATCH /api/books...`
+- `GET|POST|DELETE /api/cart...`
+- `GET|PATCH|POST /api/orders...`
+- `GET|POST /api/wishes`
+- `GET|POST /api/favorites...`
+- `GET|PATCH /api/notifications...`
+- `GET|PATCH /api/notes...`
+- `GET|POST /api/chats...`
 
-## 🛠 核心算法路线图
+`app.py` 同时保留原有的 Socket.IO 内存消息事件：`register_user`、`search_user`、`join_room`、`send_message` 和 `ping_test`。
 
-### 1. 智能 OCR 提取与结构化解析 (Intelligent OCR & Parsing)
-- **业务场景**：识别学生上传的 PDF/图片格式课表，或书籍封面/ISBN 条码。
-- **技术规划**：
-    - 集成 **PaddleOCR** 或 **Tesseract** 进行文字检测与识别。
-    - 结合 **LLM (如 Qwen-VL / GPT-4o)** 对识别出的非结构化文本进行语义提取，自动填入书籍标题、作者、出版社及课程关联信息。
+## Files
 
-### 2. 智慧校园个性化推荐 (Collaborative Filtering)
-- **业务场景**：在“购书大厅”为用户展示“你可能需要的书”。
-- **技术规划**：
-    - **基于课程关联的挖掘**：建立“课程-书籍”知识图谱，通过共同选课数据实现 Item-based 协同过滤。
-    - **地理位置加权算法**：优先推荐处于同一校区（如紫金港、玉泉、西溪等）的书籍订单，降低线下交易成本。
+- `app.py`：Flask 路由和 Socket.IO 入口。
+- `json_store.py`：JSON 文件读写、原子替换、ID 和时间戳工具。
+- `auth_service.py`：浙江大学 CAS 登录认证。
+- `schedule_service.py`：教务课表和官方教材抓取、清洗。
+- `ai_service.py`：DeepSeek 服务端代理。
+- `config.py`：本地环境变量读取和请求头配置。
 
-### 3. AI 教材必要性评分模型 (Necessity Scoring AI)
-- **业务场景**：为学弟学妹提供“避坑指南”，评分书籍是否值得购买。
-- **技术规划**：
-    - **情感分析**：通过 NLP 技术爬取并分析历史课程群聊、BBS 评价中的书籍讨论。
-    - **RAG (检索增强生成)**：基于历年课程大纲（Syllabus）与教师推荐清单，由 AI 判定该书是“官方指定必备”、“参考阅读”还是“非必要”。
+## Run
 
-### 4. 动态价格指导引擎 (Dynamic Pricing Engine)
-- **业务场景**：在发布书籍时为卖家提供合理的建议售价。
-- **技术规划**：
-    - **多因子分级算法**：综合考虑新旧程度（成色因子）、目前库存量（供需系数）及该教材在当前学期的热门程度（时空因子）来实时计算建议价格区间。
+在 `server/` 下安装依赖并启动：
 
----
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python app.py
+```
 
-## 🏗 后端预留技术栈
-- **核心框架**：Node.js (Next.js API Routes / Express)
-- **数据库**：PostgreSQL (关系型数据) + Redis (缓存与消息队列)
-- **AI 接口**：阿里云 DashScope / OpenAI API
-- **对象存储**：用于存储上传的书籍与课表图片
+默认监听 `http://localhost:3001`，前端 Vite 已将 `/api` 代理到这个地址。
 
----
-*浙江大学《Web编程》课程作业 - 第一小组 后端技术预案*
+## Local env
+
+AI 密钥只放在后端本地环境文件中。复制 `.env.example` 或运行：
+
+```powershell
+.\setup-env.ps1
+```
+
+可用变量：
+
+```env
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
+DEEPSEEK_MODEL=deepseek-v4-pro
+DEEPSEEK_API_URL=https://api.deepseek.com/chat/completions
+PORT=3001
+DEBUG_CRAWLER=0
+ZOOK_DATA_DIR=../client/public/data
+ZOOK_ENV_FILE=.env.local
+```
+
+前端 `桃酥 / AI 分析` 页面提供 DeepSeek 密钥配置入口，提交后会调用 `POST /api/ai/config` 并写入 `server/.env.local`。`GET /api/ai/config` 只返回是否已配置、脱敏后的密钥、模型和接口地址，不返回明文密钥。
+
+`ZOOK_DATA_DIR` 可在测试时指向临时 JSON 目录；不配置时默认使用 `client/public/data`。`ZOOK_ENV_FILE` 可在测试时指向临时 `.env.local`，避免把测试密钥写入真实配置。`DEBUG_CRAWLER=1` 时会在 `server/` 下写出抓取调试文件；这些文件已被仓库忽略。
+
+## Main workflows
+
+- 本地注册和 CAS 登录统一返回前端用户对象。
+- 发布书籍默认进入 `pending`，管理员审核通过后变成 `approved`，审核时会触发心愿匹配和通知。
+- 购物清单只允许加入 `approved` 书籍；结算创建 `unpaid` 订单，支付后进入 `pending`，确认后进入 `completed`，取消后进入 `cancelled`。
+- 已完成订单可以评价；收藏、笔记点赞下载、聊天消息和通知已读都会落盘到 JSON。

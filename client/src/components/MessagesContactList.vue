@@ -13,7 +13,7 @@ const emit = defineEmits(['select'])
     <div class="p-6 border-b border-gray-100">
       <div class="flex items-center gap-3 mb-2">
         <div class="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center"><Bell class="w-5 h-5" /></div>
-        <div><h2 class="font-black text-gray-900">消息通知</h2><p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Chats & Updates</p></div>
+        <div><h2 class="font-black text-gray-900">消息通知</h2><p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">会话与动态</p></div>
       </div>
     </div>
     <div class="flex-1 overflow-y-auto">

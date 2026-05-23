@@ -1,5 +1,49 @@
 [
-  { "id": "u1", "name": "计科王学长", "credit": 4.8, "tradeCount": 18, "level": "Lv.4 资深买卖手", "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=u1", "bio": "专注计科专业课教材，诚信交易。", "joinDate": "2025-09-01" },
-  { "id": "u2", "name": "经管李学姐", "credit": 4.9, "tradeCount": 25, "level": "Lv.5 金牌卖家", "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=u2", "bio": "经管学院大四毕业生，全套教材打包优惠。", "joinDate": "2024-03-15" },
-  { "id": "u3", "name": "软件小哥", "credit": 4.5, "tradeCount": 12, "level": "Lv.3 活跃买家", "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=u3", "bio": "软院老铁，求各种编程书籍。", "joinDate": "2025-11-20" }
+  {
+    "id": "u1",
+    "name": "计科王学长",
+    "credit": 4.8,
+    "tradeCount": 18,
+    "level": "Lv.4 资深买卖手",
+    "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=u1",
+    "bio": "专注计科专业课教材，诚信交易。",
+    "joinDate": "2025-09-01"
+  },
+  {
+    "id": "u2",
+    "name": "经管李学姐",
+    "credit": 4.9,
+    "tradeCount": 25,
+    "level": "Lv.5 金牌卖家",
+    "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=u2",
+    "bio": "经管学院大四毕业生，全套教材打包优惠。",
+    "joinDate": "2024-03-15"
+  },
+  {
+    "id": "u3",
+    "name": "软件小哥",
+    "credit": 4.5,
+    "tradeCount": 12,
+    "level": "Lv.3 活跃买家",
+    "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=u3",
+    "bio": "软院老铁，求各种编程书籍。",
+    "joinDate": "2025-11-20"
+  },
+  {
+    "id": "u2026052220370968f9",
+    "username": "3230102355",
+    "name": "3230102355",
+    "realName": "3230102355",
+    "studentId": "3230102355",
+    "college": "浙江大学",
+    "major": "未填写",
+    "class": "",
+    "credit": 5.0,
+    "tradeCount": 0,
+    "level": "Lv.1 新同学",
+    "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=3230102355",
+    "bio": "通过本地 JSON 注册的浙里淘书用户。",
+    "joinDate": "2026-05-22 20:37",
+    "passwordHash": "scrypt:32768:8:1$4imDZKPZkQnSDoYo$925cfbb31068d0f8deec89f9ac5bd99bd28d0c59f53d728b48039b884f2e747d778e01f2186d4a3b7460440b77fe70db01a1dcf3d7f30846a57b756e49f244a8"
+  }
 ]

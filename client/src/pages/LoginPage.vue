@@ -18,7 +18,12 @@ const handleSubmit = async () => {
   error.value = ''
   isLoading.value = true
   try {
-    const data = await postJson('/api/login', { username: username.value, password: password.value })
+    const endpoint = isLogin.value ? '/api/login' : '/api/register'
+    const data = await postJson(endpoint, {
+      username: username.value,
+      password: password.value,
+      name: username.value,
+    })
     // 保存凭据用于课表拉取
     localStorage.setItem('zook_username', username.value)
     localStorage.setItem('zook_password', password.value)
@@ -26,10 +31,8 @@ const handleSubmit = async () => {
     // 一键登录实名同步：如果有随登录接口自动带回的实名信息，直接一秒落盘！
     let displayName = '浙大同学'
     if (data.user) {
-      if (data.user.realName) {
-        localStorage.setItem('zook_real_name', data.user.realName)
-        displayName = data.user.realName
-      }
+      displayName = data.user.realName || data.user.name || displayName
+      localStorage.setItem('zook_real_name', displayName)
       if (data.user.studentId) localStorage.setItem('zook_student_id', data.user.studentId)
       if (data.user.college) localStorage.setItem('zook_college', data.user.college)
       if (data.user.major) localStorage.setItem('zook_major', data.user.major)

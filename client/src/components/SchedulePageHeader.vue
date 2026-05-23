@@ -12,7 +12,7 @@ const emit = defineEmits(['reload'])
 <template>
   <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
     <div>
-      <div class="flex items-center gap-3 mb-3"><div class="w-12 h-[2px] bg-blue-600"></div><span class="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">Schedule Sync</span></div>
+      <div class="flex items-center gap-3 mb-3"><div class="w-12 h-[2px] bg-blue-600"></div><span class="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">课表同步</span></div>
       <h1 class="text-5xl font-black text-gray-900 tracking-tight">课表智能选书</h1>
       <p class="text-gray-500 mt-3 text-lg">绑定本学期课表，同步所需教材。</p>
     </div>

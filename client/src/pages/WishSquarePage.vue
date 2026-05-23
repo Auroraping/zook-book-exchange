@@ -1,13 +1,13 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { Heart, Search, Tag, Clock, CheckCircle2 } from 'lucide-vue-next'
+import { getJson } from '../composables/useApi.js'
 
 const wishes = ref([])
 const searchTerm = ref('')
 
 onMounted(async () => {
-  const res = await fetch('/data/wishes.json')
-  wishes.value = await res.json()
+  wishes.value = (await getJson('/api/wishes')).wishes
 })
 
 const filteredWishes = computed(() => {
@@ -20,7 +20,7 @@ const filteredWishes = computed(() => {
 <template>
   <div class="max-w-5xl mx-auto flex flex-col gap-10 animate-google-in">
     <div class="text-center">
-      <div class="flex items-center justify-center gap-3 mb-4"><div class="w-10 h-[2px] bg-purple-500"></div><span class="text-[10px] font-black text-purple-600 uppercase tracking-[0.3em]">Wish Square</span><div class="w-10 h-[2px] bg-purple-500"></div></div>
+      <div class="flex items-center justify-center gap-3 mb-4"><div class="w-10 h-[2px] bg-purple-500"></div><span class="text-[10px] font-black text-purple-600 uppercase tracking-[0.3em]">求购广场</span><div class="w-10 h-[2px] bg-purple-500"></div></div>
       <h1 class="text-5xl font-black text-gray-900 tracking-tight mb-4">心愿广场</h1>
       <p class="text-lg text-gray-500 max-w-2xl mx-auto">在这里登记你想买的书，桃酥 AI 会在全校范围内帮你实时追踪。一旦有人上架，你将第一时间收到通知。</p>
     </div>

@@ -4,14 +4,16 @@ import { Search, Heart, ShoppingCart, CalendarDays, BookOpen, Bell, Plus } from 
 import { ref, onMounted, onUnmounted } from 'vue'
 import AppLogo from './AppLogo.vue'
 import { useDataLoader } from '../composables/useDataLoader.js'
+import { getJson } from '../composables/useApi.js'
 
 const route = useRoute()
 const cartCount = ref(0)
 const { data: navItems } = useDataLoader('/data/ui.json', (json) => json.navigation || [])
 
-const updateCart = () => {
-  const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-  cartCount.value = cart.length
+const updateCart = async () => {
+  const cart = await getJson('/api/cart?userId=me').catch(() => ({ bookIds: JSON.parse(localStorage.getItem('cart') || '[]') }))
+  cartCount.value = cart.bookIds.length
+  localStorage.setItem('cart', JSON.stringify(cart.bookIds))
 }
 
 onMounted(() => {

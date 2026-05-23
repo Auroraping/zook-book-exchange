@@ -24,7 +24,7 @@ const props = defineProps({
         </div>
         <div class="flex justify-between items-end border-t border-gray-50 pt-6 mt-auto">
           <div>
-            <p class="text-[10px] text-gray-400 font-black uppercase mb-1">Exchange</p>
+            <p class="text-[10px] text-gray-400 font-black uppercase mb-1">转让价</p>
             <span class="text-3xl font-black text-gray-900">¥{{ book.price }}</span>
           </div>
           <div class="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 shadow-xl shadow-blue-500/40">

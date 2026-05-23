@@ -4,6 +4,7 @@ import CommunityEmptyState from '../components/CommunityEmptyState.vue'
 import CommunityFilterBar from '../components/CommunityFilterBar.vue'
 import CommunityHero from '../components/CommunityHero.vue'
 import CommunityNoteCard from '../components/CommunityNoteCard.vue'
+import { getJson } from '../composables/useApi.js'
 
 const notes = ref([])
 const activeFilter = ref('')
@@ -12,10 +13,9 @@ const filters = ref([])
 const courseGroups = ref({})
 
 onMounted(async () => {
-  const [notesRes, uiRes] = await Promise.all([fetch('/data/notes.json'), fetch('/data/ui.json')])
-  const raw = await notesRes.json()
+  const [notesData, uiRes] = await Promise.all([getJson('/api/notes'), fetch('/data/ui.json')])
   const ui = await uiRes.json()
-  notes.value = raw.map((note, index) => ({ ...note, listId: `${note.id}-${index}` }))
+  notes.value = notesData.notes.map((note, index) => ({ ...note, listId: `${note.id}-${index}` }))
   filters.value = ui.community?.filters || []
   courseGroups.value = ui.community?.courseGroups || {}
   activeFilter.value = filters.value[0] || ''
@@ -34,17 +34,19 @@ const filteredNotes = computed(() => {
   })
 })
 
-const filterCounts = computed(() => {
-  return filters.value.reduce((acc, filter) => {
-    acc[filter] = notes.value.filter((note) => matchesFilter(note, filter)).length
-    return acc
-  }, {})
-})
+const filterCounts = computed(() => filters.value.reduce((acc, filter) => {
+  acc[filter] = notes.value.filter((note) => matchesFilter(note, filter)).length
+  return acc
+}, {}))
+
+const runSearch = () => {
+  if (keyword.value.trim()) activeFilter.value = filters.value[0] || ''
+}
 </script>
 
 <template>
   <div class="max-w-7xl mx-auto flex flex-col gap-8 animate-google-in">
-    <CommunityHero v-model:keyword="keyword" />
+    <CommunityHero v-model:keyword="keyword" @search="runSearch" />
     <section class="flex flex-col gap-6">
       <CommunityFilterBar v-model:activeFilter="activeFilter" :filters="filters" :counts="filterCounts" />
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">

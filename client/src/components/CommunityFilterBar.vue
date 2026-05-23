@@ -13,7 +13,7 @@ const emit = defineEmits(['update:activeFilter'])
   <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
     <div>
       <div class="flex items-center gap-2 text-blue-600 text-[10px] font-black uppercase tracking-[0.25em] mb-3">
-        <FileText class="w-4 h-4" /> Course Library
+        <FileText class="w-4 h-4" /> 课程资料库
       </div>
       <h2 class="text-3xl font-black text-gray-900">六门课程资料库</h2>
     </div>

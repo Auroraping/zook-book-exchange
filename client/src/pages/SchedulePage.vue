@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { AlertCircle, Loader2 } from 'lucide-vue-next'
 import { useAuth } from '../composables/useAuth.js'
-import { postJson } from '../composables/useApi.js'
+import { getJson, postJson } from '../composables/useApi.js'
 import ScheduleGrid from '../components/ScheduleGrid.vue'
 import ScheduleBookList from '../components/ScheduleBookList.vue'
 import SchedulePageHeader from '../components/SchedulePageHeader.vue'
@@ -73,8 +73,8 @@ const matchedOfficialTextbook = computed(() => {
 })
 
 onMounted(async () => {
-  const [booksRes, uiRes] = await Promise.all([fetch('/data/books.json'), fetch('/data/ui.json')])
-  books.value = await booksRes.json()
+  const [booksData, uiRes] = await Promise.all([getJson('/api/books?status=approved'), fetch('/data/ui.json')])
+  books.value = booksData.books
   const ui = await uiRes.json()
   scheduleUi.value = ui.schedule || {}
   await loadSchedule()
@@ -171,11 +171,9 @@ const loadSchedule = async () => {
           if (tbData.success && tbData.textbooks) {
             officialTextbooks.value = tbData.textbooks
             officialTextbookStatus.value = tbData.message || tbData.unavailableReason || ''
-            console.log('[Schedule] 成功从教务网实时抓取并解析到 ' + tbData.textbooks.length + ' 本官方教材');
           }
         } catch (e) {
           officialTextbookStatus.value = e.message || '当前无法同步教务官方教材'
-          console.warn('[Schedule] 静默抓取官方教材预订失败:', e.message)
         }
 
         loading.value = false
@@ -183,8 +181,8 @@ const loadSchedule = async () => {
         selectedMiniSemester.value = currentMiniSemester.value
         return
       }
-    } catch (e) {
-      console.warn('[Schedule] 后端不可用，使用模拟数据:', e.message)
+    } catch {
+      error.value = '后端不可用，使用本地模拟课表'
     }
   }
   // 降级到本地模拟数据
@@ -334,12 +332,10 @@ const filteredCourses = computed(() => {
   return merged
 })
 
-const addToCart = (bookId) => {
-  const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-  if (!cart.includes(bookId)) {
-    localStorage.setItem('cart', JSON.stringify([...cart, bookId]))
-    window.dispatchEvent(new Event('cartUpdated'))
-  }
+const addToCart = async (bookId) => {
+  const cart = await postJson('/api/cart', { userId: 'me', bookId })
+  localStorage.setItem('cart', JSON.stringify(cart.bookIds))
+  window.dispatchEvent(new Event('cartUpdated'))
 }
 </script>
 

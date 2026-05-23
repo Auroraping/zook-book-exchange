@@ -1,14 +1,16 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { Search, ArrowRight, Bell, LogOut } from 'lucide-vue-next'
 import { useAuth } from '../composables/useAuth.js'
+import { getJson } from '../composables/useApi.js'
 
 const route = useRoute()
 const router = useRouter()
 const { isLoggedIn, logout } = useAuth()
 
 const searchTerm = ref(new URLSearchParams(route.query).get('q') || '')
+const unreadNotifications = ref(0)
 
 watch(() => route.fullPath, () => {
   searchTerm.value = new URLSearchParams(route.query).get('q') || ''
@@ -18,6 +20,26 @@ const submitSearch = () => {
   const query = searchTerm.value.trim()
   router.push(query ? `/books?q=${encodeURIComponent(query)}` : '/books')
 }
+
+const refreshNotifications = async () => {
+  if (!isLoggedIn.value) {
+    unreadNotifications.value = 0
+    return
+  }
+  const data = await getJson('/api/notifications?userId=me').catch(() => ({ notifications: [] }))
+  unreadNotifications.value = data.notifications.filter((item) => !item.isRead).length
+}
+
+watch(isLoggedIn, refreshNotifications)
+
+onMounted(() => {
+  refreshNotifications()
+  window.addEventListener('notificationsUpdated', refreshNotifications)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('notificationsUpdated', refreshNotifications)
+})
 </script>
 
 <template>
@@ -29,7 +51,7 @@ const submitSearch = () => {
         </div>
         <input type="search" v-model="searchTerm" placeholder="搜索书名、作者、ISBN 或课程关键词" class="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-base text-gray-800 placeholder-gray-400 font-medium" />
         <div class="flex items-center gap-3 pl-3 border-l border-gray-100">
-          <span class="hidden lg:inline text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Global Search</span>
+          <span class="hidden lg:inline text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">全站搜索</span>
           <button type="submit" class="w-10 h-10 rounded-2xl bg-gray-900 text-white flex items-center justify-center hover:bg-blue-600 active:scale-95 transition-all" title="搜索">
             <ArrowRight class="w-5 h-5" />
           </button>
@@ -41,11 +63,11 @@ const submitSearch = () => {
       <div v-else class="flex items-center gap-4">
         <RouterLink to="/chat" :class="['relative w-12 h-12 rounded-[16px] border flex items-center justify-center transition-all shadow-sm', route.path === '/chat' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-white text-gray-400 border-gray-100 hover:text-blue-600 hover:bg-blue-50']" title="消息通知">
           <Bell class="w-5 h-5" />
-          <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
+          <span v-if="unreadNotifications > 0" class="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] leading-4 text-center ring-2 ring-white font-black">{{ unreadNotifications > 9 ? '9+' : unreadNotifications }}</span>
         </RouterLink>
         <div class="text-right hidden xl:block">
-          <p class="text-sm font-bold text-gray-800">Hello, 求是校友</p>
-          <p class="text-[10px] text-emerald-500 font-black uppercase">Verified User</p>
+          <p class="text-sm font-bold text-gray-800">你好，求是校友</p>
+          <p class="text-[10px] text-emerald-500 font-black uppercase">已认证用户</p>
         </div>
         <RouterLink to="/profile" class="w-14 h-14 rounded-[20px] border-4 border-white shadow-2xl overflow-hidden hover:scale-110 transition-all rotate-3">
           <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-full h-full object-cover" />

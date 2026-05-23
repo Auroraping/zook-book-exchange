@@ -1,3 +1,56 @@
 [
-  { "id": "n1", "userId": "me", "type": "wish_match", "title": "心愿达成！", "content": "你关注的《数字图像处理》刚刚上架了，快去看看吧。", "bookId": "b1", "isRead": false, "timestamp": "10分钟前" }
+  {
+    "id": "n202605222038415c02",
+    "userId": "admin",
+    "type": "system",
+    "title": "新书待审核",
+    "content": "《水豆腐师傅》已提交上架审核。",
+    "bookId": "b202605222038418e3a",
+    "tone": "blue",
+    "isRead": false,
+    "timestamp": "2026-05-22 20:38"
+  },
+  {
+    "id": "n202605222037515077",
+    "userId": "me",
+    "type": "system",
+    "title": "订单已创建",
+    "content": "已为你创建 1 笔订单，请在履约中心完成支付。",
+    "bookId": null,
+    "tone": "blue",
+    "isRead": false,
+    "timestamp": "2026-05-22 20:37"
+  },
+  {
+    "id": "n20260522203743859e",
+    "userId": "me",
+    "type": "system",
+    "title": "订单已创建",
+    "content": "已为你创建 1 笔订单，请在履约中心完成支付。",
+    "bookId": null,
+    "tone": "blue",
+    "isRead": false,
+    "timestamp": "2026-05-22 20:37"
+  },
+  {
+    "id": "n202605222037104baa",
+    "userId": "admin",
+    "type": "system",
+    "title": "新用户注册",
+    "content": "3230102355 已创建本地演示账号。",
+    "bookId": null,
+    "tone": "green",
+    "isRead": false,
+    "timestamp": "2026-05-22 20:37"
+  },
+  {
+    "id": "n1",
+    "userId": "me",
+    "type": "wish_match",
+    "title": "心愿达成！",
+    "content": "你关注的《数字图像处理》刚刚上架了，快去看看吧。",
+    "bookId": "b1",
+    "isRead": false,
+    "timestamp": "10分钟前"
+  }
 ]

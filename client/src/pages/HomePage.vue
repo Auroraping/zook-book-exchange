@@ -6,13 +6,14 @@ import { useAuth } from '../composables/useAuth.js'
 import BookCard from '../components/BookCard.vue'
 import HeroSection from '../components/HeroSection.vue'
 import FeatureGrid from '../components/FeatureGrid.vue'
+import { getJson } from '../composables/useApi.js'
 
 const { isLoggedIn } = useAuth()
 const books = ref([])
 
 onMounted(async () => {
-  const res = await fetch('/data/books.json')
-  books.value = await res.json()
+  const data = await getJson('/api/books?status=approved')
+  books.value = data.books
 })
 </script>
 
@@ -26,7 +27,7 @@ onMounted(async () => {
         <div>
           <div class="flex items-center gap-3 mb-4">
             <div class="w-12 h-[2px] bg-blue-600"></div>
-            <span class="text-xs font-black text-blue-600 uppercase tracking-[0.3em]">Trending Now</span>
+            <span class="text-xs font-black text-blue-600 uppercase tracking-[0.3em]">当前热卖</span>
           </div>
           <h2 class="text-6xl font-black text-gray-900 leading-none">正在热卖</h2>
         </div>

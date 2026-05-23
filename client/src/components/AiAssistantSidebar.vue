@@ -10,7 +10,7 @@ import { ChevronRight, Cpu } from 'lucide-vue-next'
         <div class="absolute inset-0 bg-orange-200 blur-3xl opacity-60 rounded-full"></div>
         <img src="/taosu.png" alt="桃酥" class="relative w-32 h-32 object-contain drop-shadow-xl" />
       </div>
-      <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-600 text-[10px] font-black uppercase tracking-widest border border-orange-100">Taosu Chat</span>
+      <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-600 text-[10px] font-black uppercase tracking-widest border border-orange-100">桃酥对话</span>
       <h1 class="mt-3 text-3xl font-black text-gray-900 tracking-tight">桃酥</h1>
       <p class="mt-3 text-sm text-gray-500 leading-relaxed">温暖治愈的 AI 知识小助手。</p>
     </div>

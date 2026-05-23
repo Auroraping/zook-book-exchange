@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { MessageSquare, ShoppingBag } from 'lucide-vue-next'
 
@@ -6,6 +7,7 @@ const props = defineProps({
   book: { type: Object, required: true }
 })
 const emit = defineEmits(['addToCart'])
+const isAvailable = computed(() => props.book.status === 'approved')
 </script>
 
 <template>
@@ -21,8 +23,8 @@ const emit = defineEmits(['addToCart'])
       <span class="text-xl text-gray-400 line-through">原价 ¥{{ book.originalPrice }}</span>
     </div>
     <div class="flex gap-4">
-      <button @click="emit('addToCart')" class="flex-[2] m3-btn-filled !rounded-[24px] !py-5 flex items-center justify-center gap-3 text-lg">
-        <ShoppingBag class="w-6 h-6" /> 加入购书清单
+      <button @click="emit('addToCart')" :disabled="!isAvailable" :class="['flex-[2] m3-btn-filled !rounded-[24px] !py-5 flex items-center justify-center gap-3 text-lg', !isAvailable ? 'opacity-50 cursor-not-allowed' : '']">
+        <ShoppingBag class="w-6 h-6" /> {{ isAvailable ? '加入购书清单' : '暂不可购买' }}
       </button>
       <RouterLink to="/messages" class="flex-1 bg-white border border-gray-200 text-gray-800 !rounded-[24px] flex items-center justify-center gap-3 text-lg hover:bg-gray-50 rounded-3xl py-5">
         <MessageSquare class="w-6 h-6" /> 聊一聊
