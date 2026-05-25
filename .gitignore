@@ -39,3 +39,9 @@ server/raw_*.html
 # OS files
 Thumbs.db
 desktop.ini
+
+# SQLite databases
+*.db
+*.db-wal
+*.db-shm
+
