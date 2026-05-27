@@ -58,7 +58,21 @@ const startChat = async () => {
 
 // “同求此书”
 const coseekWish = async () => {
-  if (!props.w<template>
+  if (!props.wish) return
+  isCoseeking.value = true
+  try {
+    await postJson(`/api/wishes/${props.wish.id}/coseek`)
+    emit('coseek')
+  } catch (err) {
+    console.error('同求失败：', err)
+    alert(err.message || '同求失败，请重试')
+  } finally {
+    isCoseeking.value = false
+  }
+}
+</script>
+
+<template>
   <Teleport to="body">
     <div v-if="isOpen && wish" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
       <!-- 遮罩 -->
