@@ -138,10 +138,12 @@ def current_user_id():
 
 def public_user(user_id):
     if user_id == "me":
+        ui_data = read_json("ui.json", {})
+        default_user = ui_data.get("profile", {}).get("defaultUser", {})
         return {
             "id": "me",
-            "name": "浙大同学",
-            "avatar": "/user_avatar.png",
+            "name": default_user.get("name") or "浙大同学",
+            "avatar": default_user.get("avatar") or "/user_avatar.png",
             "credit": 4.9,
         }
     users = read_json("users.json", [])
@@ -720,7 +722,13 @@ def review_order(order_id):
 
 @app.get("/api/wishes")
 def list_wishes():
-    return jsonify({"success": True, "wishes": read_json("wishes.json", [])})
+    wishes = read_json("wishes.json", [])
+    for wish in wishes:
+        user_id = wish.get("userId") or "me"
+        user = public_user(user_id)
+        wish["userName"] = user.get("name") or wish.get("userName") or "浙大同学"
+        wish["avatar"] = user.get("avatar") or wish.get("avatar") or "/user_avatar.png"
+    return jsonify({"success": True, "wishes": wishes})
 
 
 @app.post("/api/wishes/<wish_id>/coseek")
