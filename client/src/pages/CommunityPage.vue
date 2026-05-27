@@ -53,6 +53,49 @@ const filteredNotes = computed(() => {
 // 计算总页数
 const totalPages = computed(() => Math.ceil(filteredNotes.value.length / pageSize.value))
 
+// 计算可见页码（带省略号，应用级智能展示）
+const visiblePages = computed(() => {
+  const pages = []
+  const total = totalPages.value
+  const current = currentPage.value
+  
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) {
+      pages.push(i)
+    }
+  } else {
+    // 始终展示第一页
+    pages.push(1)
+    
+    let start = Math.max(2, current - 2)
+    let end = Math.min(total - 1, current + 2)
+    
+    // 边界补偿，确保当前页左右两侧页码对称与居中
+    if (current <= 4) {
+      end = 5
+    } else if (current >= total - 3) {
+      start = total - 4
+    }
+    
+    if (start > 2) {
+      pages.push('...')
+    }
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i)
+    }
+    
+    if (end < total - 1) {
+      pages.push('...')
+    }
+    
+    // 始终展示最后一页
+    pages.push(total)
+  }
+  
+  return pages
+})
+
 // 获取当前页的切片数据
 const paginatedNotes = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
@@ -102,19 +145,26 @@ const runSearch = () => {
         </button>
         
         <div class="flex items-center gap-1.5 mx-2">
-          <button 
-            v-for="page in totalPages" 
-            :key="page" 
-            @click="currentPage = page; scrollToTop()"
-            :class="[
-              'w-9 h-9 rounded-2xl text-xs font-black transition-all active:scale-95 flex items-center justify-center',
-              currentPage === page 
-                ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' 
-                : 'bg-white text-gray-400 hover:text-gray-700 border border-gray-100 hover:border-gray-300'
-            ]"
-          >
-            {{ page }}
-          </button>
+          <template v-for="(page, idx) in visiblePages" :key="idx">
+            <span 
+              v-if="page === '...'" 
+              class="w-9 h-9 flex items-center justify-center text-gray-400 text-xs font-black select-none"
+            >
+              ...
+            </span>
+            <button 
+              v-else
+              @click="currentPage = page; scrollToTop()"
+              :class="[
+                'w-9 h-9 rounded-2xl text-xs font-black transition-all active:scale-95 flex items-center justify-center',
+                currentPage === page 
+                  ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' 
+                  : 'bg-white text-gray-400 hover:text-gray-700 border border-gray-100 hover:border-gray-300'
+              ]"
+            >
+              {{ page }}
+            </button>
+          </template>
         </div>
 
         <button 
