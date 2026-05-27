@@ -40,7 +40,15 @@ const markNotificationsRead = async () => {
 const selectChat = (chatId) => {
   activeChatId.value = chatId
   updateActiveChat()
-  if (chatId === 'system') markNotificationsRead()
+  if (chatId === 'system') {
+    markNotificationsRead()
+  } else {
+    const chat = chats.value.find((c) => c.id === chatId)
+    if (chat && chat.unread > 0) {
+      chat.unread = 0
+      window.dispatchEvent(new Event('notificationsUpdated'))
+    }
+  }
 }
 
 const sendMessage = async (text) => {

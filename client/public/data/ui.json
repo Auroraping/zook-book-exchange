@@ -5,7 +5,7 @@
     { "icon": "ShoppingCart", "path": "/cart", "label": "清单", "color": "yellow", "hasCount": true },
     { "icon": "CalendarDays", "path": "/schedule", "label": "课表", "color": "green" },
     { "icon": "BookOpen", "path": "/community", "label": "社区", "color": "blue" },
-    { "icon": "Bell", "path": "/chat", "label": "消息", "color": "blue" },
+    { "icon": "Bell", "path": "/messages", "label": "消息", "color": "blue" },
     { "icon": "taosu", "path": "/ai-analysis", "label": "桃酥", "color": "orange" }
   ],
   "featureCards": [

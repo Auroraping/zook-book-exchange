@@ -26,8 +26,17 @@ const refreshNotifications = async () => {
     unreadNotifications.value = 0
     return
   }
-  const data = await getJson('/api/notifications?userId=me').catch(() => ({ notifications: [] }))
-  unreadNotifications.value = data.notifications.filter((item) => !item.isRead).length
+  try {
+    const [noticesData, chatData] = await Promise.all([
+      getJson('/api/notifications?userId=me').catch(() => ({ notifications: [] })),
+      getJson('/api/chats').catch(() => ({ contacts: [] }))
+    ])
+    const systemUnread = (noticesData.notifications || []).filter((item) => !item.isRead).length
+    const chatUnread = (chatData.contacts || []).reduce((sum, item) => sum + (parseInt(item.unread) || 0), 0)
+    unreadNotifications.value = systemUnread + chatUnread
+  } catch (err) {
+    unreadNotifications.value = 0
+  }
 }
 
 watch(isLoggedIn, refreshNotifications)
@@ -61,7 +70,7 @@ onUnmounted(() => {
     <div class="flex items-center gap-8 ml-12">
       <RouterLink v-if="!isLoggedIn" to="/login" class="btn-premium whitespace-nowrap shadow-2xl">立即开启淘书之旅</RouterLink>
       <div v-else class="flex items-center gap-4">
-        <RouterLink to="/chat" :class="['relative w-12 h-12 rounded-[16px] border flex items-center justify-center transition-all shadow-sm', route.path === '/chat' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-white text-gray-400 border-gray-100 hover:text-blue-600 hover:bg-blue-50']" title="消息通知">
+        <RouterLink to="/messages" :class="['relative w-12 h-12 rounded-[16px] border flex items-center justify-center transition-all shadow-sm', (route.path === '/messages' || route.path === '/notifications') ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-white text-gray-400 border-gray-100 hover:text-blue-600 hover:bg-blue-50']" title="消息通知">
           <Bell class="w-5 h-5" />
           <span v-if="unreadNotifications > 0" class="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] leading-4 text-center ring-2 ring-white font-black">{{ unreadNotifications > 9 ? '9+' : unreadNotifications }}</span>
         </RouterLink>
