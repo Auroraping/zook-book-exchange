@@ -1051,6 +1051,18 @@ def get_chats():
     return jsonify({"success": True, **seed_chat_state()})
 
 
+@app.post("/api/chats/<chat_id>/read")
+def read_chat(chat_id):
+    def update(chat_state):
+        contacts = chat_state.setdefault("contacts", [])
+        for contact in contacts:
+            if str(contact.get("id")) == str(chat_id):
+                contact["unread"] = 0
+        return {"success": True}
+    mutate_json("chat.json", update, {})
+    return jsonify({"success": True})
+
+
 @app.post("/api/user/update")
 def update_user_profile():
     import time

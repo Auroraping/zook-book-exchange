@@ -27,7 +27,16 @@ onMounted(async () => {
   chatMessages.value = chatData.messages || {}
   systemNotifications.value = noticesData.notifications
   updateActiveChat()
-  if (activeChatId.value === 'system') markNotificationsRead()
+  if (activeChatId.value === 'system') {
+    markNotificationsRead()
+  } else {
+    const chat = chats.value.find((c) => c.id === activeChatId.value)
+    if (chat && chat.unread > 0) {
+      chat.unread = 0
+      postJson(`/api/chats/${activeChatId.value}/read`).catch(() => {})
+      window.dispatchEvent(new Event('notificationsUpdated'))
+    }
+  }
 
   // 1. 初始化 Socket.IO 长连接，指向后端服务端口
   socket = io('http://localhost:3001')
@@ -95,6 +104,7 @@ const selectChat = (chatId) => {
     const chat = chats.value.find((c) => c.id === chatId)
     if (chat && chat.unread > 0) {
       chat.unread = 0
+      postJson(`/api/chats/${chatId}/read`).catch(() => {})
       window.dispatchEvent(new Event('notificationsUpdated'))
     }
   }
