@@ -61,8 +61,8 @@ const coseekWish = async () => {
   if (!props.wish) return
   isCoseeking.value = true
   try {
-    await postJson(`/api/wishes/${props.wish.id}/coseek`)
-    emit('coseek')
+    const data = await postJson(`/api/wishes/${props.wish.id}/coseek`)
+    emit('coseek', data.wish)
   } catch (err) {
     console.error('同求失败：', err)
     alert(err.message || '同求失败，请重试')

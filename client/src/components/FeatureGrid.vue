@@ -8,8 +8,8 @@ const iconMap = { ShoppingCart, Upload, FileText, Zap }
 </script>
 
 <template>
-  <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-    <RouterLink v-for="(item, idx) in features" :key="idx" :to="item.path" class="premium-card p-10 group relative overflow-hidden block transition-all hover:scale-[1.02] active:scale-95">
+  <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <RouterLink v-for="(item, idx) in features.filter(f => f.path !== '/ai-analysis')" :key="idx" :to="item.path" class="premium-card p-10 group relative overflow-hidden block transition-all hover:scale-[1.02] active:scale-95">
       <div :class="`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${item.color} opacity-5 group-hover:opacity-10 transition-opacity rounded-bl-[100px]`"></div>
       <div :class="`w-20 h-20 rounded-3xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white mb-8 shadow-lg group-hover:rotate-12 transition-transform duration-500`">
         <component :is="iconMap[item.icon]" class="w-10 h-10" />

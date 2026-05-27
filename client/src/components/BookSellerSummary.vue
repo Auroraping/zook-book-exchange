@@ -21,6 +21,6 @@ const props = defineProps({
         <p class="text-xs text-gray-500 mt-1 font-medium">浙大统一身份认证 · 信用优秀</p>
       </div>
     </div>
-    <RouterLink to="/profile" class="m3-btn-filled !px-5 !py-2 !text-xs">查看主页</RouterLink>
+    <RouterLink :to="`/profile/${book.sellerId || book.seller || 'me'}`" class="m3-btn-filled !px-5 !py-2 !text-xs">查看主页</RouterLink>
   </section>
 </template>

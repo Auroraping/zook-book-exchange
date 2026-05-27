@@ -6,7 +6,8 @@ from datetime import datetime
 from pathlib import Path
 
 # 导入 SQLite 数据库管理器
-from db_manager import db_read_table, db_write_table, init_db
+from db_manager import db_read_table, db_write_table
+from db_init import init_db
 
 # 当 json_store 模块加载时，自动调用并初始化数据库
 init_db()

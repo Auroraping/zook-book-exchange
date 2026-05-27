@@ -19,17 +19,7 @@ import { ArrowRight } from 'lucide-vue-next'
         </RouterLink>
         <RouterLink to="/publish" class="px-10 py-5 rounded-full border-2 border-gray-900 font-bold text-gray-900 hover:bg-gray-900 hover:text-white transition-all text-xl">我要出书</RouterLink>
       </div>
-      <!-- IP形象：桃酥 -->
-      <RouterLink to="/ai-analysis" class="mt-20 flex flex-col items-center group/taosu">
-        <div class="relative group">
-          <div class="absolute inset-0 bg-orange-400 blur-2xl opacity-20 group-hover/taosu:opacity-40 transition-opacity rounded-full"></div>
-          <img src="/taosu.png" alt="桃酥 Taosu" class="w-48 h-48 object-contain relative z-10 mix-blend-multiply group-hover/taosu:scale-105 transition-transform" />
-          <div class="absolute -top-4 -right-20 bg-white p-4 rounded-2xl shadow-xl border border-gray-100 animate-float">
-            <p class="text-xs font-bold text-gray-800 whitespace-nowrap">嗨！我是桃酥~ <br/><span class="text-orange-500">点我进入 AI 助手</span></p>
-            <div class="absolute bottom-[-6px] left-4 w-3 h-3 bg-white border-b border-r border-gray-100 rotate-45"></div>
-          </div>
-        </div>
-      </RouterLink>
+
     </div>
     <div class="absolute top-20 right-[15%] w-32 h-32 bg-blue-100 rounded-[30px] rotate-12 blur-sm -z-10 animate-pulse"></div>
     <div class="absolute bottom-20 left-[15%] w-24 h-24 bg-rose-100 rounded-[20px] -rotate-12 blur-sm -z-10 animate-float"></div>
