@@ -75,7 +75,10 @@ const recordAction = async (action) => {
         <p class="text-gray-500 mt-4 leading-relaxed">{{ note.desc }}</p>
       </div>
       <div class="p-10 flex flex-col gap-7">
-        <section v-for="section in note.sections" :key="section.heading" class="rounded-3xl border border-gray-100 bg-gray-50/60 p-6"><h2 class="text-lg font-black text-gray-900 mb-3">{{ section.heading }}</h2><p class="text-sm text-gray-600 leading-7">{{ section.body }}</p></section>
+        <section v-for="section in note.sections" :key="section.heading" class="rounded-3xl border border-gray-100 bg-gray-50/60 p-6">
+          <h2 class="text-lg font-black text-gray-900 mb-3">{{ section.heading }}</h2>
+          <div class="text-sm text-gray-650 leading-7 rich-content" v-html="section.body"></div>
+        </section>
       </div>
       <div class="px-10 py-6 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4 text-xs font-black text-gray-400">
         <span>作者：{{ note.author }} · 更新：{{ note.updatedAt }} · {{ note.difficulty }}</span>
@@ -84,3 +87,65 @@ const recordAction = async (action) => {
     </article>
   </div>
 </template>
+
+<style scoped>
+.rich-content :deep(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  margin: 1.5rem auto;
+  display: block;
+}
+
+.rich-content :deep(a) {
+  color: #2563eb;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.rich-content :deep(a:hover) {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.rich-content :deep(a.download-file) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  padding: 0.5rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid #dbeafe;
+  margin: 0.5rem 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+}
+
+.rich-content :deep(a.download-file:hover) {
+  background-color: #dbeafe;
+  transform: translateY(-1px);
+  text-decoration: none !important;
+}
+
+.rich-content :deep(div.visibleImage) {
+  display: none;
+}
+
+/* 引用块美化，完美搭配卡片质感 */
+.rich-content :deep(div[style*="background-color"]) {
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  padding: 1.25rem !important;
+  margin: 1.25rem 0 !important;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.01) !important;
+}
+
+.rich-content :deep(article) {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+</style>

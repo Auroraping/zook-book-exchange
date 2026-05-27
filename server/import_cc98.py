@@ -98,10 +98,20 @@ def clean_data():
         if not tags:
             tags = ["学术交流"]
             
+        # 解析原始富文本 HTML 并转换相对资源链接为绝对路径，保持排版与图片渲染
+        content_html = item.get("content", "").strip()
+        if content_html:
+            content_html = content_html.replace('src="/static/images/', 'src="https://www.cc98.org/static/images/')
+            content_html = content_html.replace("src='/static/images/", "src='https://www.cc98.org/static/images/")
+            content_html = content_html.replace('href="/topic/', 'href="https://www.cc98.org/topic/')
+            content_html = content_html.replace("href='/topic/", "href='https://www.cc98.org/topic/")
+        else:
+            content_html = content_text if content_text else "该资源无帖子正文描述，请直接点击下方下载按钮获取真实的物理附件资料。"
+
         sections = []
         sections.append({
             "heading": "楼主分享概述",
-            "body": content_text if content_text else "该资源无帖子正文描述，请直接点击下方下载按钮获取真实的物理附件资料。"
+            "body": content_html
         })
         
         replies = item.get("replies", [])
@@ -151,7 +161,7 @@ def clean_data():
             "author": item.get("userName") or "CC98课友",
             "likes": likes,
             "downloads": downloads,
-            "updatedAt": updated_at,
+            "updatedAt": updatedAt if 'updatedAt' in locals() else updated_at,
             "isPaid": False,
             "tags": tags,
             "desc": desc,
@@ -163,18 +173,23 @@ def clean_data():
         
     print(f"成功转换了 {len(imported_notes)} 条高能真实的 CC98 帖子数据")
     
+    # 覆盖导入逻辑：如果数据库中已经存在相同 id 的 CC98 帖子，用富文本版本的最新内容覆盖更新，避免重复导入的同时升级全量数据
     existing_notes = read_json("notes.json", [])
+    updated_notes = []
+    imported_map = {n["id"]: n for n in imported_notes}
     
-    existing_ids = {n.get("id") for n in existing_notes}
-    new_notes = [n for n in imported_notes if n["id"] not in existing_ids]
+    for note in existing_notes:
+        note_id = note.get("id")
+        if note_id in imported_map:
+            updated_notes.append(imported_map[note_id])
+            del imported_map[note_id]
+        else:
+            updated_notes.append(note)
+            
+    updated_notes.extend(imported_map.values())
     
-    if not new_notes:
-        print("未检测到新增数据（可能已全部导入过）")
-        return
-        
-    combined = existing_notes + new_notes
-    write_json("notes.json", combined)
-    print(f"成功导入 {len(new_notes)} 条真实 CC98 帖子！当前数据库中共有 {len(combined)} 条笔记。")
+    write_json("notes.json", updated_notes)
+    print(f"成功更新与导入了 {len(imported_notes)} 条高能真实的 CC98 帖子数据。当前库中共有 {len(updated_notes)} 条笔记。")
 
 if __name__ == "__main__":
     clean_data()
