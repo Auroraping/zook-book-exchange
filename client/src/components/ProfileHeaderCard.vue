@@ -1,10 +1,12 @@
 <script setup>
 import { RouterLink } from 'vue-router'
-import { Calendar, ShieldCheck, Star } from 'lucide-vue-next'
+import { Calendar, ShieldCheck, Star, Camera } from 'lucide-vue-next'
 
 const props = defineProps({
   profileUser: { type: Object, required: true }
 })
+
+defineEmits(['edit-avatar'])
 </script>
 
 <template>
@@ -13,7 +15,15 @@ const props = defineProps({
     <div class="px-12 pb-8 relative">
       <div class="flex justify-between items-end">
         <div class="flex items-end gap-8 mt-[-60px]">
-          <div class="relative"><img :src="profileUser.avatar" class="w-40 h-40 rounded-3xl border-[6px] border-white shadow-xl bg-white object-cover" /><div v-if="profileUser.credit >= 4.8" class="absolute -bottom-2 -right-2 bg-yellow-400 text-white p-2 rounded-xl shadow-lg border-2 border-white"><Star class="w-5 h-5 fill-current" /></div></div>
+          <div class="relative group cursor-pointer" @click="$emit('edit-avatar')">
+            <img :src="profileUser.avatar" class="w-40 h-40 rounded-3xl border-[6px] border-white shadow-xl bg-white object-cover" />
+            <!-- 高端悬停修改遮罩 -->
+            <div class="absolute inset-[6px] rounded-[18px] bg-black/45 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center gap-1 text-white">
+              <Camera class="w-6 h-6 animate-pulse" />
+              <span class="text-[10px] font-black tracking-widest uppercase">修改头像</span>
+            </div>
+            <div v-if="profileUser.credit >= 4.8" class="absolute -bottom-2 -right-2 bg-yellow-400 text-white p-2 rounded-xl shadow-lg border-2 border-white"><Star class="w-5 h-5 fill-current" /></div>
+          </div>
           <div class="mb-2">
             <div class="flex items-center gap-3 mb-1"><h2 class="text-3xl font-black text-gray-800">{{ profileUser.name }}</h2><span class="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs font-bold rounded border border-blue-100">{{ profileUser.level }}</span></div>
             <p class="text-gray-500 font-medium text-sm mb-3">{{ profileUser.bio }}</p>

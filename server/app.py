@@ -1043,6 +1043,70 @@ def get_chats():
     return jsonify({"success": True, **seed_chat_state()})
 
 
+@app.post("/api/user/update")
+def update_user_profile():
+    import time
+    import uuid
+    # 接收 userId，如果没有传，默认为 'me'
+    user_id = request.form.get("userId") or (request.json.get("userId") if request.is_json else None)
+    if not user_id:
+        user_id = "me"
+
+    avatar_url = None
+
+    # 1. 尝试接收本地上传的图片文件
+    file = request.files.get("file")
+    if file and file.filename:
+        # 确保 uploads 文件夹存在
+        upload_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "client", "public", "uploads")
+        os.makedirs(upload_folder, exist_ok=True)
+        ext = os.path.splitext(file.filename)[1] or ".png"
+        unique_filename = f"avatar_{int(time.time())}_{uuid.uuid4().hex[:6]}{ext}"
+        file_path = os.path.join(upload_folder, unique_filename)
+        file.save(file_path)
+        avatar_url = f"/uploads/{unique_filename}"
+    else:
+        # 2. 尝试从 JSON 获取
+        payload = request_payload()
+        avatar_url = payload.get("avatar")
+
+    if not avatar_url:
+        return jsonify({"success": False, "message": "未提供头像数据"}), 400
+
+    # 3. 覆盖写入 users.json，使其能够持久化到 SQLite 数据库中
+    def update_user_data(users_list):
+        user_item = find_by_id(users_list, user_id)
+        if user_item:
+            user_item["avatar"] = avatar_url
+        else:
+            user_item = {
+                "id": user_id,
+                "avatar": avatar_url,
+                "name": "浙大同学",
+                "studentId": user_id if user_id != "me" else ""
+            }
+            users_list.append(user_item)
+        return user_item
+
+    mutate_json("users.json", update_user_data, [])
+
+    # 4. 同步更新 ui.json 里的 defaultUser 以便临时账号 me 在刷新后头像绝对不会丢失！
+    if user_id == "me":
+        def update_ui(ui_data):
+            profile = ui_data.setdefault("profile", {})
+            default_user = profile.setdefault("defaultUser", {})
+            default_user["avatar"] = avatar_url
+            return default_user
+        mutate_json("ui.json", update_ui, {})
+
+    return jsonify({
+        "success": True,
+        "avatar": avatar_url,
+        "message": "头像更新成功！"
+    })
+
+
+
 @app.post("/api/chats/<chat_id>/messages")
 def create_chat_message(chat_id):
     payload = request_payload()

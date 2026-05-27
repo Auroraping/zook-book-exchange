@@ -7,7 +7,7 @@ import { getJson } from '../composables/useApi.js'
 
 const route = useRoute()
 const router = useRouter()
-const { isLoggedIn, logout } = useAuth()
+const { isLoggedIn, logout, user } = useAuth()
 
 const searchTerm = ref(new URLSearchParams(route.query).get('q') || '')
 const unreadNotifications = ref(0)
@@ -79,7 +79,7 @@ onUnmounted(() => {
           <p class="text-[10px] text-emerald-500 font-black uppercase">已认证用户</p>
         </div>
         <RouterLink to="/profile" class="w-14 h-14 rounded-[20px] border-4 border-white shadow-2xl overflow-hidden hover:scale-110 transition-all rotate-3">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-full h-full object-cover" />
+          <img :src="user?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'" class="w-full h-full object-cover" />
         </RouterLink>
         <button @click="logout" class="w-12 h-12 bg-white border border-gray-100 rounded-[16px] flex items-center justify-center text-rose-500 hover:bg-rose-50 transition-colors shadow-sm" title="退出登录">
           <LogOut class="w-5 h-5" />
