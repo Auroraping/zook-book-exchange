@@ -696,6 +696,26 @@ def list_wishes():
     return jsonify({"success": True, "wishes": read_json("wishes.json", [])})
 
 
+@app.post("/api/wishes/<wish_id>/coseek")
+def coseek_wish(wish_id):
+    payload = request_payload()
+    user_id = payload.get("userId") or "me"
+
+    def update(wishes):
+        wish = find_by_id(wishes, wish_id)
+        if not wish:
+            return None
+        co_seekers = wish.setdefault("coSeekers", [])
+        if user_id not in co_seekers:
+            co_seekers.append(user_id)
+        return wish
+
+    wish = mutate_json("wishes.json", update, [])
+    if not wish:
+        return jsonify({"success": False, "message": "心愿不存在"}), 404
+    return jsonify({"success": True, "wish": wish})
+
+
 @app.post("/api/wishes")
 def create_wish():
     payload = request_payload()
@@ -923,6 +943,72 @@ def seed_chat_state():
     }
     write_json("chat.json", chat_state)
     return chat_state
+
+
+@app.post("/api/chats")
+def create_chat():
+    payload = request_payload()
+    contact_id = payload.get("contactId")
+    contact_name = payload.get("contactName")
+    avatar = payload.get("avatar")
+    initial_msg = payload.get("initialMsg")
+    book_title = payload.get("bookTitle", "求购教材")
+    
+    if not contact_id or not contact_name:
+        return jsonify({"success": False, "message": "联系人参数不完整"}), 400
+
+    def update(chat_state):
+        if not chat_state.get("contacts"):
+            seeded = seed_chat_state()
+            chat_state.update(seeded)
+            
+        contacts = chat_state.setdefault("contacts", [])
+        messages_map = chat_state.setdefault("messages", {})
+        
+        # 查找联系人是否已存在
+        existing = next((c for c in contacts if str(c.get("id")) == str(contact_id)), None)
+        
+        # 对方智能自动回复
+        auto_reply_text = f"收到！真的太好啦，我非常需要《{book_title}》这本教材。请问你这本大概几成新呀？方便我们约个时间在学校当面交易吗？"
+        
+        if existing:
+            # 移到最前面，并更新最后一条消息
+            contacts.remove(existing)
+            existing["lastMsg"] = auto_reply_text
+            existing["time"] = "刚刚"
+            contacts.insert(0, existing)
+        else:
+            new_contact = {
+                "id": contact_id,
+                "name": contact_name,
+                "avatar": avatar or f"https://api.dicebear.com/7.x/identicon/svg?seed={contact_name}",
+                "time": "刚刚",
+                "unread": 0,
+                "lastMsg": auto_reply_text
+            }
+            contacts.insert(0, new_contact)
+            
+        # 推入消息
+        room = messages_map.setdefault(str(contact_id), [])
+        
+        msg = {
+            "id": new_id("m"),
+            "role": "me",
+            "content": initial_msg or "同学你好，我有这本书。",
+            "timestamp": now_text()
+        }
+        reply = {
+            "id": new_id("m"),
+            "role": "other",
+            "content": auto_reply_text,
+            "timestamp": now_text()
+        }
+        room.append(msg)
+        room.append(reply)
+        return {"contactId": contact_id}
+
+    result = mutate_json("chat.json", update, {})
+    return jsonify({"success": True, **result})
 
 
 @app.get("/api/chats")

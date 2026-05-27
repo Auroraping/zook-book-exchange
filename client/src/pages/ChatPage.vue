@@ -1,10 +1,12 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import { Send } from 'lucide-vue-next'
 import ChatContactList from '../components/ChatContactList.vue'
 import ChatWindowHeader from '../components/ChatWindowHeader.vue'
 import { getJson, postJson } from '../composables/useApi.js'
 
+const route = useRoute()
 const books = ref([])
 const activeChatId = ref(1)
 const draft = ref('')
@@ -18,8 +20,16 @@ onMounted(async () => {
   books.value = booksData.books
   chats.value = chatData.contacts || []
   chatMessages.value = chatData.messages || {}
-  activeChat.value = chats.value[0] || null
-  activeChatId.value = activeChat.value?.id || ''
+  
+  const targetId = route.query.activeId
+  if (targetId) {
+    activeChat.value = chats.value.find((c) => String(c.id) === String(targetId)) || chats.value[0] || null
+    activeChatId.value = activeChat.value?.id || ''
+  } else {
+    activeChat.value = chats.value[0] || null
+    activeChatId.value = activeChat.value?.id || ''
+  }
+  scrollToBottom()
 })
 
 const selectChat = (chat) => {
