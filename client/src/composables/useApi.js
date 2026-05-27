@@ -38,3 +38,16 @@ export const postJson = (path, payload) => requestJson(path, { method: 'POST', b
 export const patchJson = (path, payload) => requestJson(path, { method: 'PATCH', body: payload })
 
 export const deleteJson = (path) => requestJson(path, { method: 'DELETE' })
+
+export const uploadFile = async (path, formData) => {
+  let response
+  try {
+    response = await fetch(apiUrl(path), {
+      method: 'POST',
+      body: formData,
+    })
+  } catch {
+    throw new Error('服务暂时不可用，请确认后端已启动')
+  }
+  return parseJsonResponse(response)
+}

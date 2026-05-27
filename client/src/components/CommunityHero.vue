@@ -1,10 +1,10 @@
 <script setup>
-import { BookMarked, ChevronRight, Search } from 'lucide-vue-next'
+import { BookMarked, ChevronRight, Search, FileUp } from 'lucide-vue-next'
 
 const props = defineProps({
   keyword: { type: String, required: true }
 })
-const emit = defineEmits(['update:keyword', 'search'])
+const emit = defineEmits(['update:keyword', 'search', 'upload'])
 </script>
 
 <template>
@@ -16,6 +16,9 @@ const emit = defineEmits(['update:keyword', 'search'])
           <h1 class="text-4xl font-black tracking-tight mb-4">求是知识共创社区</h1>
           <p class="text-blue-100 max-w-2xl text-sm leading-relaxed">围绕微积分、线性代数、微观经济学、宏观经济学、概率论与数理统计、毛概沉淀复习资料。</p>
         </div>
+        <button @click="emit('upload')" class="hidden sm:flex items-center gap-2 bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-white border border-white/20 rounded-2xl px-5 py-3 text-sm font-black tracking-wide shrink-0">
+          <FileUp class="w-4 h-4" /> 分享资料
+        </button>
       </div>
       <form class="mt-9 max-w-3xl flex bg-white rounded-2xl shadow-xl shadow-blue-900/10 overflow-hidden" @submit.prevent="emit('search')">
         <div class="flex-1 h-14 px-6 flex items-center gap-3">

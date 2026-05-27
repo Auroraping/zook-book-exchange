@@ -13,6 +13,55 @@ onMounted(async () => {
 
 const recordAction = async (action) => {
   note.value = (await patchJson(`/api/notes/${note.value.id}`, { action })).note
+  
+  if (action === 'download') {
+    if (note.value.fileUrl) {
+      // 触发真实附件下载
+      const link = document.createElement('a')
+      link.href = note.value.fileUrl
+      link.download = note.value.fileName || `${note.value.title}.txt`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } else {
+      // 虚拟附件生成降级机制：如果数据库没有上传文件，当场拼装整篇笔记的详实内容生成 txt 供下载，拉满体验！
+      let text = `========================================================================\n`
+      text += `                  《${note.value.title}》考前复习讲义\n`
+      text += `========================================================================\n\n`
+      text += `【课程科目】：${note.value.course}\n`
+      text += `【资料类型】：${note.value.type}\n`
+      text += `【整理作者】：${note.value.author}\n`
+      text += `【难度建议】：${note.value.difficulty}\n`
+      text += `【更新时间】：${note.value.updatedAt}\n\n`
+      text += `【资料概述】：\n${note.value.desc || '暂无概述说明。'}\n\n`
+      text += `------------------------------------------------------------------------\n`
+      text += `【章节大纲与复习概要】\n`
+      text += `------------------------------------------------------------------------\n\n`
+      
+      if (note.value.sections && note.value.sections.length > 0) {
+        note.value.sections.forEach((sec, idx) => {
+          text += `${idx + 1}. 【${sec.heading}】\n`
+          text += `   ${sec.body}\n\n`
+        })
+      } else {
+        text += `   （本篇复习资料未录入细分章节，请直接查阅附件大纲。）\n\n`
+      }
+      
+      text += `========================================================================\n`
+      text += `     浙里淘书 zook 知识社区 · 好书淘不尽，浙里 top three · 知识共创\n`
+      text += `========================================================================\n`
+      
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${note.value.title}_复习参考.txt`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    }
+  }
 }
 </script>
 

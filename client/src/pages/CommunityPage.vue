@@ -4,6 +4,7 @@ import CommunityEmptyState from '../components/CommunityEmptyState.vue'
 import CommunityFilterBar from '../components/CommunityFilterBar.vue'
 import CommunityHero from '../components/CommunityHero.vue'
 import CommunityNoteCard from '../components/CommunityNoteCard.vue'
+import CommunityUploadModal from '../components/CommunityUploadModal.vue'
 import { getJson } from '../composables/useApi.js'
 
 const notes = ref([])
@@ -11,15 +12,25 @@ const activeFilter = ref('')
 const keyword = ref('')
 const filters = ref([])
 const courseGroups = ref({})
+const isUploadOpen = ref(false)
+
+const fetchNotes = async () => {
+  const notesData = await getJson('/api/notes')
+  notes.value = notesData.notes.map((note, index) => ({ ...note, listId: `${note.id}-${index}` }))
+}
 
 onMounted(async () => {
-  const [notesData, uiRes] = await Promise.all([getJson('/api/notes'), fetch('/data/ui.json')])
+  const [, uiRes] = await Promise.all([fetchNotes(), fetch('/data/ui.json')])
   const ui = await uiRes.json()
-  notes.value = notesData.notes.map((note, index) => ({ ...note, listId: `${note.id}-${index}` }))
   filters.value = ui.community?.filters || []
   courseGroups.value = ui.community?.courseGroups || {}
   activeFilter.value = filters.value[0] || ''
 })
+
+const onUploadSuccess = async () => {
+  isUploadOpen.value = false
+  await fetchNotes()
+}
 
 const matchesFilter = (note, filter) => {
   if (!filter || filter === filters.value[0]) return true
@@ -46,7 +57,7 @@ const runSearch = () => {
 
 <template>
   <div class="max-w-7xl mx-auto flex flex-col gap-8 animate-google-in">
-    <CommunityHero v-model:keyword="keyword" @search="runSearch" />
+    <CommunityHero v-model:keyword="keyword" @search="runSearch" @upload="isUploadOpen = true" />
     <section class="flex flex-col gap-6">
       <CommunityFilterBar v-model:activeFilter="activeFilter" :filters="filters" :counts="filterCounts" />
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -54,5 +65,6 @@ const runSearch = () => {
       </div>
       <CommunityEmptyState v-if="filteredNotes.length === 0" />
     </section>
+    <CommunityUploadModal :isOpen="isUploadOpen" @close="isUploadOpen = false" @success="onUploadSuccess" />
   </div>
 </template>

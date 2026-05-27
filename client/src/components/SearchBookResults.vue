@@ -1,20 +1,35 @@
 <script setup>
-import { BookOpen } from 'lucide-vue-next'
+import { BookOpen, ArrowUp, ArrowDown } from 'lucide-vue-next'
 import BookListCard from './BookListCard.vue'
 
 const props = defineProps({
   books: { type: Array, required: true },
   sortTabs: { type: Array, required: true },
-  activeSort: { type: String, required: true }
+  activeSort: { type: String, required: true },
+  sortOrder: { type: String, required: true }
 })
-const emit = defineEmits(['update:activeSort'])
+const emit = defineEmits(['sort-change'])
 </script>
 
 <template>
   <div class="flex-1">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-8">
       <div class="flex flex-wrap gap-3">
-        <button v-for="tab in sortTabs" :key="tab" @click="emit('update:activeSort', tab)" :class="['px-8 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all', activeSort === tab ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/30' : 'bg-white text-gray-400 hover:text-gray-800']">{{ tab }}</button>
+        <button 
+          v-for="tab in sortTabs" 
+          :key="tab" 
+          @click="emit('sort-change', tab)" 
+          :class="[
+            'px-7 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all flex items-center gap-1.5 active:scale-95', 
+            activeSort === tab ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/30' : 'bg-white text-gray-400 hover:text-gray-800'
+          ]"
+        >
+          <span>{{ tab }}</span>
+          <span v-if="activeSort === tab" class="animate-google-in flex items-center shrink-0">
+            <ArrowUp v-slot="icon" v-if="sortOrder === 'asc'" class="w-3.5 h-3.5" />
+            <ArrowDown v-slot="icon" v-else class="w-3.5 h-3.5" />
+          </span>
+        </button>
       </div>
       <div class="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">找到 <span class="text-gray-900">{{ books.length }}</span> 本教材</div>
     </div>
