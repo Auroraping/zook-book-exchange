@@ -65,6 +65,26 @@ def read_env_lines():
     return ENV_LOCAL_PATH.read_text(encoding="utf-8").splitlines()
 
 
+def load_local_env():
+    try:
+        for line in read_env_lines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" in line:
+                key, val = line.split("=", 1)
+                key = key.strip()
+                val = val.strip()
+                if key:
+                    os.environ[key] = val
+    except Exception as exc:
+        print("[Env] 启动时加载本地环境配置失败:", exc)
+
+
+load_local_env()
+
+
+
 def single_line_env_value(value):
     text = str(value or "").strip()
     if "\n" in text or "\r" in text:
@@ -248,7 +268,12 @@ def save_ai_config():
     model = str(payload.get("model") or DEFAULT_DEEPSEEK_MODEL).strip()
     api_url = str(payload.get("apiUrl") or DEFAULT_DEEPSEEK_API_URL).strip()
     if not api_key:
-        return jsonify({"success": False, "message": "请输入 DeepSeek API 密钥"}), 400
+        existing_key = os.getenv("DEEPSEEK_API_KEY")
+        if existing_key:
+            api_key = existing_key
+        else:
+            return jsonify({"success": False, "message": "请输入 API 密钥"}), 400
+
     if not api_url.startswith("https://"):
         return jsonify({"success": False, "message": "API 地址必须使用 HTTPS"}), 400
 
