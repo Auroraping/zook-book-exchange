@@ -29,13 +29,22 @@ onMounted(async () => {
     activeChat.value = chats.value[0] || null
     activeChatId.value = activeChat.value?.id || ''
   }
+  if (activeChat.value && activeChat.value.unread > 0) {
+    activeChat.value.unread = 0
+    postJson(`/api/chats/${activeChat.value.id}/read`).catch(() => {})
+    window.dispatchEvent(new Event('notificationsUpdated'))
+  }
   scrollToBottom()
 })
 
 const selectChat = (chat) => {
   activeChatId.value = chat.id
   activeChat.value = chat
-  chat.unread = 0
+  if (chat.unread > 0) {
+    chat.unread = 0
+    postJson(`/api/chats/${chat.id}/read`).catch(() => {})
+    window.dispatchEvent(new Event('notificationsUpdated'))
+  }
   scrollToBottom()
 }
 
