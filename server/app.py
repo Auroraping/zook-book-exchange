@@ -27,6 +27,8 @@ registered_users = {
     "U_MOCK_004": "高数笔记小助手",
 }
 user_credentials = {}
+online_users = {}
+
 
 
 def resolve_local_env_path():
@@ -1048,32 +1050,89 @@ def create_chat_message(chat_id):
     if not text:
         return jsonify({"success": False, "message": "消息不能为空"}), 400
 
+    sender_id = str(payload.get("userId") or "me").strip()
+    receiver_id = str(chat_id).strip()
+
+    # 1. 核心：智能检测接收方是否在线
+    is_receiver_online = receiver_id in online_users
+
     def update(chat_state):
         if not chat_state.get("contacts"):
             seeded = seed_chat_state()
             chat_state.update(seeded)
         messages_map = chat_state.setdefault("messages", {})
-        room = messages_map.setdefault(str(chat_id), [])
+        room = messages_map.setdefault(receiver_id, [])
+        
+        # 写入发送者的消息
         message = {"id": new_id("m"), "role": "me", "content": text, "timestamp": now_text()}
         room.append(message)
-        replies = chat_state.get("autoReplies") or ["收到，我稍后确认。"]
-        reply = {"id": new_id("m"), "role": "other", "content": replies[len(room) % len(replies)], "timestamp": now_text()}
-        room.append(reply)
-        for contact in chat_state.get("contacts", []):
-            if str(contact.get("id")) == str(chat_id):
-                contact["lastMsg"] = reply["content"]
-                contact["time"] = "刚刚"
+        
+        reply = None
+        if is_receiver_online:
+            # 对方在线，双人真实实时对聊，直接更新联系人的最后一条消息为用户发的内容，不触发模拟自动回复！
+            for contact in chat_state.get("contacts", []):
+                if str(contact.get("id")) == receiver_id:
+                    contact["lastMsg"] = text
+                    contact["time"] = "刚刚"
+        else:
+            # 对方离线，降级触发模拟自动回复
+            replies = chat_state.get("autoReplies") or ["收到，我稍后确认。"]
+            reply = {"id": new_id("m"), "role": "other", "content": replies[len(room) % len(replies)], "timestamp": now_text()}
+            room.append(reply)
+            for contact in chat_state.get("contacts", []):
+                if str(contact.get("id")) == receiver_id:
+                    contact["lastMsg"] = reply["content"]
+                    contact["time"] = "刚刚"
+                    
         return {"message": message, "reply": reply}
 
     result = mutate_json("chat.json", update, {})
+    
+    # 2. 核心：如果对方当前在线，通过 Socket.IO 精准推送给其个人专属广播房间！
+    if is_receiver_online:
+        event_data = {
+            "chatId": sender_id,  # 接收方收到时，对应的会话 ID 应该是 sender_id
+            "message": {
+                "id": result["message"]["id"],
+                "role": "other",  # 接收方客户端将其渲染为左侧气泡
+                "content": text,
+                "timestamp": result["message"]["timestamp"]
+            }
+        }
+        socketio.emit("receive_message", event_data, room=receiver_id)
+        print(f"[Socket] 已向在线用户 {receiver_id} 专属房间发送了来自 {sender_id} 的即时消息。")
+        
     return jsonify({"success": True, **result})
 
 
 @socketio.on("register_user")
-def register_user(user):
+def handle_register_user(user):
     if isinstance(user, dict) and user.get("id"):
+        user_id = str(user["id"])
         display_name = user.get("name") or user.get("username") or "匿名用户"
-        registered_users[str(user["id"])] = display_name
+        registered_users[user_id] = display_name
+        
+        # 核心：将此 Socket 连接记录在在线字典中
+        from flask import request
+        from flask_socketio import join_room
+        online_users[user_id] = request.sid
+        
+        # 核心：让该连接自动加入以其用户 ID 命名的专属广播房间
+        join_room(user_id)
+        print(f"[Socket] 用户 {display_name} ({user_id}) 已连接并加入专属个人房间。当前在线数: {len(online_users)}")
+
+
+@socketio.on("disconnect")
+def handle_disconnect():
+    from flask import request
+    user_id_to_remove = None
+    for uid, sid in list(online_users.items()):
+        if sid == request.sid:
+            user_id_to_remove = uid
+            break
+    if user_id_to_remove:
+        online_users.pop(user_id_to_remove, None)
+        print(f"[Socket] 用户 {user_id_to_remove} 已断开长连接。当前在线数: {len(online_users)}")
 
 
 @socketio.on("ping_test")

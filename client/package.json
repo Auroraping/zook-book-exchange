@@ -9,9 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "lucide-vue-next": "^0.300.0",
+    "socket.io-client": "^4.8.3",
     "vue": "^3.4.0",
-    "vue-router": "^4.2.0",
-    "lucide-vue-next": "^0.300.0"
+    "vue-router": "^4.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
