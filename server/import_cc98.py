@@ -39,8 +39,8 @@ def clean_data():
             
     print(f"初筛得到符合要求的记录：{len(filtered)} 条")
     
-    # 限制 45 条优质数据注入，以确保极速响应与精品内容
-    selected = filtered[:45]
+    # 限制 180 条优质数据注入，以确保极速响应与精品内容
+    selected = filtered[:180]
     
     imported_notes = []
     
