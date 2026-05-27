@@ -173,9 +173,21 @@ const submitWish = async () => {
             <Flame class="w-3 h-3 text-slate-400" /> 1人求购
           </span>
         </div>
-        
         <div class="flex flex-wrap gap-2">
-          <span v-for="tag in wish.tags" :key="tag" class="px-3 py-1 bg-gray-50 text-gray-500 text-[10px] fo    <!-- 登记心愿 Glassmorphism 弹窗 -->
+          <span v-for="tag in wish.tags" :key="tag" class="px-3 py-1 bg-gray-50 text-gray-500 text-[10px] font-bold rounded-full border border-gray-100 flex items-center gap-1"><Tag class="w-3 h-3" /> {{ tag }}</span>
+        </div>
+      </article>
+    </div>
+    
+    <div v-if="filteredWishes.length === 0" class="py-20 text-center">
+      <Heart class="w-16 h-16 text-gray-200 mx-auto mb-4" />
+      <p class="text-gray-400 font-bold text-lg">没有找到匹配的心愿</p>
+    </div>
+    
+    <!-- 详情互动弹窗 -->
+    <WishDetailModal :isOpen="isDetailOpen" :wish="selectedWish" @close="isDetailOpen = false" @coseek="handleCoseekSuccess" />
+    
+    <!-- 登记心愿 Glassmorphism 弹窗 -->
     <Teleport to="body">
       <transition name="fade">
         <div v-if="isCreateOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md overflow-y-auto animate-fade-in">
