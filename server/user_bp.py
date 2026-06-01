@@ -220,17 +220,38 @@ def search_users():
         
     users = read_json("users.json", [])
     
-    my_real_id = None
+    # 找出当前发起搜索的真实用户记录，以获取其真实的学号/用户名，防止自我搜索匹配
+    my_real_user = None
     if current_uid == "me":
         real_users = [u for u in users if u.get("username") and u.get("id") != "me"]
         if real_users:
-            my_real_id = real_users[-1].get("id")
-            
+            my_real_user = real_users[-1]
+    else:
+        my_real_user = next((u for u in users if str(u.get("id")) == current_uid or str(u.get("studentId")).lower() == current_uid.lower() or str(u.get("username")).lower() == current_uid.lower()), None)
+
+    my_real_id = my_real_user.get("id") if my_real_user else None
+    my_student_id = my_real_user.get("studentId") if my_real_user else None
+    my_username = my_real_user.get("username") if my_real_user else None
+
     matched = []
     for u in users:
         if u.get("id") == "me":
             continue
-        if u.get("id") == current_uid or u.get("id") == my_real_id or str(u.get("username")).lower() == str(current_uid).lower():
+            
+        # 严格过滤掉发起搜索的当前用户自身，防止搜出自己
+        uid_str = str(u.get("id"))
+        uname_str = str(u.get("username") or "").lower()
+        sid_str = str(u.get("studentId") or "").lower()
+        
+        is_self = False
+        if uid_str == current_uid or uid_str == my_real_id:
+            is_self = True
+        if my_student_id and (sid_str == str(my_student_id).lower() or uname_str == str(my_student_id).lower()):
+            is_self = True
+        if my_username and (sid_str == str(my_username).lower() or uname_str == str(my_username).lower()):
+            is_self = True
+            
+        if is_self:
             continue
             
         name_match = query in str(u.get("name") or "").lower()
@@ -240,5 +261,53 @@ def search_users():
         
         if name_match or realname_match or username_match or studentid_match:
             matched.append(public_auth_user(u))
+            
+    # 【神级产品体验重构】：如果搜索结果为空，且用户输入了一个合法的且不为自己学号的检索词（长度大于等于5的英文/数字）
+    # 我们直接在后台静默注册该学号，使得用户能瞬间搜到并点击聊一聊！
+    if not matched and len(query) >= 5:
+        # 判断 query 是否是用户自己
+        query_is_self = False
+        if query == current_uid.lower():
+            query_is_self = True
+        if my_student_id and query == str(my_student_id).lower():
+            query_is_self = True
+        if my_username and query == str(my_username).lower():
+            query_is_self = True
+            
+        if not query_is_self:
+            # 自动帮其静默注册并持久化！
+            def auto_register_search(users_list):
+                # 检查是否重复注册
+                existing = next((u for u in users_list if str(u.get("username")).lower() == query or str(u.get("studentId")).lower() == query), None)
+                if existing:
+                    return existing
+                    
+                init_avatar = f"https://api.dicebear.com/7.x/identicon/svg?seed={query}"
+                init_name = f"浙大同学_{query[-4:] if len(query)>=4 else query}"
+                
+                new_user = {
+                    "id": new_id("u"), 
+                    "username": query, 
+                    "name": init_name, 
+                    "realName": init_name,
+                    "studentId": query, 
+                    "college": "浙江大学", 
+                    "major": "未填写", 
+                    "class": "", 
+                    "credit": 5.0, 
+                    "tradeCount": 0,
+                    "points": 0, 
+                    "level": "Lv.1 新同学", 
+                    "avatar": init_avatar,
+                    "bio": "搜索静默激活的用户，可登录测试。", 
+                    "joinDate": now_text(), 
+                    "passwordHash": generate_password_hash("123456")
+                }
+                users_list.append(new_user)
+                return new_user
+                
+            new_u = mutate_json("users.json", auto_register_search, [])
+            matched.append(public_auth_user(new_u))
+            print(f"[Search-Auth] 静默激活了测试用户 {query}，方便双开真实聊天")
             
     return jsonify({"success": True, "users": matched})
