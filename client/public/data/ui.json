@@ -124,7 +124,8 @@
       { "id": "favorites", "label": "我收藏的心仪书籍", "icon": "Heart" },
       { "id": "wishes", "label": "购书心愿单", "icon": "Sparkles" },
       { "id": "notifications", "label": "消息通知中心", "icon": "Bell" },
-      { "id": "listings", "label": "我发布的书籍", "icon": "BookMarked" }
+      { "id": "listings", "label": "我发布的书籍", "icon": "BookMarked" },
+      { "id": "notes", "label": "我的社区", "icon": "FileText" }
     ]
   },
   "achievements": [

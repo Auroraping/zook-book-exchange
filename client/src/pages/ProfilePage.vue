@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuth } from '../composables/useAuth.js'
 import { getJson, postJson } from '../composables/useApi.js'
-import { Bell, BookMarked, Heart, Package, Sparkles } from 'lucide-vue-next'
+import { Bell, BookMarked, Heart, Package, Sparkles, FileText } from 'lucide-vue-next'
 import ProfileHeaderCard from '../components/ProfileHeaderCard.vue'
 import ProfileLoginPrompt from '../components/ProfileLoginPrompt.vue'
 import ProfileSidebar from '../components/ProfileSidebar.vue'
@@ -20,9 +20,10 @@ const books = ref([])
 const wishes = ref([])
 const notifications = ref([])
 const favoriteBooks = ref([])
+const notes = ref([])
 const tabs = ref([])
 const profileUser = ref({})
-const iconMap = { Package, Heart, Sparkles, Bell, BookMarked }
+const iconMap = { Package, Heart, Sparkles, Bell, BookMarked, FileText }
 
 // 头像修改弹窗响应式状态
 const showAvatarModal = ref(false)
@@ -123,13 +124,14 @@ const hydrateRealProfile = (name, sid, coll, maj, cls) => {
 }
 
 onMounted(async () => {
-  const [ordersData, booksData, wishesData, noticesData, favoritesData, uiRes] = await Promise.all([
+  const [ordersData, booksData, wishesData, noticesData, favoritesData, uiRes, notesData] = await Promise.all([
     isMe ? getJson('/api/orders?userId=me') : { orders: [] }, 
     getJson(isMe ? '/api/books' : `/api/books?sellerId=${targetUserId}`), 
     getJson('/api/wishes'), 
     isMe ? getJson('/api/notifications?userId=me') : { notifications: [] }, 
     isMe ? getJson('/api/favorites?userId=me') : { items: [] }, 
-    fetch('/data/ui.json')
+    fetch('/data/ui.json'),
+    getJson('/api/notes')
   ])
   const ui = await uiRes.json()
   orders.value = ordersData.orders || []
@@ -137,6 +139,7 @@ onMounted(async () => {
   wishes.value = wishesData.wishes || []
   notifications.value = noticesData.notifications || []
   favoriteBooks.value = favoritesData.items || []
+  notes.value = notesData.notes || []
   
   if (isMe) {
     profileUser.value = { ...(ui.profile?.defaultUser || {}) }
@@ -189,6 +192,10 @@ onMounted(async () => {
 const handleWishDeleted = (wishId) => {
   wishes.value = wishes.value.filter((w) => w.id !== wishId)
 }
+
+const handleNoteDeleted = (noteId) => {
+  notes.value = notes.value.filter((n) => n.id !== noteId)
+}
 </script>
 
 <template>
@@ -197,7 +204,7 @@ const handleWishDeleted = (wishId) => {
     <ProfileHeaderCard :profile-user="profileUser" :is-me="isMe" @edit-avatar="openAvatarModal" />
     <div class="flex gap-8">
       <ProfileSidebar v-model:activeTab="activeTab" :profile-user="profileUser" :tabs="tabs" :icon-map="iconMap" />
-      <ProfileTabContent :active-tab="activeTab" :tabs="tabs" :orders="orders" :books="books" :wishes="wishes" :notifications="notifications" :favorite-books="favoriteBooks" @wish-deleted="handleWishDeleted" />
+      <ProfileTabContent :active-tab="activeTab" :tabs="tabs" :orders="orders" :books="books" :wishes="wishes" :notifications="notifications" :favorite-books="favoriteBooks" :notes="notes" @wish-deleted="handleWishDeleted" @note-deleted="handleNoteDeleted" />
     </div>
   </div>
 
