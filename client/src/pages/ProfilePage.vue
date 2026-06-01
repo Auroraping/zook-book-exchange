@@ -84,6 +84,7 @@ const saveAvatar = async () => {
       const formData = new FormData()
       formData.append('file', uploadFile.value)
       formData.append('userId', profileUser.value.id || 'me')
+      formData.append('studentId', localStorage.getItem('zook_username') || '')
       const res = await fetch('/api/user/update', {
         method: 'POST',
         body: formData
@@ -94,7 +95,8 @@ const saveAvatar = async () => {
       // 2. 外部 Dicebear URL 直接 JSON 提交
       const res = await postJson('/api/user/update', {
         userId: profileUser.value.id || 'me',
-        avatar: newAvatarUrl.value
+        avatar: newAvatarUrl.value,
+        studentId: localStorage.getItem('zook_username')
       })
       if (!res.success) throw new Error(res.message)
       finalAvatarUrl = res.avatar
@@ -142,7 +144,19 @@ onMounted(async () => {
   notes.value = notesData.notes || []
   
   if (isMe) {
-    profileUser.value = { ...(ui.profile?.defaultUser || {}) }
+    // 核心：如果 useAuth 缓存中已有此用户的独立头像和网名，优先采用缓存，绝不被静态默认 defaultUser 污染
+    let cachedInfo = {}
+    const cachedUser = localStorage.getItem('user')
+    if (cachedUser) {
+      try {
+        cachedInfo = JSON.parse(cachedUser) || {}
+      } catch {}
+    }
+
+    profileUser.value = { 
+      ...(ui.profile?.defaultUser || {}),
+      ...cachedInfo
+    }
     tabs.value = ui.profile?.tabs || []
     
     const realName = localStorage.getItem('zook_real_name')
@@ -157,20 +171,6 @@ onMounted(async () => {
           if (raw.xm) hydrateRealProfile(raw.xm, raw.xh || '', raw.xy || '', raw.zy || '', raw.xzb || '')
         }).catch(() => {})
       }
-    }
-    
-    // 核心：如果 useAuth 缓存中已有新头像和网名，用缓存覆盖初始数据
-    const cachedUser = localStorage.getItem('user')
-    if (cachedUser) {
-      try {
-        const uObj = JSON.parse(cachedUser)
-        if (uObj.avatar) {
-          profileUser.value.avatar = uObj.avatar
-        }
-        if (uObj.name) {
-          profileUser.value.name = uObj.name
-        }
-      } catch {}
     }
   } else {
     // 访问他人主页

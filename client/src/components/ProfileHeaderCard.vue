@@ -34,7 +34,11 @@ const saveName = async () => {
   }
   savingName.value = true
   try {
-    const res = await postJson('/api/user/update', { userId: props.profileUser.id || 'me', name: newName })
+    const res = await postJson('/api/user/update', { 
+      userId: props.profileUser.id || 'me', 
+      name: newName,
+      studentId: localStorage.getItem('zook_username')
+    })
     if (res.success) {
       props.profileUser.name = newName
       updateUser({ name: newName })

@@ -52,20 +52,6 @@ def login():
                         if key in real_info:
                             u[key] = real_info[key]
                             
-                # 从 id='me' 的记录或 ui.json defaultUser 中恢复用户自定义的 avatar 和 name
-                me_user = find_by_id(users, "me")
-                ui_data = read_json("ui.json", {})
-                default_user = ui_data.get("profile", {}).get("defaultUser", {})
-                
-                # 优先使用 ui.json 的值，其次使用 me_user 的值
-                saved_avatar = default_user.get("avatar") or (me_user or {}).get("avatar")
-                saved_name = default_user.get("name") or (me_user or {}).get("name")
-
-                if saved_avatar and saved_avatar != "/user_avatar.png":
-                    u["avatar"] = saved_avatar
-                if saved_name and saved_name not in ("浙大同学", ""):
-                    u["name"] = saved_name
-                    
                 return u
             return local_user
             
@@ -75,12 +61,10 @@ def login():
 
 
     def auto_register(users):
-        # 新用户首次登录注册前，也检查是否有 ui.json 中的自定义数据
-        ui_data = read_json("ui.json", {})
-        default_user = ui_data.get("profile", {}).get("defaultUser", {})
-        me_user = find_by_id(users, "me")
-        init_avatar = (me_user or {}).get("avatar") or default_user.get("avatar") or f"https://api.dicebear.com/7.x/identicon/svg?seed={username}"
-        init_name = (me_user or {}).get("name") or default_user.get("name") or real_info.get("realName") or username
+        # 新用户首次注册，绝不继承可能被污染的 me 或 defaultUser 属性！
+        # 直接使用以 username 作为 seed 的专属随机头像与教务实名作为干净的初始配置
+        init_avatar = f"https://api.dicebear.com/7.x/identicon/svg?seed={username}"
+        init_name = real_info.get("realName") or f"浙大同学_{username[-4:] if len(username)>=4 else username}"
 
         new_user = {
             "id": new_id("u"), "username": username, "name": init_name, "realName": real_info.get("realName") or username,
@@ -122,6 +106,7 @@ def register():
 def update_user_profile():
     payload = request_payload()
     user_id = request.form.get("userId") or payload.get("userId") or "me"
+    student_id = request.form.get("studentId") or payload.get("studentId")
     avatar_url = None
     new_name = request.form.get("name") or payload.get("name")
     
@@ -141,27 +126,37 @@ def update_user_profile():
         return jsonify({"success": False, "message": "未提供更新数据"}), 400
 
     def update_user_data(users_list):
-        user_item = find_by_id(users_list, user_id)
-        if user_item:
-            if avatar_url: user_item["avatar"] = avatar_url
-            if new_name: user_item["name"] = new_name
+        target_user = None
+        # 1. 优先使用 student_id 精确定位当前真实用户
+        if student_id:
+            student_id_str = str(student_id).strip().lower()
+            target_user = next((u for u in users_list if u.get("id") != "me" and (str(u.get("username") or "").lower() == student_id_str or str(u.get("studentId") or "").lower() == student_id_str)), None)
+        
+        # 2. 如果没找到，退化到使用 user_id 定位
+        if not target_user:
+            target_user = find_by_id(users_list, user_id)
+            
+        # 3. 更新对应的属性
+        if target_user:
+            if avatar_url: target_user["avatar"] = avatar_url
+            if new_name: target_user["name"] = new_name
+            # 如果更新的是真实注册用户，并且 user_id == "me"，同时保持 "me" 用户的头像/网名同步，以便在退化渲染时一致
+            if target_user.get("id") != "me" and user_id == "me":
+                me_user = find_by_id(users_list, "me")
+                if me_user:
+                    if avatar_url: me_user["avatar"] = avatar_url
+                    if new_name: me_user["name"] = new_name
         else:
-            user_item = {"id": user_id, "avatar": avatar_url or "", "name": new_name or "浙大同学", "studentId": user_id if user_id != "me" else ""}
-            users_list.append(user_item)
-        # 当 userId 为 'me' 时，同时将 avatar/name 同步到最近注册的真实用户记录
-        # 这是因为前端始终以 userId='me' 身份发起更新，而登录时后端返回的是真实 ID 的用户记录
-        if user_id == "me":
-            # 找到最后一个有 username 的真实用户（即当前登录的用户）
-            real_users = [u for u in users_list if u.get("username") and u.get("id") != "me"]
-            if real_users:
-                latest = real_users[-1]
-                if avatar_url: latest["avatar"] = avatar_url
-                if new_name: latest["name"] = new_name
-        return user_item
+            # 4. 如果都不存在，则新建
+            target_user = {"id": user_id, "avatar": avatar_url or "", "name": new_name or "浙大同学", "studentId": student_id or ""}
+            users_list.append(target_user)
+            
+        return target_user
 
     mutate_json("users.json", update_user_data, [])
 
-    if user_id == "me":
+    # 5. 只有在没有传入特定 student_id（即非特定账号的全局普通更新，比如演示用的 'me'）时，才同步写入全局 ui.json
+    if not student_id and user_id == "me":
         def update_ui(ui_data):
             profile = ui_data.setdefault("profile", {})
             default_user = profile.setdefault("defaultUser", {})
