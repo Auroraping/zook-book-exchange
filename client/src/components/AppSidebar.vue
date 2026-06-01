@@ -44,7 +44,7 @@ const isActive = (path) => route.path === path || route.path.startsWith(path + '
     </RouterLink>
     <nav class="flex flex-col gap-4 flex-1">
       <RouterLink
-        v-for="item in navItems.filter(i => i.path !== '/ai-analysis')"
+        v-for="item in navItems"
         :key="item.path"
         :to="item.path"
         :class="['relative group flex flex-col items-center gap-1 p-2.5 rounded-2xl transition-all duration-300', isActive(item.path) ? colorMap[item.color] : 'text-gray-400 hover:text-gray-800']"

@@ -1,6 +1,7 @@
 <script setup>
 import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
+import FloatingAssistant from './FloatingAssistant.vue'
 </script>
 
 <template>
@@ -17,6 +18,7 @@ import AppHeader from './AppHeader.vue'
           <RouterView />
         </div>
       </main>
+      <FloatingAssistant />
     </div>
   </div>
 </template>
