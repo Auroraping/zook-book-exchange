@@ -126,8 +126,17 @@ const handleRemoveFavorite = async (book) => {
         </div>
       </div>
       <div v-else-if="activeTab === 'wishes'" class="flex flex-col gap-4">
-        <div v-for="wish in wishes.filter((w) => w.userId === currentUserId)" :key="wish.id" class="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex justify-between items-center"><div><h4 class="text-xl font-black text-gray-800 mb-2">{{ wish.title }}</h4><p class="text-sm text-gray-500">作者：{{ wish.author }} | 预算：¥{{ wish.priceRange }}</p></div><button @click="handleDeleteWish(wish)" class="p-3 bg-red-50 text-red-500 hover:bg-red-100 hover:scale-105 active:scale-95 rounded-2xl transition-all" title="删除心愿"><Trash2 class="w-5 h-5" /></button></div>
-        <div v-if="wishes.filter((w) => w.userId === currentUserId).length === 0" class="py-24 text-center"><Sparkles class="w-16 h-16 text-gray-100 mx-auto mb-4" /><p class="text-gray-400 font-black">暂无心愿</p></div>
+        <div v-for="wish in wishes.filter((w) => w.userId === currentUserId || (w.coSeekers && (w.coSeekers.includes(currentUserId) || w.coSeekers.includes('me'))))" :key="wish.id" class="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex justify-between items-center">
+          <div>
+            <h4 class="text-xl font-black text-gray-800 mb-2">{{ wish.title }}</h4>
+            <p class="text-sm text-gray-500">
+              作者：{{ wish.author }} | 期望价：¥{{ wish.priceRange }}
+              <span v-if="wish.userId !== currentUserId" class="ml-2 px-2 py-0.5 bg-purple-50 text-purple-600 text-[10px] font-bold rounded border border-purple-100 shadow-sm">我已同求</span>
+            </p>
+          </div>
+          <button @click="handleDeleteWish(wish)" class="p-3 bg-red-50 text-red-500 hover:bg-red-100 hover:scale-105 active:scale-95 rounded-2xl transition-all" :title="wish.userId === currentUserId ? '删除求购心愿' : '取消同求此书'"><Trash2 class="w-5 h-5" /></button>
+        </div>
+        <div v-if="wishes.filter((w) => w.userId === currentUserId || (w.coSeekers && (w.coSeekers.includes(currentUserId) || w.coSeekers.includes('me')))).length === 0" class="py-24 text-center"><Sparkles class="w-16 h-16 text-gray-100 mx-auto mb-4" /><p class="text-gray-400 font-black">暂无心愿</p></div>
       </div>
       <div v-else-if="activeTab === 'notes'" class="flex flex-col gap-4">
         <div v-for="note in notes.filter((n) => n.userId === currentUserId || (n.userId === 'me' && currentUserId === 'u202605271552105251') || (n.userId === 'u202605271552105251' && currentUserId === 'me'))" :key="note.id" class="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex justify-between items-center">
