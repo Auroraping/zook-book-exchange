@@ -91,16 +91,15 @@ onMounted(async () => {
       chatMessages.value[senderId] = []
     }
 
-    // 推进对应会话的消息列表中
-    chatMessages.value[senderId].push(incomingMsg)
+    // 1. 使用高可用解构重赋值替换普通的 push，百分之百强行唤醒 Vue 3 深层响应式依赖并重绘聊天气泡！
+    chatMessages.value[senderId] = [...chatMessages.value[senderId], incomingMsg]
 
     // 联动更新会话列表里的状态
     let chat = chats.value.find((c) => String(c.id) === String(senderId))
     if (!chat) {
       // 全新会话，拉取最新会话列表并置顶
       try {
-        const currentUserId = user.value?.realId || localStorage.getItem('zook_user_uuid') || user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || 'me'
-        const chatData = await getJson(`/api/chats?userId=${currentUserId}`)
+        const chatData = await getJson(`/api/chats?userId=${myUuid || myStudentId || 'me'}`)
         chats.value = [
           { id: 'system', type: 'system', name: '消息通知', unread: systemNotifications.value.filter((item) => !item.isRead).length },
           ...(chatData.contacts || []).map((c) => ({ ...c, type: 'chat' }))
@@ -115,6 +114,9 @@ onMounted(async () => {
     if (chat) {
       chat.lastMsg = incomingMsg.content
       chat.time = '刚刚'
+      
+      // 2. 强行刷新 chats 的引用，百分之百驱动 Vue 3 同步重绘侧边栏最后一条消息与红点状态！
+      chats.value = [...chats.value]
 
       // 若用户当前没有开着此人对话框，进行红点提示，并唤醒右上角全局未读数
       if (String(activeChatId.value) !== String(senderId)) {
