@@ -20,6 +20,7 @@ from schedule_bp import schedule_bp
 from cart_bp import cart_bp
 from favorites_bp import favorites_bp
 from chat_messages_bp import chat_messages_bp
+from ai_bp import ai_bp
 
 app = Flask(__name__)
 app.config["JSON_AS_ASCII"] = False
@@ -44,6 +45,7 @@ app.register_blueprint(schedule_bp)
 app.register_blueprint(cart_bp)
 app.register_blueprint(favorites_bp)
 app.register_blueprint(chat_messages_bp)
+app.register_blueprint(ai_bp)
 
 @app.get("/")
 def index():
