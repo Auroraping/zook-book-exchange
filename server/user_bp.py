@@ -209,3 +209,36 @@ def textbooks():
                     "price": book["price"], "cover": book["cover"], "seller": book["seller"]
                 })
     return jsonify({"success": True, "textbooks": matched_books})
+
+@user_bp.get("/api/users/search")
+def search_users():
+    query = str(request.args.get("q") or "").strip().lower()
+    current_uid = str(request.args.get("userId") or "me").strip()
+    
+    if not query:
+        return jsonify({"success": True, "users": []})
+        
+    users = read_json("users.json", [])
+    
+    my_real_id = None
+    if current_uid == "me":
+        real_users = [u for u in users if u.get("username") and u.get("id") != "me"]
+        if real_users:
+            my_real_id = real_users[-1].get("id")
+            
+    matched = []
+    for u in users:
+        if u.get("id") == "me":
+            continue
+        if u.get("id") == current_uid or u.get("id") == my_real_id or str(u.get("username")).lower() == str(current_uid).lower():
+            continue
+            
+        name_match = query in str(u.get("name") or "").lower()
+        realname_match = query in str(u.get("realName") or "").lower()
+        username_match = query in str(u.get("username") or "").lower()
+        studentid_match = query in str(u.get("studentId") or "").lower()
+        
+        if name_match or realname_match or username_match or studentid_match:
+            matched.append(public_auth_user(u))
+            
+    return jsonify({"success": True, "users": matched})
