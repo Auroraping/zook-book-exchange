@@ -69,7 +69,7 @@ def login():
         new_user = {
             "id": new_id("u"), "username": username, "name": init_name, "realName": real_info.get("realName") or username,
             "studentId": username, "college": real_info.get("college") or "浙江大学", "major": real_info.get("major") or "未填写", "class": real_info.get("class") or "", "credit": 5.0, "tradeCount": 0,
-            "level": "Lv.1 新同学", "avatar": init_avatar,
+            "points": 0, "level": "Lv.1 新同学", "avatar": init_avatar,
             "bio": "本地自动激活的用户。", "joinDate": now_text(), "passwordHash": generate_password_hash(password)
         }
         users.append(new_user)
@@ -92,7 +92,7 @@ def register():
     def add_user(users):
         user = {
             "id": new_id("u"), "username": username, "name": display_name, "realName": display_name, "studentId": username,
-            "college": "浙江大学", "major": "未填写", "class": "", "credit": 5.0, "tradeCount": 0, "level": "Lv.1 新同学",
+            "college": "浙江大学", "major": "未填写", "class": "", "credit": 5.0, "tradeCount": 0, "points": 0, "level": "Lv.1 新同学",
             "avatar": f"https://api.dicebear.com/7.x/identicon/svg?seed={username}", "bio": "本地注册用户。", "joinDate": now_text(),
             "passwordHash": generate_password_hash(password)
         }

@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Calendar, ShieldCheck, Star, Camera, Pencil } from 'lucide-vue-next'
+import { Calendar, ShieldCheck, Star, Camera, Pencil, Sparkles } from 'lucide-vue-next'
 import { postJson } from '../composables/useApi.js'
 import { useAuth } from '../composables/useAuth.js'
 
@@ -95,6 +95,9 @@ const saveName = async () => {
               <span class="px-2.5 py-1 bg-gray-50 text-gray-600 text-xs font-bold rounded-lg border border-gray-100 shadow-sm">学院：{{ profileUser.college }}</span>
               <span class="px-2.5 py-1 bg-gray-50 text-gray-600 text-xs font-bold rounded-lg border border-gray-100 shadow-sm">专业：{{ profileUser.major }}</span>
               <span class="px-2.5 py-1 bg-gray-50 text-gray-600 text-xs font-bold rounded-lg border border-gray-100 shadow-sm">学号：{{ profileUser.studentId }}</span>
+              <span v-if="isMe" class="px-2.5 py-1 bg-amber-50 text-amber-700 text-xs font-bold rounded-lg border border-amber-200 shadow-sm flex items-center gap-1.5">
+                <Sparkles class="w-3.5 h-3.5 fill-current text-amber-500 animate-pulse" /> 我的积分：{{ profileUser.points || 0 }}
+              </span>
             </div>
             <div v-else class="mb-4">
               <RouterLink to="/schedule" class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 text-xs font-bold rounded-xl transition-all shadow-sm">提示：前往「我的课表」同步教务，即可一键完成实名认证</RouterLink>

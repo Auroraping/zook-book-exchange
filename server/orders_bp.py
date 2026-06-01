@@ -10,17 +10,51 @@ def current_user_id():
     return request.args.get("userId") or request_payload().get("userId") or "me"
 
 def enrich_order(order):
-    if order.get("title") and order.get("cover"):
-        return order
+    # 1. 安全扩充 isPaid、isDelivered 状态
+    is_paid = order.get("isPaid")
+    is_delivered = order.get("isDelivered")
+    
+    # 2. 如果缺少这些属性（历史订单），以其 status 做兼容映射
+    if is_paid is None:
+        if order.get("status") in ("pending", "completed"):
+            is_paid = True
+        else:
+            is_paid = False
+            
+    if is_delivered is None:
+        if order.get("status") == "completed":
+            is_delivered = True
+        else:
+            is_delivered = False
+            
+    # 3. 动态确定对外公开的 status 状态
+    status = order.get("status")
+    if status != "cancelled":
+        if is_paid and is_delivered:
+            status = "completed"
+        elif is_paid and not is_delivered:
+            status = "paid"
+        elif not is_paid and is_delivered:
+            status = "delivered"
+        else:
+            status = "unpaid"
+            
+    # 4. 获取教材的详情属性进行补全
     book = find_by_id(read_json("books.json", []), order.get("bookId"))
-    if not book:
-        return order
+    title = order.get("title") or (book.get("title") if book else "未知教材")
+    price = order.get("price") or (book.get("price") if book else 0.0)
+    seller = order.get("seller") or (book.get("seller") if book else "浙大同学")
+    cover = order.get("cover") or (book.get("cover") if book else "/book_cover.png")
+    
     return {
         **order,
-        "title": order.get("title") or book.get("title"),
-        "price": order.get("price") or book.get("price"),
-        "seller": order.get("seller") or book.get("seller"),
-        "cover": order.get("cover") or book.get("cover"),
+        "isPaid": is_paid,
+        "isDelivered": is_delivered,
+        "status": status,
+        "title": title,
+        "price": price,
+        "seller": seller,
+        "cover": cover,
     }
 
 def update_book_status(books, book_id, status):
@@ -117,6 +151,9 @@ def checkout_cart():
                 "title": book.get("title"),
                 "price": book.get("price"),
                 "status": "unpaid",
+                "isPaid": False,
+                "isDelivered": False,
+                "pointsAwarded": False,
                 "seller": book.get("seller"),
                 "sellerId": book.get("sellerId"),
                 "date": now_text(),
@@ -143,31 +180,118 @@ def list_orders():
     user_id = request.args.get("userId")
     orders = [enrich_order(order) for order in read_json("orders.json", [])]
     if user_id:
-        orders = [order for order in orders if order.get("userId") in (None, "", user_id)]
+        users = read_json("users.json", [])
+        real_users = [u for u in users if u.get("username") and u.get("id") != "me"]
+        
+        current_user = None
+        if user_id == "me":
+            if real_users:
+                current_user = real_users[-1]
+        else:
+            current_user = next((u for u in users if u.get("id") == user_id or str(u.get("username")).lower() == str(user_id).lower() or str(u.get("studentId")).lower() == str(user_id).lower()), None)
+            
+        if current_user:
+            c_id = current_user.get("id")
+            c_username = current_user.get("username")
+            c_student_id = current_user.get("studentId")
+            
+            orders = [
+                order for order in orders 
+                if (order.get("userId") in ("me", c_id, c_username, c_student_id)) 
+                or (order.get("sellerId") in (c_id, c_username, c_student_id))
+            ]
+            return jsonify({"success": True, "orders": orders, "points": current_user.get("points", 0)})
+        else:
+            orders = [order for order in orders if order.get("userId") == user_id]
+            
     return jsonify({"success": True, "orders": orders})
 
 @orders_bp.patch("/api/orders/<order_id>")
 def update_order(order_id):
     action = request_payload().get("action")
-    transitions = {"pay": "pending", "confirm": "completed", "cancel": "cancelled"}
-    if action not in transitions:
+    allowed_actions = {"pay", "deliver", "confirm", "cancel"}
+    if action not in allowed_actions:
         return jsonify({"success": False, "message": "订单操作不合法"}), 400
-    allowed_sources = {"pay": {"unpaid"}, "confirm": {"pending"}, "cancel": {"unpaid", "pending"}}
 
     def update(orders):
         order = find_by_id(orders, order_id)
         if not order:
             return None
-        if order.get("status") not in allowed_sources[action]:
-            return {"error": "当前订单状态不能执行该操作"}
-        order["status"] = transitions[action]
-        order[f"{action}At"] = now_text()
+        
+        # 1. 兼容和映射老订单状态
+        if order.get("isPaid") is None:
+            order["isPaid"] = order.get("status") in ("pending", "completed")
+        if order.get("isDelivered") is None:
+            order["isDelivered"] = order.get("status") == "completed"
+
+        # 2. 执行状态修改动作
+        if action == "pay":
+            if order.get("status") == "cancelled":
+                return {"error": "已关闭的订单无法支付"}
+            order["isPaid"] = True
+            order["paidAt"] = now_text()
+        elif action in ("deliver", "confirm"):
+            if order.get("status") == "cancelled":
+                return {"error": "已关闭的订单无法交付"}
+            order["isDelivered"] = True
+            order["deliveredAt"] = now_text()
+        elif action == "cancel":
+            if order.get("status") == "completed" or (order.get("isPaid") and order.get("isDelivered")):
+                return {"error": "已完成的订单无法取消"}
+            order["status"] = "cancelled"
+            order["cancelledAt"] = now_text()
+            return order
+
+        # 3. 动态判断多态已支付/已交付/已完成
+        if order.get("isPaid") and order.get("isDelivered"):
+            order["status"] = "completed"
+            order["completedAt"] = now_text()
+            
+            # 4. 交易完美完成，触发买卖双方 +5 积分奖励
+            if not order.get("pointsAwarded"):
+                order["pointsAwarded"] = True
+                
+                buyer_id = order.get("userId")
+                seller_id = order.get("sellerId")
+                
+                def award_points(users_list):
+                    buyer_user = None
+                    seller_user = None
+                    if buyer_id:
+                        buyer_user = next((u for u in users_list if u.get("id") == buyer_id or str(u.get("username")).lower() == str(buyer_id).lower() or str(u.get("studentId")).lower() == str(buyer_id).lower()), None)
+                    if seller_id:
+                        seller_user = next((u for u in users_list if u.get("id") == seller_id or str(u.get("username")).lower() == str(seller_id).lower() or str(u.get("studentId")).lower() == str(seller_id).lower()), None)
+                        
+                    if buyer_user:
+                        buyer_user["points"] = buyer_user.get("points", 0) + 5
+                        if buyer_user.get("id") != "me":
+                            me_user = find_by_id(users_list, "me")
+                            if me_user:
+                                me_user["points"] = me_user.get("points", 0) + 5
+                                
+                    if seller_user:
+                        seller_user["points"] = seller_user.get("points", 0) + 5
+                        if seller_user.get("id") != "me":
+                            # 如果卖家被映射在其它地方，我们也同步
+                            pass
+                            
+                    return True
+                
+                mutate_json("users.json", award_points, [])
+        else:
+            if order.get("isPaid") and not order.get("isDelivered"):
+                order["status"] = "paid"
+            elif not order.get("isPaid") and order.get("isDelivered"):
+                order["status"] = "delivered"
+            else:
+                order["status"] = "unpaid"
+
         return order
 
     order = mutate_json("orders.json", update, [])
     if not order:
         return jsonify({"success": False, "message": "订单不存在"}), 404
-    if order.get("error"):
+    if isinstance(order, dict) and order.get("error"):
         return jsonify({"success": False, "message": order["error"]}), 409
 
     book_status = "sold" if action == "pay" else "approved" if action == "cancel" else None

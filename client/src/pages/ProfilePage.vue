@@ -187,6 +187,11 @@ onMounted(async () => {
       { id: 'books', label: 'Ta 的闲置', icon: 'Package' }
     ]
   }
+
+  if (isMe && ordersData.points !== undefined) {
+    profileUser.value.points = ordersData.points
+    updateUser({ points: ordersData.points })
+  }
 })
 
 const handleWishDeleted = (wishId) => {
@@ -200,6 +205,20 @@ const handleNoteDeleted = (noteId) => {
 const handleFavoriteDeleted = (bookId) => {
   favoriteBooks.value = favoriteBooks.value.filter((b) => b.id !== bookId)
 }
+
+const handleOrderUpdated = async () => {
+  const [ordersData, favoritesData] = await Promise.all([
+    isMe ? getJson('/api/orders?userId=me') : { orders: [] }, 
+    isMe ? getJson('/api/favorites?userId=me') : { items: [] }
+  ])
+  orders.value = ordersData.orders || []
+  favoriteBooks.value = favoritesData.items || []
+  
+  if (ordersData.points !== undefined) {
+    profileUser.value.points = ordersData.points
+    updateUser({ points: ordersData.points })
+  }
+}
 </script>
 
 <template>
@@ -208,7 +227,7 @@ const handleFavoriteDeleted = (bookId) => {
     <ProfileHeaderCard :profile-user="profileUser" :is-me="isMe" @edit-avatar="openAvatarModal" />
     <div class="flex gap-8">
       <ProfileSidebar v-model:activeTab="activeTab" :profile-user="profileUser" :tabs="tabs" :icon-map="iconMap" />
-      <ProfileTabContent :active-tab="activeTab" :tabs="tabs" :orders="orders" :books="books" :wishes="wishes" :notifications="notifications" :favorite-books="favoriteBooks" :notes="notes" @wish-deleted="handleWishDeleted" @note-deleted="handleNoteDeleted" @favorite-deleted="handleFavoriteDeleted" />
+      <ProfileTabContent :active-tab="activeTab" :tabs="tabs" :orders="orders" :books="books" :wishes="wishes" :notifications="notifications" :favorite-books="favoriteBooks" :notes="notes" @wish-deleted="handleWishDeleted" @note-deleted="handleNoteDeleted" @favorite-deleted="handleFavoriteDeleted" @order-updated="handleOrderUpdated" />
     </div>
   </div>
 

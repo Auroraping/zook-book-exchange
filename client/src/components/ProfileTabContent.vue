@@ -1,8 +1,8 @@
 <script setup>
 import { RouterLink } from 'vue-router'
-import { ChevronRight, Heart, Sparkles, Trash2, FileText } from 'lucide-vue-next'
+import { ChevronRight, Heart, Sparkles, Trash2, FileText, CreditCard, Package } from 'lucide-vue-next'
 import { useAuth } from '../composables/useAuth.js'
-import { deleteJson, postJson } from '../composables/useApi.js'
+import { deleteJson, postJson, patchJson } from '../composables/useApi.js'
 
 const props = defineProps({
   activeTab: { type: String, required: true },
@@ -15,10 +15,36 @@ const props = defineProps({
   notes: { type: Array, default: () => [] }
 })
 
-const emit = defineEmits(['wish-deleted', 'note-deleted', 'favorite-deleted'])
+const emit = defineEmits(['wish-deleted', 'note-deleted', 'favorite-deleted', 'order-updated'])
 
 const { user } = useAuth()
 const currentUserId = user.value?.id || 'me'
+
+const statusMap = {
+  unpaid: { label: '待支付', class: 'bg-orange-50 text-orange-600 border border-orange-100' },
+  paid: { label: '已支付 (待交付)', class: 'bg-blue-50 text-blue-600 border border-blue-100' },
+  delivered: { label: '已交付 (待支付)', class: 'bg-purple-50 text-purple-600 border border-purple-100' },
+  completed: { label: '交易完成', class: 'bg-green-50 text-green-600 border border-green-100' },
+  cancelled: { label: '已关闭', class: 'bg-gray-50 text-gray-400 border border-gray-100' }
+}
+
+const getStatusStyle = (status) => statusMap[status] || statusMap.cancelled
+
+const handleOrderAction = async (order, action) => {
+  try {
+    const res = await patchJson(`/api/orders/${order.id}`, { action })
+    if (res.success) {
+      if (res.order.status === 'completed') {
+        alert('🎉 交易已圆满完成！您与交易对方各获得 5 积分奖励！')
+      }
+      emit('order-updated')
+    } else {
+      alert(res.message || '操作失败，请重试')
+    }
+  } catch (err) {
+    alert(err.message || '网络连接失败，请检查服务状态后重试。')
+  }
+}
 
 const handleDeleteWish = async (wish) => {
   if (confirm(`确定要删除购书心愿《${wish.title}》吗？删除后将无法恢复。`)) {
@@ -71,7 +97,32 @@ const handleRemoveFavorite = async (book) => {
     <div class="p-8 border-b border-gray-100"><h3 class="font-black text-gray-800 text-xl">{{ tabs.find((t) => t.id === activeTab)?.label }}</h3></div>
     <div class="p-8">
       <div v-if="activeTab === 'orders'" class="flex flex-col gap-6">
-        <div v-for="order in orders" :key="order.id" class="border border-gray-100 rounded-3xl p-6 hover:border-blue-200 hover:shadow-md transition-all flex gap-6"><img :src="order.cover" class="w-20 h-28 bg-gray-50 rounded-2xl object-cover shadow-sm" /><div class="flex-1"><h4 class="font-bold text-gray-800 text-lg mb-1">{{ order.title }}</h4><p class="text-xs text-gray-400 mb-2">卖家：{{ order.seller }}</p><span class="text-[10px] font-bold px-2 py-0.5 bg-blue-50 text-blue-600 rounded">{{ order.status }}</span></div><div class="text-right"><p class="text-2xl font-black text-gray-800">¥ {{ order.price.toFixed(2) }}</p><p class="text-[10px] text-gray-400 mt-1 font-bold">{{ order.date }}</p></div></div>
+        <div v-for="order in orders" :key="order.id" class="border border-gray-100 rounded-[28px] p-6 hover:border-blue-200 hover:shadow-lg transition-all duration-300 flex flex-col sm:flex-row gap-6 bg-white relative overflow-hidden">
+          <img :src="order.cover" class="w-20 h-28 bg-gray-50 rounded-2xl object-cover shadow-sm shrink-0" />
+          <div class="flex-1 flex flex-col justify-between">
+            <div>
+              <h4 class="font-black text-gray-800 text-lg mb-1 leading-snug">{{ order.title }}</h4>
+              <p class="text-xs text-gray-400 font-bold mb-3">卖家：<span class="text-gray-600">{{ order.seller }}</span></p>
+            </div>
+            <div class="flex items-center gap-3 flex-wrap">
+              <span :class="['text-[10px] font-black px-2.5 py-1 rounded-lg border shadow-sm', getStatusStyle(order.status).class]">
+                {{ getStatusStyle(order.status).label }}
+              </span>
+              <!-- 买家视图：未支付时显示支付按钮 -->
+              <button v-if="order.isPaid === false && order.status !== 'cancelled' && (order.userId === currentUserId || order.userId === 'me')" @click="handleOrderAction(order, 'pay')" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
+                <CreditCard class="w-3.5 h-3.5" /> 去支付
+              </button>
+              <!-- 卖家视图：未交付时显示交付按钮 -->
+              <button v-if="order.isDelivered === false && order.status !== 'cancelled' && order.sellerId === currentUserId" @click="handleOrderAction(order, 'deliver')" class="px-4 py-1.5 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
+                <Package class="w-3.5 h-3.5" /> 确认交付
+              </button>
+            </div>
+          </div>
+          <div class="text-right flex flex-col justify-between shrink-0">
+            <p class="text-2xl font-black text-gray-800">¥ {{ order.price.toFixed(2) }}</p>
+            <p class="text-[10px] text-gray-400 font-bold">{{ order.date }}</p>
+          </div>
+        </div>
       </div>
       <div v-else-if="activeTab === 'wishes'" class="flex flex-col gap-4">
         <div v-for="wish in wishes.filter((w) => w.userId === currentUserId)" :key="wish.id" class="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex justify-between items-center"><div><h4 class="text-xl font-black text-gray-800 mb-2">{{ wish.title }}</h4><p class="text-sm text-gray-500">作者：{{ wish.author }} | 预算：¥{{ wish.priceRange }}</p></div><button @click="handleDeleteWish(wish)" class="p-3 bg-red-50 text-red-500 hover:bg-red-100 hover:scale-105 active:scale-95 rounded-2xl transition-all" title="删除心愿"><Trash2 class="w-5 h-5" /></button></div>
