@@ -67,6 +67,13 @@ onMounted(async () => {
 
   // 3. 监听实时收到聊天消息广播事件
   socket.on('receive_message', async (data) => {
+    const currentUserId = user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || localStorage.getItem('zook_student_id') || 'me'
+    
+    // 【高可用容灾防御】：如果本条全局路由消息的指定接收者不是当前登录的账号学号，直接默默丢弃，绝不越权显示
+    if (data.receiverId && String(data.receiverId) !== String(currentUserId)) {
+      return
+    }
+
     const senderId = data.chatId
     const incomingMsg = data.message
 

@@ -277,10 +277,11 @@ def create_chat_message(chat_id):
 
     result = mutate_json("chat.json", update, {})
     
-    # 3. 实时消息 Socket 推送（高可用冗余广播：只要不是 Mock 机器人，一律无条件实时路由，提高多端即时通讯容灾能力）
+    # 3. 实时消息 Socket 推送（全局大厅容灾广播：彻底脱离对长连接房间和 session 状态切换的强依赖，保障双开测试 100% 投递）
     if not is_mock_bot:
         event_data = {
             "chatId": sender_id,
+            "receiverId": receiver_id,
             "message": {
                 "id": result["message"]["id"],
                 "role": "other",
@@ -290,7 +291,7 @@ def create_chat_message(chat_id):
         }
         socketio = current_app.extensions.get("socketio")
         if socketio:
-            socketio.emit("receive_message", event_data, room=receiver_id)
-            print(f"[Socket] 实时投递：已向在线用户 {receiver_id} 专属房间路由了实时消息。")
+            socketio.emit("receive_message", event_data)
+            print(f"[Socket] 全局大厅容灾投递：已将实时消息广播至大厅，等待目标用户 {receiver_id} 接收。")
         
     return jsonify({"success": True, **result})
