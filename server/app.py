@@ -135,4 +135,4 @@ def diagnose_search_trigger():
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "3001"))
-    socketio.run(app, host="0.0.0.0", port=port, allow_unsafe_werkzeug=True)
+    socketio.run(app, host="0.0.0.0", port=port, allow_unsafe_werkzeug=True, debug=True)
