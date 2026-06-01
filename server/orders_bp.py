@@ -174,6 +174,12 @@ def checkout_cart():
         return books_list
     mutate_json("books.json", mark_books_sold, [])
 
+    def clear_cart(carts_data):
+        cart_entry = next((item for item in carts_data if item.get("userId") == user_id), None)
+        if cart_entry:
+            cart_entry["bookIds"] = []
+        return cart_entry
+
     mutate_json("carts.json", clear_cart, [])
     notify(user_id, "订单已创建", f"已为你创建 {len(created_orders)} 笔订单，请在履约中心完成支付。", "blue")
     return jsonify({"success": True, "orders": created_orders})
