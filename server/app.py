@@ -4,8 +4,8 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room
 
-# 从独立蓝图导入在线共享状态与注册字典
-from chats_bp import online_users, registered_users
+# 从强单例共享状态文件导入在线状态与注册字典，确保热重载数据一致性
+from socket_state import online_users, registered_users
 
 # 引入所有业务路由蓝图
 from user_bp import user_bp

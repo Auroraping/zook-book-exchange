@@ -3,14 +3,8 @@ from json_store import find_by_id, mutate_json, new_id, now_text, read_json, wri
 
 chats_bp = Blueprint("chats_bp", __name__)
 
-# 在内存中共享 Socket 状态字典，可在 app.py 中安全导入
-online_users = {}
-registered_users = {
-    "U_MOCK_001": "书友小陈",
-    "U_MOCK_002": "李同学",
-    "U_MOCK_003": "计科王同学",
-    "U_MOCK_004": "高数笔记小助手",
-}
+# 从强单例状态共享文件导入 online_users 以防蓝图热重载实例分裂
+from socket_state import online_users
 
 def request_payload():
     return request.get_json(silent=True) or {}
@@ -283,8 +277,8 @@ def create_chat_message(chat_id):
 
     result = mutate_json("chat.json", update, {})
     
-    # 3. 实时消息 Socket 推送
-    if is_receiver_online and not is_mock_bot:
+    # 3. 实时消息 Socket 推送（高可用冗余广播：只要不是 Mock 机器人，一律无条件实时路由，提高多端即时通讯容灾能力）
+    if not is_mock_bot:
         event_data = {
             "chatId": sender_id,
             "message": {
@@ -297,6 +291,6 @@ def create_chat_message(chat_id):
         socketio = current_app.extensions.get("socketio")
         if socketio:
             socketio.emit("receive_message", event_data, room=receiver_id)
-            print(f"[Socket] 已向在线用户 {receiver_id} 专属房间路由了实时消息。")
+            print(f"[Socket] 实时投递：已向在线用户 {receiver_id} 专属房间路由了实时消息。")
         
     return jsonify({"success": True, **result})
