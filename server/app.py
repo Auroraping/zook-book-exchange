@@ -114,6 +114,25 @@ def handle_send_message(data):
     messages.append(message_data)
     socketio.emit("receive_message", message_data, room=data.get("roomId"))
 
+@app.post("/api/diagnose/error")
+def diagnose_error():
+    from flask import request
+    payload = request.get_json(silent=True) or {}
+    print("\n⚠️⚠️⚠️ [FRONTEND RUNTIME ERROR DETECTED] ⚠️⚠️⚠️")
+    print(f"Message: {payload.get('message')}")
+    print(f"URL: {payload.get('url')}")
+    print(f"Line: {payload.get('line')}, Col: {payload.get('col')}")
+    print(f"Stack: {payload.get('stack')}")
+    print("⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️\n")
+    return jsonify({"success": True})
+
+@app.post("/api/diagnose/search_trigger")
+def diagnose_search_trigger():
+    from flask import request
+    payload = request.get_json(silent=True) or {}
+    print(f"\n🔍 [FRONTEND SEARCH TRIGGERED] Query: '{payload.get('query')}', UserID: '{payload.get('userId')}'\n")
+    return jsonify({"success": True})
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "3001"))
     socketio.run(app, host="0.0.0.0", port=port, allow_unsafe_werkzeug=True)

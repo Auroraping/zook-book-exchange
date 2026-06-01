@@ -19,6 +19,17 @@ const searching = ref(false)
 
 const handleSearch = async () => {
   const q = searchQuery.value.trim()
+  
+  // 发送工业级原生 fetch 触发诊断，无视 getJson 本身可能被 catch 阻断的影响
+  try {
+    const currentUserId = user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || localStorage.getItem('zook_student_id') || 'me'
+    fetch('http://localhost:3001/api/diagnose/search_trigger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: q, userId: currentUserId })
+    }).catch(() => {})
+  } catch {}
+
   if (!q) {
     searchResults.value = []
     searching.value = false

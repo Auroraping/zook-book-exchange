@@ -18,6 +18,22 @@ const chats = ref([])
 const chatMessages = ref({})
 const activeChat = ref(null)
 
+// 注入工业级前端崩溃捕获系统
+window.onerror = function (message, url, line, col, error) {
+  fetch('http://localhost:3001/api/diagnose/error', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: message,
+      url: url,
+      line: line,
+      col: col,
+      stack: error ? error.stack : ''
+    })
+  }).catch(() => {})
+  return false
+}
+
 let socket = null
 
 onMounted(async () => {
