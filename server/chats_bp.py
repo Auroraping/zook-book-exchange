@@ -279,9 +279,11 @@ def create_chat_message(chat_id):
     
     # 3. 实时消息 Socket 推送（全局大厅容灾广播：彻底脱离对长连接房间和 session 状态切换的强依赖，保障双开测试 100% 投递）
     if not is_mock_bot:
+        r_info = get_user_info(receiver_id)
         event_data = {
             "chatId": sender_id,
             "receiverId": receiver_id,
+            "receiverStudentId": r_info.get("studentId") or "",
             "message": {
                 "id": result["message"]["id"],
                 "role": "other",

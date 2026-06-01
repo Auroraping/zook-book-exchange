@@ -130,7 +130,7 @@ def diagnose_error():
 def diagnose_search_trigger():
     from flask import request
     payload = request.get_json(silent=True) or {}
-    print(f"\n🔍 [FRONTEND SEARCH TRIGGERED] Query: '{payload.get('query')}', UserID: '{payload.get('userId')}'\n")
+    print(f"\n[FRONTEND SEARCH TRIGGERED] Query: '{payload.get('query')}', UserID: '{payload.get('userId')}'\n")
     return jsonify({"success": True})
 
 if __name__ == "__main__":

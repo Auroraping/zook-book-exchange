@@ -67,10 +67,20 @@ onMounted(async () => {
 
   // 3. 监听实时收到聊天消息广播事件
   socket.on('receive_message', async (data) => {
-    const currentUserId = user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || localStorage.getItem('zook_student_id') || 'me'
+    const myUuid = user.value?.realId || localStorage.getItem('zook_user_uuid')
+    const myStudentId = user.value?.studentId || user.value?.username || localStorage.getItem('zook_username')
     
-    // 【高可用容灾防御】：如果本条全局路由消息的指定接收者不是当前登录的账号学号，直接默默丢弃，绝不越权显示
-    if (data.receiverId && String(data.receiverId) !== String(currentUserId)) {
+    // 【双重高可用容灾防御】：只要指定的接收者 UUID 或接收者学号中任意一个匹配当前登录用户，即认定为是发给我的
+    let isForMe = false
+    if (data.receiverId && myUuid && String(data.receiverId) === String(myUuid)) {
+      isForMe = true
+    }
+    if (data.receiverStudentId && myStudentId && String(data.receiverStudentId) === String(myStudentId)) {
+      isForMe = true
+    }
+    
+    // 若两级容灾比对均匹配失败，则判定为别人的消息，直接安全静默丢弃，绝不越权显示
+    if (!isForMe) {
       return
     }
 
