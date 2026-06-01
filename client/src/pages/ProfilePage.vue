@@ -196,6 +196,10 @@ const handleWishDeleted = (wishId) => {
 const handleNoteDeleted = (noteId) => {
   notes.value = notes.value.filter((n) => n.id !== noteId)
 }
+
+const handleFavoriteDeleted = (bookId) => {
+  favoriteBooks.value = favoriteBooks.value.filter((b) => b.id !== bookId)
+}
 </script>
 
 <template>
@@ -204,7 +208,7 @@ const handleNoteDeleted = (noteId) => {
     <ProfileHeaderCard :profile-user="profileUser" :is-me="isMe" @edit-avatar="openAvatarModal" />
     <div class="flex gap-8">
       <ProfileSidebar v-model:activeTab="activeTab" :profile-user="profileUser" :tabs="tabs" :icon-map="iconMap" />
-      <ProfileTabContent :active-tab="activeTab" :tabs="tabs" :orders="orders" :books="books" :wishes="wishes" :notifications="notifications" :favorite-books="favoriteBooks" :notes="notes" @wish-deleted="handleWishDeleted" @note-deleted="handleNoteDeleted" />
+      <ProfileTabContent :active-tab="activeTab" :tabs="tabs" :orders="orders" :books="books" :wishes="wishes" :notifications="notifications" :favorite-books="favoriteBooks" :notes="notes" @wish-deleted="handleWishDeleted" @note-deleted="handleNoteDeleted" @favorite-deleted="handleFavoriteDeleted" />
     </div>
   </div>
 
