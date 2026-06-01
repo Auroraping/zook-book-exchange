@@ -26,7 +26,8 @@ const handleSearch = async () => {
   }
   searching.value = true
   try {
-    const res = await getJson(`/api/users/search?q=${encodeURIComponent(q)}&userId=${user.value?.studentId || 'me'}`)
+    const currentUserId = user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || localStorage.getItem('zook_student_id') || 'me'
+    const res = await getJson(`/api/users/search?q=${encodeURIComponent(q)}&userId=${currentUserId}`)
     searchResults.value = res.users || []
   } catch (err) {
     console.error('搜索用户失败：', err)

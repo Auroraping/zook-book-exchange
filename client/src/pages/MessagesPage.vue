@@ -21,7 +21,8 @@ const activeChat = ref(null)
 let socket = null
 
 onMounted(async () => {
-  const [booksData, chatData, noticesData] = await Promise.all([getJson('/api/books?status=approved'), getJson(`/api/chats?userId=${user.value?.studentId || 'me'}`), getJson('/api/notifications?userId=me')])
+  const currentUserId = user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || localStorage.getItem('zook_student_id') || 'me'
+  const [booksData, chatData, noticesData] = await Promise.all([getJson('/api/books?status=approved'), getJson(`/api/chats?userId=${currentUserId}`), getJson('/api/notifications?userId=me')])
   books.value = booksData.books
   chats.value = [{ id: 'system', type: 'system', name: '消息通知', unread: noticesData.notifications.filter((item) => !item.isRead).length }, ...(chatData.contacts || []).map((chat) => ({ ...chat, type: 'chat' }))]
   chatMessages.value = chatData.messages || {}
@@ -42,7 +43,7 @@ onMounted(async () => {
   socket = io('http://localhost:3001')
 
   socket.on('connect', () => {
-    const currentUserId = user.value?.studentId || 'me'
+    const currentUserId = user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || localStorage.getItem('zook_student_id') || 'me'
     const currentUserName = user.value?.name || '浙大同学'
     // 2. 长连接建立后向后端注册身份，以便加入专属广播房间
     socket.emit('register_user', { id: currentUserId, name: currentUserName })
@@ -65,7 +66,8 @@ onMounted(async () => {
     if (!chat) {
       // 全新会话，拉取最新会话列表并置顶
       try {
-        const chatData = await getJson(`/api/chats?userId=${user.value?.studentId || 'me'}`)
+        const currentUserId = user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || localStorage.getItem('zook_student_id') || 'me'
+        const chatData = await getJson(`/api/chats?userId=${currentUserId}`)
         chats.value = [
           { id: 'system', type: 'system', name: '消息通知', unread: systemNotifications.value.filter((item) => !item.isRead).length },
           ...(chatData.contacts || []).map((c) => ({ ...c, type: 'chat' }))
@@ -126,7 +128,7 @@ const selectChat = (chatId) => {
 }
 
 const sendMessage = async (text) => {
-  const currentUserId = user.value?.studentId || 'me'
+  const currentUserId = user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || localStorage.getItem('zook_student_id') || 'me'
   const data = await postJson(`/api/chats/${activeChatId.value}/messages`, { text, userId: currentUserId })
   
   if (!chatMessages.value[activeChatId.value]) chatMessages.value[activeChatId.value] = []
@@ -150,17 +152,18 @@ const sendMessage = async (text) => {
 const handleStartChat = async (targetUser) => {
   if (!targetUser) return
   try {
+    const currentUserId = user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || localStorage.getItem('zook_student_id') || 'me'
     const res = await postJson('/api/chats', {
       contactId: targetUser.id,
       contactName: targetUser.name,
       avatar: targetUser.avatar,
       initialMsg: `你好，${targetUser.name}同学！我想与你交流一下教材交易和信息沟通。`,
       bookTitle: '教材沟通',
-      userId: user.value?.studentId || 'me'
+      userId: currentUserId
     })
     
     if (res.success) {
-      const chatData = await getJson(`/api/chats?userId=${user.value?.studentId || 'me'}`)
+      const chatData = await getJson(`/api/chats?userId=${currentUserId}`)
       chats.value = [
         { id: 'system', type: 'system', name: '消息通知', unread: systemNotifications.value.filter((item) => !item.isRead).length },
         ...(chatData.contacts || []).map((chat) => ({ ...chat, type: 'chat' }))
