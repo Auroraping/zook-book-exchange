@@ -58,11 +58,38 @@ onMounted(async () => {
   // 1. 初始化 Socket.IO 长连接，指向后端服务端口
   socket = io('http://localhost:3001')
 
+  const reportSocketDiagnose = (event, details) => {
+    const currentUserId = user.value?.realId || localStorage.getItem('zook_user_uuid') || user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || 'me'
+    const currentUserName = user.value?.name || '浙大同学'
+    fetch('http://localhost:3001/api/diagnose/socket', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: currentUserId,
+        userName: currentUserName,
+        event: event,
+        details: details
+      })
+    }).catch(() => {})
+  }
+
   socket.on('connect', () => {
     const currentUserId = user.value?.realId || localStorage.getItem('zook_user_uuid') || user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || 'me'
     const currentUserName = user.value?.name || '浙大同学'
+    console.log(`%c[Socket.IO] 长连接连接成功！注册 ID: ${currentUserId}`, 'color: #10b981; font-weight: bold;');
     // 2. 长连接建立后向后端注册身份，以便加入专属广播房间
     socket.emit('register_user', { id: currentUserId, name: currentUserName })
+    reportSocketDiagnose('CONNECT_SUCCESS', { socketId: socket.id, registeredId: currentUserId })
+  })
+
+  socket.on('connect_error', (error) => {
+    console.error('%c[Socket.IO] 长连接发生连接错误！', 'color: #ef4444; font-weight: bold;', error);
+    reportSocketDiagnose('CONNECT_ERROR', { errorMessage: error.message, errorStack: error.stack })
+  })
+
+  socket.on('disconnect', (reason) => {
+    console.warn('%c[Socket.IO] 长连接已断开！原因:', 'color: #f59e0b; font-weight: bold;', reason);
+    reportSocketDiagnose('DISCONNECT', { reason: reason })
   })
 
   // 3. 监听实时收到聊天消息广播事件
@@ -72,12 +99,28 @@ onMounted(async () => {
     
     // 【双重高可用容灾防御】：只要指定的接收者 UUID 或接收者学号中任意一个匹配当前登录用户，即认定为是发给我的
     let isForMe = false
+    let matchType = 'none'
     if (data.receiverId && myUuid && String(data.receiverId) === String(myUuid)) {
       isForMe = true
+      matchType = 'uuid'
     }
     if (data.receiverStudentId && myStudentId && String(data.receiverStudentId) === String(myStudentId)) {
       isForMe = true
+      matchType = 'student_id'
     }
+    
+    // 触发收到消息的比对诊断回传，帮助在后端控制台一眼看穿消息匹配问题
+    reportSocketDiagnose('RECEIVE_MESSAGE_MATCH_DIAGNOSE', {
+      incomingReceiverId: data.receiverId,
+      incomingReceiverStudentId: data.receiverStudentId,
+      myUuid: myUuid,
+      myStudentId: myStudentId,
+      isForMe: isForMe,
+      matchType: matchType,
+      messageContent: data.message?.content
+    })
+    
+    console.log(`[Socket.IO] 收到实时广播，匹配结果为: ${isForMe} (匹配类型: ${matchType})`, data);
     
     // 若两级容灾比对均匹配失败，则判定为别人的消息，直接安全静默丢弃，绝不越权显示
     if (!isForMe) {
@@ -91,8 +134,16 @@ onMounted(async () => {
       chatMessages.value[senderId] = []
     }
 
-    // 1. 使用高可用解构重赋值替换普通的 push，百分之百强行唤醒 Vue 3 深层响应式依赖并重绘聊天气泡！
+    // 【唯一消息 ID 工业级去重防御】：防止多维容灾或网络瞬间重试带来的并发消息多包投递，保证界面上气泡仅绘制一次
+    const isDuplicate = chatMessages.value[senderId].some(m => String(m.id) === String(incomingMsg.id))
+    if (isDuplicate) {
+      console.log(`%c[Socket.IO] 捕获到重复消息包，已安全执行去重抛弃，ID: ${incomingMsg.id}`, 'color: #94a3b8;');
+      return
+    }
+
+    // 1. 使用高可用解构重赋值并彻底突变嵌套字典的根引用，100% 强行驱动 Vue 3 依赖重绘聊天气泡！
     chatMessages.value[senderId] = [...chatMessages.value[senderId], incomingMsg]
+    chatMessages.value = { ...chatMessages.value }
 
     // 联动更新会话列表里的状态
     let chat = chats.value.find((c) => String(c.id) === String(senderId))
@@ -166,15 +217,19 @@ const sendMessage = async (text) => {
   const currentUserId = user.value?.realId || localStorage.getItem('zook_user_uuid') || user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || 'me'
   const data = await postJson(`/api/chats/${activeChatId.value}/messages`, { text, userId: currentUserId })
   
-  if (!chatMessages.value[activeChatId.value]) chatMessages.value[activeChatId.value] = []
+  if (!chatMessages.value[activeChatId.value]) {
+    chatMessages.value[activeChatId.value] = []
+  }
   
-  // 推进自己发送的消息气泡
-  chatMessages.value[activeChatId.value].push(data.message)
+  // 1. 推进自己发送的消息气泡，采用强解构与根引用强制刷新，物理规避 Vue 3 依赖追踪盲区！
+  let updatedList = [...chatMessages.value[activeChatId.value], data.message]
   
   // 如果是离线自动回复降级，则推入机器人回复气泡
   if (data.reply) {
-    chatMessages.value[activeChatId.value].push(data.reply)
+    updatedList = [...updatedList, data.reply]
   }
+  chatMessages.value[activeChatId.value] = updatedList
+  chatMessages.value = { ...chatMessages.value }
 
   // 同步更新侧边会话最后消息
   const chat = chats.value.find((c) => c.id === activeChatId.value)

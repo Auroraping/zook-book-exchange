@@ -118,12 +118,12 @@ def handle_send_message(data):
 def diagnose_error():
     from flask import request
     payload = request.get_json(silent=True) or {}
-    print("\n⚠️⚠️⚠️ [FRONTEND RUNTIME ERROR DETECTED] ⚠️⚠️⚠️")
+    print("\n*** [FRONTEND RUNTIME ERROR DETECTED] ***")
     print(f"Message: {payload.get('message')}")
     print(f"URL: {payload.get('url')}")
     print(f"Line: {payload.get('line')}, Col: {payload.get('col')}")
     print(f"Stack: {payload.get('stack')}")
-    print("⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️\n")
+    print("****************************************\n")
     return jsonify({"success": True})
 
 @app.post("/api/diagnose/search_trigger")
@@ -132,6 +132,18 @@ def diagnose_search_trigger():
     payload = request.get_json(silent=True) or {}
     print(f"\n[FRONTEND SEARCH TRIGGERED] Query: '{payload.get('query')}', UserID: '{payload.get('userId')}'\n")
     return jsonify({"success": True})
+
+@app.post("/api/diagnose/socket")
+def diagnose_socket():
+    from flask import request
+    payload = request.get_json(silent=True) or {}
+    print("\n=== [FRONTEND SOCKET DIAGNOSTIC REPORT] ===")
+    print(f"User: '{payload.get('userId')}' ({payload.get('userName')})")
+    print(f"Event: '{payload.get('event')}'")
+    print(f"Details: {payload.get('details')}")
+    print("========================================\n")
+    return jsonify({"success": True})
+
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "3001"))

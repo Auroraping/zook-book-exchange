@@ -9,18 +9,32 @@ from socket_state import online_users
 def request_payload():
     return request.get_json(silent=True) or {}
 
+def normalize_user_id(user_id):
+    user_id_str = str(user_id or "").strip()
+    if not user_id_str or user_id_str == "me":
+        return "me"
+    users = read_json("users.json", [])
+    u = next((item for item in users if str(item.get("id")) == user_id_str or str(item.get("studentId")) == user_id_str or str(item.get("username")) == user_id_str), None)
+    if u and u.get("id"):
+        return str(u["id"])
+    return user_id_str
+
 def get_user_info(user_id):
     user_id_str = str(user_id or "").strip()
     if not user_id_str or user_id_str == "me":
-        return {"name": "浙大同学", "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=me"}
+        return {"id": "me", "studentId": "me", "name": "浙大同学", "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=me"}
     users = read_json("users.json", [])
     u = next((item for item in users if str(item.get("id")) == user_id_str or str(item.get("studentId")) == user_id_str or str(item.get("username")) == user_id_str), None)
     if u:
         return {
+            "id": u.get("id"),
+            "studentId": u.get("studentId") or u.get("username") or "",
             "name": u.get("name") or u.get("realName") or f"用户_{user_id_str}",
             "avatar": u.get("avatar") or f"https://api.dicebear.com/7.x/identicon/svg?seed={user_id_str}"
         }
     return {
+        "id": user_id_str,
+        "studentId": user_id_str,
         "name": f"同学_{user_id_str[-4:] if len(user_id_str)>=4 else user_id_str}",
         "avatar": f"https://api.dicebear.com/7.x/identicon/svg?seed={user_id_str}"
     }
@@ -51,12 +65,12 @@ def seed_chat_state(user_id="me"):
 @chats_bp.post("/api/chats")
 def create_chat():
     payload = request_payload()
-    contact_id = payload.get("contactId")
+    contact_id = normalize_user_id(payload.get("contactId"))
     contact_name = payload.get("contactName")
     avatar = payload.get("avatar")
     initial_msg = payload.get("initialMsg")
     book_title = payload.get("bookTitle", "求购教材")
-    current_user_id = payload.get("userId") or "me"
+    current_user_id = normalize_user_id(payload.get("userId") or "me")
     
     if not contact_id or not contact_name:
         return jsonify({"success": False, "message": "联系人参数不完整"}), 400
@@ -174,14 +188,14 @@ def create_chat():
 
 @chats_bp.get("/api/chats")
 def get_chats():
-    user_id = request.args.get("userId") or "me"
+    user_id = normalize_user_id(request.args.get("userId") or "me")
     return jsonify({"success": True, **seed_chat_state(user_id)})
 
 @chats_bp.post("/api/chats/<chat_id>/read")
 def read_chat(chat_id):
+    chat_id = normalize_user_id(chat_id)
     user_id = request.args.get("userId") or request.json.get("userId") if request.is_json else None
-    if not user_id:
-        user_id = "me"
+    user_id = normalize_user_id(user_id or "me")
     def update(chat_state):
         user_chats = chat_state.setdefault("user_chats", {})
         seed_chat_state(user_id)
@@ -201,8 +215,8 @@ def create_chat_message(chat_id):
     if not text:
         return jsonify({"success": False, "message": "消息不能为空"}), 400
 
-    sender_id = str(payload.get("userId") or "me").strip()
-    receiver_id = str(chat_id).strip()
+    sender_id = normalize_user_id(payload.get("userId") or "me")
+    receiver_id = normalize_user_id(chat_id)
 
     is_receiver_online = receiver_id in online_users
     is_mock_bot = receiver_id.startswith("U_MOCK_")
@@ -277,11 +291,13 @@ def create_chat_message(chat_id):
 
     result = mutate_json("chat.json", update, {})
     
-    # 3. 实时消息 Socket 推送（全局大厅容灾广播：彻底脱离对长连接房间和 session 状态切换的强依赖，保障双开测试 100% 投递）
+    # 3. 实时消息 Socket 推送（全局大厅容灾广播与多维冗余信道：彻底保障双开浏览器极速接收）
     if not is_mock_bot:
         r_info = get_user_info(receiver_id)
+        s_info = get_user_info(sender_id)
         event_data = {
             "chatId": sender_id,
+            "senderStudentId": s_info.get("studentId") or "",
             "receiverId": receiver_id,
             "receiverStudentId": r_info.get("studentId") or "",
             "message": {
@@ -293,7 +309,19 @@ def create_chat_message(chat_id):
         }
         socketio = current_app.extensions.get("socketio")
         if socketio:
-            socketio.emit("receive_message", event_data)
-            print(f"[Socket] 全局大厅容灾投递：已将实时消息广播至大厅，等待目标用户 {receiver_id} 接收。")
+            # 1. 精准信道一：面向接收者当前会话 ID 的房间推送
+            socketio.emit("receive_message", event_data, room=receiver_id)
+            
+            # 2. 精准信道二：如果其真实 UUID 存在且与当前 ID 不同，追加向真实 UUID 房间推送
+            real_rec_id = r_info.get("id")
+            if real_rec_id and str(real_rec_id) != str(receiver_id):
+                socketio.emit("receive_message", event_data, room=str(real_rec_id))
+                
+            # 3. 精准信道三：如果接收方学号存在且与前两者都不同，追加向学号房间推送
+            rec_student_id = r_info.get("studentId")
+            if rec_student_id and str(rec_student_id) != str(receiver_id) and str(rec_student_id) != str(real_rec_id):
+                socketio.emit("receive_message", event_data, room=str(rec_student_id))
+
+            print(f"[Socket] 多维冗余精准投递成功：房间 {receiver_id}、UUID房间 {real_rec_id}、学号房间 {rec_student_id} 已同步投递！")
         
     return jsonify({"success": True, **result})

@@ -165,11 +165,14 @@ def checkout_cart():
 
     created_orders = mutate_json("orders.json", add_orders, [])
 
-    def clear_cart(carts_data):
-        cart_entry = next((item for item in carts_data if item.get("userId") == user_id), None)
-        if cart_entry:
-            cart_entry["bookIds"] = []
-        return cart_entry
+    # 物理强制！下单结账的瞬间，自动将结算的所有图书状态变更为 "sold"（已售出），以在广场上同步瞬间消失！
+    def mark_books_sold(books_list):
+        for b_id in book_ids:
+            b = find_by_id(books_list, b_id)
+            if b:
+                b["status"] = "sold"
+        return books_list
+    mutate_json("books.json", mark_books_sold, [])
 
     mutate_json("carts.json", clear_cart, [])
     notify(user_id, "订单已创建", f"已为你创建 {len(created_orders)} 笔订单，请在履约中心完成支付。", "blue")
