@@ -29,17 +29,36 @@ const handleSubmit = async () => {
     localStorage.setItem('zook_password', password.value)
 
     // 一键登录实名同步：如果有随登录接口自动带回的实名信息，直接一秒落盘！
-    let displayName = '浙大同学'
     if (data.user) {
-      displayName = data.user.realName || data.user.name || displayName
-      localStorage.setItem('zook_real_name', displayName)
+      // 将真名单独存储到 localStorage，不去覆盖网名
+      if (data.user.realName) localStorage.setItem('zook_real_name', data.user.realName)
       if (data.user.studentId) localStorage.setItem('zook_student_id', data.user.studentId)
       if (data.user.college) localStorage.setItem('zook_college', data.user.college)
       if (data.user.major) localStorage.setItem('zook_major', data.user.major)
       if (data.user.class) localStorage.setItem('zook_class', data.user.class)
+      
+      // 极致兜底：如果后端返回的名字是默认原名且本地 LocalStorage 曾有自定义网名，静默重新回写后端激活
+      const localCached = localStorage.getItem('user')
+      let mergedUser = { ...data.user }
+      if (localCached) {
+        try {
+          const prev = JSON.parse(localCached)
+          if (prev.name && prev.name !== '浙大同学' && prev.name !== username.value) {
+            if (!data.user.name || data.user.name === data.user.realName || data.user.name === username.value) {
+              mergedUser.name = prev.name
+              postJson('/api/user/update', { userId: data.user.id, name: prev.name }).catch(() => {})
+            }
+          }
+          if (prev.avatar && prev.avatar !== '/user_avatar.png' && (!data.user.avatar || data.user.avatar.includes('identicon'))) {
+            mergedUser.avatar = prev.avatar
+            postJson('/api/user/update', { userId: data.user.id, avatar: prev.avatar }).catch(() => {})
+          }
+        } catch {}
+      }
+      login(mergedUser)
+    } else {
+      login('user', username.value)
     }
-
-    login('user', displayName)
     router.push('/')
   } catch (err) {
     error.value = err.message || '无法连接到验证服务器，请确保后端已启动'

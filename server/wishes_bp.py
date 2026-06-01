@@ -80,3 +80,34 @@ def create_wish():
 
     wish = mutate_json("wishes.json", add_wish, [])
     return jsonify({"success": True, "wish": wish})
+
+@wishes_bp.delete("/api/wishes/<wish_id>")
+def delete_wish(wish_id):
+    user_id = request.args.get("userId") or "me"
+
+    def remove_wish(wishes):
+        wish = find_by_id(wishes, wish_id)
+        if not wish:
+            return "not_found"
+        wish_user_id = wish.get("userId") or "me"
+        # 支持等价身份判定：允许 'me' 与 真实 UUID 互通鉴权
+        allowed_ids = {user_id}
+        if user_id == "me":
+            users_list = read_json("users.json", [])
+            real_users = [u.get("id") for u in users_list if u.get("username") and u.get("id") != "me"]
+            if real_users:
+                allowed_ids.add(real_users[-1])
+        else:
+            allowed_ids.add("me")
+
+        if wish_user_id not in allowed_ids:
+            return "permission_denied"
+        wishes.remove(wish)
+        return "success"
+
+    res = mutate_json("wishes.json", remove_wish, [])
+    if res == "not_found":
+        return jsonify({"success": False, "message": "心愿不存在"}), 404
+    elif res == "permission_denied":
+        return jsonify({"success": False, "message": "您无权删除此心愿"}), 403
+    return jsonify({"success": True, "message": "心愿已删除"})

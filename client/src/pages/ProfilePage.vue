@@ -185,6 +185,10 @@ onMounted(async () => {
     ]
   }
 })
+
+const handleWishDeleted = (wishId) => {
+  wishes.value = wishes.value.filter((w) => w.id !== wishId)
+}
 </script>
 
 <template>
@@ -193,7 +197,7 @@ onMounted(async () => {
     <ProfileHeaderCard :profile-user="profileUser" :is-me="isMe" @edit-avatar="openAvatarModal" />
     <div class="flex gap-8">
       <ProfileSidebar v-model:activeTab="activeTab" :profile-user="profileUser" :tabs="tabs" :icon-map="iconMap" />
-      <ProfileTabContent :active-tab="activeTab" :tabs="tabs" :orders="orders" :books="books" :wishes="wishes" :notifications="notifications" :favorite-books="favoriteBooks" />
+      <ProfileTabContent :active-tab="activeTab" :tabs="tabs" :orders="orders" :books="books" :wishes="wishes" :notifications="notifications" :favorite-books="favoriteBooks" @wish-deleted="handleWishDeleted" />
     </div>
   </div>
 

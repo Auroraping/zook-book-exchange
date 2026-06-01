@@ -121,6 +121,10 @@ const submitWish = async () => {
     isSubmitting.value = false
   }
 }
+
+const handleWishDeleted = (wishId) => {
+  wishes.value = wishes.value.filter((w) => w.id !== wishId)
+}
 </script>
 
 <template>
@@ -185,7 +189,7 @@ const submitWish = async () => {
     </div>
     
     <!-- 详情互动弹窗 -->
-    <WishDetailModal :isOpen="isDetailOpen" :wish="selectedWish" @close="isDetailOpen = false" @coseek="handleCoseekSuccess" />
+    <WishDetailModal :isOpen="isDetailOpen" :wish="selectedWish" @close="isDetailOpen = false" @coseek="handleCoseekSuccess" @wish-deleted="handleWishDeleted" />
     
     <!-- 登记心愿 Glassmorphism 弹窗 -->
     <Teleport to="body">

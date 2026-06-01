@@ -1,15 +1,43 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
-import { ArrowLeft, Download, Lock, ThumbsUp } from 'lucide-vue-next'
-import { getJson, patchJson } from '../composables/useApi.js'
+import { ref, onMounted, computed } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { ArrowLeft, Download, Lock, ThumbsUp, Trash2 } from 'lucide-vue-next'
+import { getJson, patchJson, deleteJson } from '../composables/useApi.js'
+import { useAuth } from '../composables/useAuth.js'
 
 const route = useRoute()
+const router = useRouter()
 const note = ref(null)
+
+const { user } = useAuth()
+const currentUserId = computed(() => user.value?.id || 'me')
+
+// 鉴权：是否为本人发布的笔记
+const isMyNote = computed(() => {
+  if (!note.value) return false
+  return note.value.userId === currentUserId.value
+})
 
 onMounted(async () => {
   note.value = (await getJson(`/api/notes/${route.params.id}`)).note
 })
+
+const handleDeleteNote = async () => {
+  if (!note.value) return
+  if (confirm(`确定要删除这篇复习资料《${note.value.title}》吗？该操作不可逆，删除后无法找回。`)) {
+    try {
+      const res = await deleteJson(`/api/notes/${note.value.id}?userId=${currentUserId.value}`)
+      if (res.success) {
+        alert('复习资料已成功删除！')
+        router.push('/community')
+      } else {
+        alert(res.message || '删除失败，请重试')
+      }
+    } catch (err) {
+      alert(err.message || '网络连接异常，删除失败。')
+    }
+  }
+}
 
 const recordAction = async (action) => {
   note.value = (await patchJson(`/api/notes/${note.value.id}`, { action })).note
@@ -82,7 +110,13 @@ const recordAction = async (action) => {
       </div>
       <div class="px-10 py-6 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4 text-xs font-black text-gray-400">
         <span>作者：{{ note.author }} · 更新：{{ note.updatedAt }} · {{ note.difficulty }}</span>
-        <span class="flex items-center gap-4"><button @click="recordAction('like')" class="flex items-center gap-1 hover:text-blue-600"><ThumbsUp class="w-4 h-4" /> {{ note.likes }}</button><button @click="recordAction('download')" class="flex items-center gap-1 hover:text-blue-600"><Download class="w-4 h-4" /> {{ note.downloads }}</button></span>
+        <span class="flex items-center gap-4">
+          <button @click="recordAction('like')" class="flex items-center gap-1 hover:text-blue-600"><ThumbsUp class="w-4 h-4" /> {{ note.likes }}</button>
+          <button @click="recordAction('download')" class="flex items-center gap-1 hover:text-blue-600"><Download class="w-4 h-4" /> {{ note.downloads }}</button>
+          <button v-if="isMyNote" @click="handleDeleteNote" class="flex items-center gap-1 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100/60 px-3 py-1.5 rounded-xl transition-colors font-black" title="删除此笔记">
+            <Trash2 class="w-3.5 h-3.5" /> <span>删除</span>
+          </button>
+        </span>
       </div>
     </article>
   </div>

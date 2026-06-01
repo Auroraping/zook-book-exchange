@@ -35,7 +35,7 @@ def login():
         if auth_res.get("success"):
             sched = fetch_schedule(username, password)
             raw = sched.get("raw") or {}
-            real_info = {"name": raw.get("xm") or username, "realName": raw.get("xm") or username, "studentId": raw.get("xh") or username, "college": raw.get("xy") or "浙江大学", "major": raw.get("zy") or "未填写", "class": raw.get("xzb") or ""}
+            real_info = {"realName": raw.get("xm") or username, "studentId": raw.get("xh") or username, "college": raw.get("xy") or "浙江大学", "major": raw.get("zy") or "未填写", "class": raw.get("xzb") or ""}
     except Exception as e:
         print("[Auth] 尝试爬虫实名登录同步失败，降级为本地极简登录:", e)
 
@@ -45,17 +45,47 @@ def login():
             u = find_by_id(users, local_user["id"])
             if u:
                 u["passwordHash"] = generate_password_hash(password)
-                if real_info: u.update(real_info) # 同步真实实名信息
+                # 仅同步 realName、studentId、college、major、class 等实名字段
+                # 绝不覆盖用户自定义的 name（网名）和 avatar（头像）
+                if real_info:
+                    for key in ("realName", "studentId", "college", "major", "class"):
+                        if key in real_info:
+                            u[key] = real_info[key]
+                            
+                # 从 id='me' 的记录或 ui.json defaultUser 中恢复用户自定义的 avatar 和 name
+                me_user = find_by_id(users, "me")
+                ui_data = read_json("ui.json", {})
+                default_user = ui_data.get("profile", {}).get("defaultUser", {})
+                
+                # 优先使用 ui.json 的值，其次使用 me_user 的值
+                saved_avatar = default_user.get("avatar") or (me_user or {}).get("avatar")
+                saved_name = default_user.get("name") or (me_user or {}).get("name")
+
+                if saved_avatar and saved_avatar != "/user_avatar.png":
+                    u["avatar"] = saved_avatar
+                if saved_name and saved_name not in ("浙大同学", ""):
+                    u["name"] = saved_name
+                    
                 return u
             return local_user
+            
         user = mutate_json("users.json", update_pass, [])
         return jsonify({"success": True, "user": public_auth_user(user)})
 
+
+
     def auto_register(users):
+        # 新用户首次登录注册前，也检查是否有 ui.json 中的自定义数据
+        ui_data = read_json("ui.json", {})
+        default_user = ui_data.get("profile", {}).get("defaultUser", {})
+        me_user = find_by_id(users, "me")
+        init_avatar = (me_user or {}).get("avatar") or default_user.get("avatar") or f"https://api.dicebear.com/7.x/identicon/svg?seed={username}"
+        init_name = (me_user or {}).get("name") or default_user.get("name") or real_info.get("realName") or username
+
         new_user = {
-            "id": new_id("u"), "username": username, "name": real_info.get("name") or username, "realName": real_info.get("realName") or username,
+            "id": new_id("u"), "username": username, "name": init_name, "realName": real_info.get("realName") or username,
             "studentId": username, "college": real_info.get("college") or "浙江大学", "major": real_info.get("major") or "未填写", "class": real_info.get("class") or "", "credit": 5.0, "tradeCount": 0,
-            "level": "Lv.1 新同学", "avatar": f"https://api.dicebear.com/7.x/identicon/svg?seed={username}",
+            "level": "Lv.1 新同学", "avatar": init_avatar,
             "bio": "本地自动激活的用户。", "joinDate": now_text(), "passwordHash": generate_password_hash(password)
         }
         users.append(new_user)
@@ -118,6 +148,15 @@ def update_user_profile():
         else:
             user_item = {"id": user_id, "avatar": avatar_url or "", "name": new_name or "浙大同学", "studentId": user_id if user_id != "me" else ""}
             users_list.append(user_item)
+        # 当 userId 为 'me' 时，同时将 avatar/name 同步到最近注册的真实用户记录
+        # 这是因为前端始终以 userId='me' 身份发起更新，而登录时后端返回的是真实 ID 的用户记录
+        if user_id == "me":
+            # 找到最后一个有 username 的真实用户（即当前登录的用户）
+            real_users = [u for u in users_list if u.get("username") and u.get("id") != "me"]
+            if real_users:
+                latest = real_users[-1]
+                if avatar_url: latest["avatar"] = avatar_url
+                if new_name: latest["name"] = new_name
         return user_item
 
     mutate_json("users.json", update_user_data, [])

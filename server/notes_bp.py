@@ -96,6 +96,7 @@ def create_note():
             
         note = {
             "id": new_id("n"),
+            "userId": request.form.get("userId") or "me",
             "title": title,
             "course": course,
             "type": request.form.get("type", "共享资料").strip(),
@@ -142,3 +143,41 @@ def update_note(note_id):
     if not note:
         return jsonify({"success": False, "message": "笔记不存在"}), 404
     return jsonify({"success": True, "note": note})
+
+@notes_bp.delete("/api/notes/<note_id>")
+def delete_note(note_id):
+    user_id = request.args.get("userId") or "me"
+
+    def remove_note(notes):
+        note = find_by_id(notes, note_id)
+        if not note:
+            return "not_found"
+        # 兼容性鉴权：允许 note.userId == user_id。如果没有录入 userId（原有旧数据，例如 mock 数据）
+        # 我们判定它的 userId 缺失，如果是其他人发的则拒绝。由于旧数据的 userId 不存在，我们把它的默认所有者设为 "system" (非当前用户 "me" 或真实 UUID)，避免被用户删除。如果是用户新发的或显式等于它的则可以通过。
+        note_user_id = note.get("userId")
+        if not note_user_id:
+            # 如果是原系统预置笔记（旧数据没有 userId），则不允许普通用户删除。
+            return "permission_denied"
+        
+        # 支持等价身份判定：允许 'me' 与 真实 UUID 互通鉴权
+        allowed_ids = {user_id}
+        if user_id == "me":
+            users_list = read_json("users.json", [])
+            real_users = [u.get("id") for u in users_list if u.get("username") and u.get("id") != "me"]
+            if real_users:
+                allowed_ids.add(real_users[-1])
+        else:
+            allowed_ids.add("me")
+
+        if note_user_id not in allowed_ids:
+            return "permission_denied"
+            
+        notes.remove(note)
+        return "success"
+
+    res = mutate_json("notes.json", remove_note, [])
+    if res == "not_found":
+        return jsonify({"success": False, "message": "笔记不存在"}), 404
+    elif res == "permission_denied":
+        return jsonify({"success": False, "message": "您无权删除此笔记"}), 403
+    return jsonify({"success": True, "message": "笔记已删除"})

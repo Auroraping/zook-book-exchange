@@ -8,7 +8,13 @@ export const apiUrl = (path) => {
 const parseJsonResponse = async (response) => {
   const data = await response.json().catch(() => ({}))
   if (!response.ok || data.success === false) {
-    throw new Error(data.message || '服务暂时不可用')
+    let errMsg = data.message
+    if (!errMsg) {
+      if (response.status === 404) errMsg = '未找到该服务接口或资源 (404)，请刷新页面重试'
+      else if (response.status === 403) errMsg = '您无权执行此操作 (403)'
+      else errMsg = '服务暂时不可用，请稍后再试'
+    }
+    throw new Error(errMsg)
   }
   return data
 }

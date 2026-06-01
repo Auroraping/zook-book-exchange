@@ -1,14 +1,15 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { X, Heart, MessageSquare, Sparkles, CheckCircle2, User, Clock, Tag } from 'lucide-vue-next'
-import { postJson } from '../composables/useApi.js'
+import { X, Heart, MessageSquare, Sparkles, CheckCircle2, User, Clock, Tag, Trash2 } from 'lucide-vue-next'
+import { postJson, deleteJson } from '../composables/useApi.js'
+import { useAuth } from '../composables/useAuth.js'
 
 const props = defineProps({
   isOpen: { type: Boolean, required: true },
   wish: { type: Object, default: null }
 })
-const emit = defineEmits(['close', 'coseek'])
+const emit = defineEmits(['close', 'coseek', 'wish-deleted'])
 
 const router = useRouter()
 const isConnecting = ref(false)
@@ -29,6 +30,31 @@ const seekerCount = computed(() => {
   const uniqueSeekers = seekers.filter(s => s !== props.wish.userId)
   return 1 + uniqueSeekers.length
 })
+
+const { user } = useAuth()
+const currentUserId = computed(() => user.value?.id || 'me')
+
+const isMyWish = computed(() => {
+  if (!props.wish) return false
+  return props.wish.userId === currentUserId.value
+})
+
+const handleDeleteWish = async () => {
+  if (!props.wish) return
+  if (confirm(`确定要删除您发布的心愿《${props.wish.title}》吗？删除后将无法恢复。`)) {
+    try {
+      const res = await deleteJson(`/api/wishes/${props.wish.id}?userId=${currentUserId.value}`)
+      if (res.success) {
+        emit('wish-deleted', props.wish.id)
+        emit('close')
+      } else {
+        alert(res.message || '删除失败，请重试')
+      }
+    } catch (err) {
+      alert(err.message || '网络连接异常，删除失败。')
+    }
+  }
+}
 
 // “我有这本，去沟通”
 const startChat = async () => {
@@ -135,32 +161,46 @@ const coseekWish = async () => {
 
         <!-- 底部交互操作 -->
         <div class="flex flex-col gap-3">
-          <!-- 同求此书按钮 -->
-          <button 
-            @click="coseekWish" 
-            :disabled="hasCoseeked || isCoseeking"
-            :class="[
-              'w-full py-3.5 rounded-2xl text-sm font-black flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm',
-              hasCoseeked 
-                ? 'bg-purple-50 text-purple-500 border border-purple-200 cursor-not-allowed' 
-                : 'bg-white text-purple-600 border border-purple-200 hover:bg-purple-50/50'
-            ]"
-          >
-            <CheckCircle2 v-if="hasCoseeked" class="w-4.5 h-4.5" />
-            <Heart v-else class="w-4.5 h-4.5" />
-            <span>{{ hasCoseeked ? '已同求此书（静候佳音）' : isCoseeking ? '同求提交中...' : '同求此书（我也要）' }}</span>
-          </button>
+          <!-- 自己发布的心愿：只显示删除心愿 -->
+          <template v-if="isMyWish">
+            <button 
+              @click="handleDeleteWish" 
+              class="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-sm font-black flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 transition-all active:scale-95"
+            >
+              <Trash2 class="w-4.5 h-4.5" />
+              <span>删除我发布的心愿</span>
+            </button>
+          </template>
 
-          <!-- 去沟通按钮 -->
-          <button 
-            @click="startChat" 
-            :disabled="isConnecting"
-            class="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl text-sm font-black flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 transition-all active:scale-95 disabled:bg-purple-300 disabled:cursor-not-allowed"
-          >
-            <span v-if="isConnecting" class="w-4.5 h-4.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            <MessageSquare v-else class="w-4.5 h-4.5" />
-            <span>我有这本书，去联系求购者</span>
-          </button>
+          <!-- 他人发布的心愿：展示常规互动 -->
+          <template v-else>
+            <!-- 同求此书按钮 -->
+            <button 
+              @click="coseekWish" 
+              :disabled="hasCoseeked || isCoseeking"
+              :class="[
+                'w-full py-3.5 rounded-2xl text-sm font-black flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm',
+                hasCoseeked 
+                  ? 'bg-purple-50 text-purple-500 border border-purple-200 cursor-not-allowed' 
+                  : 'bg-white text-purple-600 border border-purple-200 hover:bg-purple-50/50'
+              ]"
+            >
+              <CheckCircle2 v-if="hasCoseeked" class="w-4.5 h-4.5" />
+              <Heart v-else class="w-4.5 h-4.5" />
+              <span>{{ hasCoseeked ? '已同求此书（静候佳音）' : isCoseeking ? '同求提交中...' : '同求此书（我也要）' }}</span>
+            </button>
+
+            <!-- 去沟通按钮 -->
+            <button 
+              @click="startChat" 
+              :disabled="isConnecting"
+              class="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl text-sm font-black flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 transition-all active:scale-95 disabled:bg-purple-300 disabled:cursor-not-allowed"
+            >
+              <span v-if="isConnecting" class="w-4.5 h-4.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <MessageSquare v-else class="w-4.5 h-4.5" />
+              <span>我有这本书，去联系求购者</span>
+            </button>
+          </template>
         </div>
       </div>
     </div>

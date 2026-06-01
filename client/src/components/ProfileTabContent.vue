@@ -1,7 +1,8 @@
 <script setup>
 import { RouterLink } from 'vue-router'
-import { ChevronRight, Heart, Sparkles } from 'lucide-vue-next'
+import { ChevronRight, Heart, Sparkles, Trash2 } from 'lucide-vue-next'
 import { useAuth } from '../composables/useAuth.js'
+import { deleteJson } from '../composables/useApi.js'
 
 const props = defineProps({
   activeTab: { type: String, required: true },
@@ -13,8 +14,25 @@ const props = defineProps({
   favoriteBooks: { type: Array, required: true }
 })
 
+const emit = defineEmits(['wish-deleted'])
+
 const { user } = useAuth()
 const currentUserId = user.value?.id || 'me'
+
+const handleDeleteWish = async (wish) => {
+  if (confirm(`确定要删除购书心愿《${wish.title}》吗？删除后将无法恢复。`)) {
+    try {
+      const res = await deleteJson(`/api/wishes/${wish.id}?userId=${currentUserId}`)
+      if (res.success) {
+        emit('wish-deleted', wish.id)
+      } else {
+        alert(res.message || '删除失败，请重试')
+      }
+    } catch (err) {
+      alert(err.message || '网络连接异常，删除失败。')
+    }
+  }
+}
 </script>
 
 <template>
@@ -25,7 +43,7 @@ const currentUserId = user.value?.id || 'me'
         <div v-for="order in orders" :key="order.id" class="border border-gray-100 rounded-3xl p-6 hover:border-blue-200 hover:shadow-md transition-all flex gap-6"><img :src="order.cover" class="w-20 h-28 bg-gray-50 rounded-2xl object-cover shadow-sm" /><div class="flex-1"><h4 class="font-bold text-gray-800 text-lg mb-1">{{ order.title }}</h4><p class="text-xs text-gray-400 mb-2">卖家：{{ order.seller }}</p><span class="text-[10px] font-bold px-2 py-0.5 bg-blue-50 text-blue-600 rounded">{{ order.status }}</span></div><div class="text-right"><p class="text-2xl font-black text-gray-800">¥ {{ order.price.toFixed(2) }}</p><p class="text-[10px] text-gray-400 mt-1 font-bold">{{ order.date }}</p></div></div>
       </div>
       <div v-else-if="activeTab === 'wishes'" class="flex flex-col gap-4">
-        <div v-for="wish in wishes.filter((w) => w.userId === currentUserId)" :key="wish.id" class="bg-gray-50 rounded-3xl p-8 border border-gray-100"><h4 class="text-xl font-black text-gray-800 mb-2">{{ wish.title }}</h4><p class="text-sm text-gray-500">作者：{{ wish.author }} | 预算：¥{{ wish.priceRange }}</p></div>
+        <div v-for="wish in wishes.filter((w) => w.userId === currentUserId)" :key="wish.id" class="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex justify-between items-center"><div><h4 class="text-xl font-black text-gray-800 mb-2">{{ wish.title }}</h4><p class="text-sm text-gray-500">作者：{{ wish.author }} | 预算：¥{{ wish.priceRange }}</p></div><button @click="handleDeleteWish(wish)" class="p-3 bg-red-50 text-red-500 hover:bg-red-100 hover:scale-105 active:scale-95 rounded-2xl transition-all" title="删除心愿"><Trash2 class="w-5 h-5" /></button></div>
         <div v-if="wishes.filter((w) => w.userId === currentUserId).length === 0" class="py-24 text-center"><Sparkles class="w-16 h-16 text-gray-100 mx-auto mb-4" /><p class="text-gray-400 font-black">暂无心愿</p></div>
       </div>
       <div v-else-if="activeTab === 'notifications'" class="flex flex-col gap-4">

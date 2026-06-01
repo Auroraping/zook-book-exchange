@@ -1,14 +1,36 @@
 <script setup>
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Download, Lock, ThumbsUp } from 'lucide-vue-next'
+import { Download, Lock, ThumbsUp, Trash2 } from 'lucide-vue-next'
+import { useAuth } from '../composables/useAuth.js'
 
 const props = defineProps({
   note: { type: Object, required: true }
 })
+const emit = defineEmits(['delete-note'])
+
+const { user } = useAuth()
+const isMyNote = computed(() => {
+  if (!props.note.userId) return false
+  const currentId = user.value?.id || 'me'
+  return props.note.userId === currentId
+})
+
+const handleDelete = (e) => {
+  e.preventDefault()
+  e.stopPropagation()
+  if (confirm(`确定要删除《${props.note.title}》吗？删除后无法恢复。`)) {
+    emit('delete-note', props.note.id)
+  }
+}
 </script>
 
 <template>
-  <RouterLink :to="`/community/note/${note.id}`" class="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 hover:-translate-y-1 hover:shadow-xl transition-all group min-h-[260px] flex flex-col">
+  <RouterLink :to="`/community/note/${note.id}`" class="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 hover:-translate-y-1 hover:shadow-xl transition-all group min-h-[260px] flex flex-col relative">
+    <!-- 删除按钮（仅作者可见） -->
+    <button v-if="isMyNote" @click="handleDelete" class="absolute top-4 right-4 z-10 p-2 bg-red-50 text-red-400 hover:text-red-600 hover:bg-red-100 rounded-xl transition-all opacity-0 group-hover:opacity-100 border border-transparent hover:border-red-200 shadow-sm" title="删除这篇笔记">
+      <Trash2 class="w-4 h-4" />
+    </button>
     <div class="flex justify-between items-start gap-3 mb-5">
       <div class="flex flex-wrap gap-2 min-w-0">
         <span class="bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1.5 rounded-full border border-blue-100 truncate max-w-[160px]">{{ note.course }}</span>

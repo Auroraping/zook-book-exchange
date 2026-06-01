@@ -14,8 +14,15 @@ if (savedUser) {
 export function useAuth() {
   const isLoggedIn = computed(() => !!user.value)
 
-  const login = (role = 'user', customName = '浙大同学') => {
-    const newUser = { id: 'me', name: customName, role }
+  const login = (roleOrUserObj = 'user', customName = '浙大同学') => {
+    let newUser
+    if (typeof roleOrUserObj === 'object' && roleOrUserObj !== null) {
+      // 新签名：传入完整用户对象，id 强制为 'me' 保持全站一致
+      newUser = { ...roleOrUserObj, id: 'me' }
+    } else {
+      // 旧签名兼容：login('user', '浙大同学')
+      newUser = { id: 'me', name: customName, role: roleOrUserObj }
+    }
     user.value = newUser
     localStorage.setItem('user', JSON.stringify(newUser))
   }

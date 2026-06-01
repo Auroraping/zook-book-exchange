@@ -2,6 +2,9 @@
 import { ref } from 'vue'
 import { X, Upload, File, AlertCircle, CheckCircle } from 'lucide-vue-next'
 import { uploadFile } from '../composables/useApi.js'
+import { useAuth } from '../composables/useAuth.js'
+
+const { user } = useAuth()
 
 const props = defineProps({
   isOpen: { type: Boolean, required: true }
@@ -93,6 +96,8 @@ const handleSubmit = async () => {
     formData.append('desc', desc.value.trim())
     formData.append('tags', tags.value.trim())
     formData.append('file', file.value)
+    formData.append('userId', user.value?.id || 'me')
+    formData.append('author', user.value?.name || '浙大同学')
     
     // 如果没有输入具体 sections，由后端默认生成
     await uploadFile('/api/notes', formData)

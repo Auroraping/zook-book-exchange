@@ -6,7 +6,8 @@ import CommunityFilterBar from '../components/CommunityFilterBar.vue'
 import CommunityHero from '../components/CommunityHero.vue'
 import CommunityNoteCard from '../components/CommunityNoteCard.vue'
 import CommunityUploadModal from '../components/CommunityUploadModal.vue'
-import { getJson } from '../composables/useApi.js'
+import { getJson, deleteJson } from '../composables/useApi.js'
+import { useAuth } from '../composables/useAuth.js'
 
 const notes = ref([])
 const activeFilter = ref('')
@@ -35,6 +36,21 @@ onMounted(async () => {
 const onUploadSuccess = async () => {
   isUploadOpen.value = false
   await fetchNotes()
+}
+
+const { user } = useAuth()
+const handleDeleteNote = async (noteId) => {
+  const currentUserId = user.value?.id || 'me'
+  try {
+    const res = await deleteJson(`/api/notes/${noteId}?userId=${currentUserId}`)
+    if (res.success) {
+      notes.value = notes.value.filter(n => n.id !== noteId)
+    } else {
+      alert(res.message || '删除失败')
+    }
+  } catch (err) {
+    alert(err.message || '网络异常，删除失败')
+  }
 }
 
 const matchesFilter = (note, filter) => {
@@ -129,7 +145,7 @@ const runSearch = () => {
       <CommunityFilterBar v-model:activeFilter="activeFilter" :filters="filters" :counts="filterCounts" />
       
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        <CommunityNoteCard v-for="note in paginatedNotes" :key="note.listId" :note="note" />
+        <CommunityNoteCard v-for="note in paginatedNotes" :key="note.listId" :note="note" @delete-note="handleDeleteNote" />
       </div>
       
       <CommunityEmptyState v-if="paginatedNotes.length === 0" />
