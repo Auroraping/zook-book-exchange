@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { Bell, Search, X, MessageSquare } from 'lucide-vue-next'
 import { getJson } from '../composables/useApi.js'
+import { useAuth } from '../composables/useAuth.js'
 
 const props = defineProps({
   chats: { type: Array, required: true },
@@ -9,6 +10,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['select', 'start-chat'])
+
+const { user } = useAuth()
 
 const searchQuery = ref('')
 const searchResults = ref([])
@@ -23,7 +26,7 @@ const handleSearch = async () => {
   }
   searching.value = true
   try {
-    const res = await getJson(`/api/users/search?q=${encodeURIComponent(q)}&userId=me`)
+    const res = await getJson(`/api/users/search?q=${encodeURIComponent(q)}&userId=${user.value?.studentId || 'me'}`)
     searchResults.value = res.users || []
   } catch (err) {
     console.error('搜索用户失败：', err)
@@ -52,6 +55,7 @@ const clearSearch = () => {
       <div class="mt-5 relative flex items-center group">
         <input 
           v-model="searchQuery" 
+          @input="handleSearch"
           @keyup.enter="handleSearch"
           placeholder="输入学号或姓名搜人..." 
           class="w-full text-xs font-bold pl-10 pr-8 py-2.5 bg-gray-150/70 border border-transparent rounded-2xl outline-none focus:border-blue-500 focus:bg-white transition-all shadow-inner"
