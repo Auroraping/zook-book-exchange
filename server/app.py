@@ -7,13 +7,19 @@ from flask_socketio import SocketIO, emit, join_room
 # 从强单例共享状态文件导入在线状态与注册字典，确保热重载数据一致性
 from socket_state import online_users, registered_users
 
-# 引入所有业务路由蓝图
+# 引入所有业务路由蓝图以及新拆分的合规子蓝图
 from user_bp import user_bp
 from books_bp import books_bp
 from notes_bp import notes_bp
 from orders_bp import orders_bp
 from wishes_bp import wishes_bp
 from chats_bp import chats_bp
+from reports_bp import reports_bp
+from auth_bp import auth_bp
+from schedule_bp import schedule_bp
+from cart_bp import cart_bp
+from favorites_bp import favorites_bp
+from chat_messages_bp import chat_messages_bp
 
 app = Flask(__name__)
 app.config["JSON_AS_ASCII"] = False
@@ -25,13 +31,19 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 messages = []
 
-# 批量注册各业务领域的模块化蓝图
+# 批量注册各业务领域的模块化蓝图以及新解耦蓝图
 app.register_blueprint(user_bp)
 app.register_blueprint(books_bp)
 app.register_blueprint(notes_bp)
 app.register_blueprint(orders_bp)
 app.register_blueprint(wishes_bp)
 app.register_blueprint(chats_bp)
+app.register_blueprint(reports_bp)
+app.register_blueprint(auth_bp)
+app.register_blueprint(schedule_bp)
+app.register_blueprint(cart_bp)
+app.register_blueprint(favorites_bp)
+app.register_blueprint(chat_messages_bp)
 
 @app.get("/")
 def index():
