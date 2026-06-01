@@ -1,5 +1,5 @@
 <script setup>
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { ChevronRight, Heart, Sparkles, Trash2, FileText, CreditCard, Package } from 'lucide-vue-next'
 import { useAuth } from '../composables/useAuth.js'
 import { deleteJson, postJson, patchJson } from '../composables/useApi.js'
@@ -17,6 +17,7 @@ const props = defineProps({
 
 const emit = defineEmits(['wish-deleted', 'note-deleted', 'favorite-deleted', 'order-updated'])
 
+const router = useRouter()
 const { user } = useAuth()
 const currentUserId = user.value?.id || 'me'
 
@@ -108,8 +109,8 @@ const handleRemoveFavorite = async (book) => {
               <span :class="['text-[10px] font-black px-2.5 py-1 rounded-lg border shadow-sm', getStatusStyle(order.status).class]">
                 {{ getStatusStyle(order.status).label }}
               </span>
-              <!-- 买家视图：未支付时显示支付按钮 -->
-              <button v-if="order.isPaid === false && order.status !== 'cancelled' && (order.userId === currentUserId || order.userId === 'me')" @click="handleOrderAction(order, 'pay')" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
+              <!-- 买家视图：未支付时显示支付按钮，点击跳转至订单中心待支付选项卡 -->
+              <button v-if="order.isPaid === false && order.status !== 'cancelled' && (order.userId === currentUserId || order.userId === 'me')" @click="router.push('/orders?tab=unpaid')" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
                 <CreditCard class="w-3.5 h-3.5" /> 去支付
               </button>
               <!-- 卖家视图：未交付时显示交付按钮 -->

@@ -1,15 +1,16 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { Package, MapPin, CheckCircle2, Clock, XCircle, CreditCard, Star } from 'lucide-vue-next'
 import { getJson, patchJson, postJson } from '../composables/useApi.js'
 import { useAuth } from '../composables/useAuth.js'
 
 const router = useRouter()
+const route = useRoute()
 const orders = ref([])
 const tabs = ref([])
 const statusInfo = ref({})
-const activeTab = ref('all')
+const activeTab = ref(route.query.tab || 'all')
 const { user } = useAuth()
 const currentUserId = computed(() => user.value?.id || 'me')
 
