@@ -37,7 +37,7 @@ const handleSearch = async () => {
   }
   searching.value = true
   try {
-    const currentUserId = user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || localStorage.getItem('zook_student_id') || 'me'
+    const currentUserId = user.value?.realId || localStorage.getItem('zook_user_uuid') || user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || 'me'
     const res = await getJson(`/api/users/search?q=${encodeURIComponent(q)}&userId=${currentUserId}`)
     searchResults.value = res.users || []
   } catch (err) {

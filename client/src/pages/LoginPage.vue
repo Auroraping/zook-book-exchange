@@ -30,6 +30,7 @@ const handleSubmit = async () => {
 
     // 一键登录实名同步：如果有随登录接口自动带回的实名信息，直接一秒落盘！
     if (data.user) {
+      if (data.user.id) localStorage.setItem('zook_user_uuid', data.user.id)
       // 将真名单独存储到 localStorage，不去覆盖网名
       if (data.user.realName) localStorage.setItem('zook_real_name', data.user.realName)
       if (data.user.studentId) localStorage.setItem('zook_student_id', data.user.studentId)

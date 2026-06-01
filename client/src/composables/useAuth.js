@@ -17,11 +17,11 @@ export function useAuth() {
   const login = (roleOrUserObj = 'user', customName = '浙大同学') => {
     let newUser
     if (typeof roleOrUserObj === 'object' && roleOrUserObj !== null) {
-      // 新签名：传入完整用户对象，id 强制为 'me' 保持全站一致
-      newUser = { ...roleOrUserObj, id: 'me' }
+      // 新签名：传入完整用户对象，id 强制为 'me' 保持全站一致，但备份真实 UUID 在 realId 中
+      newUser = { ...roleOrUserObj, realId: roleOrUserObj.realId || roleOrUserObj.id, id: 'me' }
     } else {
       // 旧签名兼容：login('user', '浙大同学')
-      newUser = { id: 'me', name: customName, role: roleOrUserObj }
+      newUser = { id: 'me', name: customName, role: roleOrUserObj, realId: 'me' }
     }
     user.value = newUser
     localStorage.setItem('user', JSON.stringify(newUser))
