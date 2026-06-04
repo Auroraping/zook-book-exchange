@@ -6,8 +6,10 @@ import { getJson, postJson } from '../composables/useApi.js'
 import { Bell, BookMarked, Heart, Package, Sparkles, FileText } from 'lucide-vue-next'
 import ProfileHeaderCard from '../components/ProfileHeaderCard.vue'
 import ProfileLoginPrompt from '../components/ProfileLoginPrompt.vue'
+import ProfileNicknameForm from '../components/ProfileNicknameForm.vue'
 import ProfileSidebar from '../components/ProfileSidebar.vue'
 import ProfileTabContent from '../components/ProfileTabContent.vue'
+import ProfileZjuAuthCard from '../components/ProfileZjuAuthCard.vue'
 
 const route = useRoute()
 const { isLoggedIn, updateUser } = useAuth()
@@ -23,6 +25,10 @@ const favoriteBooks = ref([])
 const notes = ref([])
 const tabs = ref([])
 const profileUser = ref({})
+const nicknameSaving = ref(false)
+const nicknameError = ref('')
+const zjuAuthLoading = ref(false)
+const zjuAuthError = ref('')
 const iconMap = { Package, Heart, Sparkles, Bell, BookMarked, FileText }
 
 // 头像修改弹窗响应式状态
@@ -83,8 +89,7 @@ const saveAvatar = async () => {
       // 1. 本地高清照片 Multipart/form-data 文件上传
       const formData = new FormData()
       formData.append('file', uploadFile.value)
-      formData.append('userId', profileUser.value.id || 'me')
-      formData.append('studentId', localStorage.getItem('zook_username') || '')
+      formData.append('userId', profileUser.value.realId || profileUser.value.id || 'me')
       const res = await fetch('/api/user/update', {
         method: 'POST',
         body: formData
@@ -94,9 +99,8 @@ const saveAvatar = async () => {
     } else {
       // 2. 外部 Dicebear URL 直接 JSON 提交
       const res = await postJson('/api/user/update', {
-        userId: profileUser.value.id || 'me',
-        avatar: newAvatarUrl.value,
-        studentId: localStorage.getItem('zook_username')
+        userId: profileUser.value.realId || profileUser.value.id || 'me',
+        avatar: newAvatarUrl.value
       })
       if (!res.success) throw new Error(res.message)
       finalAvatarUrl = res.avatar
@@ -122,7 +126,16 @@ const hydrateRealProfile = (name, sid, coll, maj, cls) => {
   profileUser.value.college = coll
   profileUser.value.major = maj
   profileUser.value.classText = cls
+  profileUser.value.zjuAuthenticated = true
   profileUser.value.bio = `浙江大学${coll || ''}${maj || ''}专业本科生，已完成教务身份同步。`
+}
+
+const cacheZjuProfile = (raw) => {
+  if (raw.xm) localStorage.setItem('zook_real_name', raw.xm)
+  if (raw.xh) localStorage.setItem('zook_student_id', raw.xh)
+  if (raw.xy) localStorage.setItem('zook_college', raw.xy)
+  if (raw.zy) localStorage.setItem('zook_major', raw.zy)
+  if (raw.xzb) localStorage.setItem('zook_class', raw.xzb)
 }
 
 onMounted(async () => {
@@ -132,10 +145,10 @@ onMounted(async () => {
     getJson('/api/wishes'), 
     isMe ? getJson('/api/notifications?userId=me') : { notifications: [] }, 
     isMe ? getJson('/api/favorites?userId=me') : { items: [] }, 
-    fetch('/data/ui.json'),
+    getJson('/api/ui'),
     getJson('/api/notes')
   ])
-  const ui = await uiRes.json()
+  const ui = uiRes
   orders.value = ordersData.orders || []
   books.value = booksData.books || []
   wishes.value = wishesData.wishes || []
@@ -159,18 +172,8 @@ onMounted(async () => {
     }
     tabs.value = ui.profile?.tabs || []
     
-    const realName = localStorage.getItem('zook_real_name')
-    if (realName) {
-      hydrateRealProfile(realName, localStorage.getItem('zook_student_id'), localStorage.getItem('zook_college'), localStorage.getItem('zook_major'), localStorage.getItem('zook_class'))
-    } else if (isLoggedIn.value) {
-      const username = localStorage.getItem('zook_username')
-      const password = localStorage.getItem('zook_password')
-      if (username && password) {
-        postJson('/api/schedule', { username, password }).then((data) => {
-          const raw = data.raw || {}
-          if (raw.xm) hydrateRealProfile(raw.xm, raw.xh || '', raw.xy || '', raw.zy || '', raw.xzb || '')
-        }).catch(() => {})
-      }
+    if (cachedInfo.zjuAuthenticated && cachedInfo.realName) {
+      hydrateRealProfile(cachedInfo.realName, cachedInfo.studentId, cachedInfo.college, cachedInfo.major, cachedInfo.class)
     }
   } else {
     // 访问他人主页
@@ -219,12 +222,51 @@ const handleOrderUpdated = async () => {
     updateUser({ points: ordersData.points })
   }
 }
+
+const saveNickname = async (name) => {
+  nicknameError.value = ''
+  if (!name) {
+    nicknameError.value = '昵称不能为空'
+    return
+  }
+  nicknameSaving.value = true
+  try {
+    const res = await postJson('/api/user/update', { userId: profileUser.value.realId || profileUser.value.id || 'me', name })
+    profileUser.value.name = name
+    updateUser({ name })
+    if (!res.success) nicknameError.value = res.message || ''
+  } catch (err) {
+    nicknameError.value = err.message || '昵称保存失败'
+  } finally {
+    nicknameSaving.value = false
+  }
+}
+
+const authenticateZju = async (payload) => {
+  zjuAuthError.value = ''
+  zjuAuthLoading.value = true
+  try {
+    const data = await postJson('/api/auth/zju', payload)
+    const nextUser = { ...data.user, id: 'me', realId: data.user.id }
+    profileUser.value = { ...profileUser.value, ...nextUser }
+    cacheZjuProfile(data.raw || {})
+    updateUser(nextUser)
+  } catch (err) {
+    zjuAuthError.value = err.message || '浙大统一身份认证失败'
+  } finally {
+    zjuAuthLoading.value = false
+  }
+}
 </script>
 
 <template>
   <ProfileLoginPrompt v-if="isMe && !isLoggedIn" />
   <div v-else-if="profileUser.id" class="max-w-[1200px] mx-auto flex flex-col gap-8">
     <ProfileHeaderCard :profile-user="profileUser" :is-me="isMe" @edit-avatar="openAvatarModal" />
+    <div v-if="isMe" class="grid md:grid-cols-2 gap-6">
+      <ProfileNicknameForm :nickname="profileUser.name" :saving="nicknameSaving" :error="nicknameError" @save="saveNickname" />
+      <ProfileZjuAuthCard :profile-user="profileUser" :loading="zjuAuthLoading" :error="zjuAuthError" @authenticate="authenticateZju" />
+    </div>
     <div class="flex gap-8">
       <ProfileSidebar v-model:activeTab="activeTab" :profile-user="profileUser" :tabs="tabs" :icon-map="iconMap" />
       <ProfileTabContent :active-tab="activeTab" :tabs="tabs" :orders="orders" :books="books" :wishes="wishes" :notifications="notifications" :favorite-books="favoriteBooks" :notes="notes" @wish-deleted="handleWishDeleted" @note-deleted="handleNoteDeleted" @favorite-deleted="handleFavoriteDeleted" @order-updated="handleOrderUpdated" />

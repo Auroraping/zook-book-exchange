@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import { AlertCircle, Loader2 } from 'lucide-vue-next'
-import { useAuth } from '../composables/useAuth.js'
 import { getJson, postJson } from '../composables/useApi.js'
 import ScheduleGrid from '../components/ScheduleGrid.vue'
 import ScheduleBookList from '../components/ScheduleBookList.vue'
@@ -9,7 +9,6 @@ import SchedulePageHeader from '../components/SchedulePageHeader.vue'
 import ScheduleTermToolbar from '../components/ScheduleTermToolbar.vue'
 import ScheduleTextbookList from '../components/ScheduleTextbookList.vue'
 
-const { user, isLoggedIn } = useAuth()
 const courses = ref([])
 const books = ref([])
 const selectedCourse = ref(null)
@@ -73,9 +72,8 @@ const matchedOfficialTextbook = computed(() => {
 })
 
 onMounted(async () => {
-  const [booksData, uiRes] = await Promise.all([getJson('/api/books?status=approved'), fetch('/data/ui.json')])
+  const [booksData, ui] = await Promise.all([getJson('/api/books?status=approved'), getJson('/api/ui')])
   books.value = booksData.books
-  const ui = await uiRes.json()
   scheduleUi.value = ui.schedule || {}
   await loadSchedule()
 })
@@ -145,53 +143,29 @@ const getSecondhandBooks = (course) => {
 const loadSchedule = async () => {
   loading.value = true
   error.value = ''
-  // 尝试从后端拉取真实课表
-  const username = localStorage.getItem('zook_username')
-  const password = localStorage.getItem('zook_password')
-  if (username && password) {
-    try {
-      const data = await postJson('/api/schedule', { username, password })
-      if (data.success && data.courses && data.courses.length > 0) {
-        // 核心智能同步：将拉取到的真实浙大个人信息保存到 localStorage 中，以供全站个人中心动态展示
-        if (data.raw) {
-          if (data.raw.xm) localStorage.setItem('zook_real_name', data.raw.xm)
-          if (data.raw.xh) localStorage.setItem('zook_student_id', data.raw.xh)
-          if (data.raw.xy) localStorage.setItem('zook_college', data.raw.xy)
-          if (data.raw.zy) localStorage.setItem('zook_major', data.raw.zy)
-          if (data.raw.xzb) localStorage.setItem('zook_class', data.raw.xzb)
-        }
-
-        courses.value = data.courses
-        termInfo.value = data.termInfo
-        isReal.value = true
-
-        // 同时静默同步官方教材预定状态来进行一键比价匹配
-        try {
-          const tbData = await postJson('/api/textbooks', { username, password })
-          if (tbData.success && tbData.textbooks) {
-            officialTextbooks.value = tbData.textbooks
-            officialTextbookStatus.value = tbData.message || tbData.unavailableReason || ''
-          }
-        } catch (e) {
-          officialTextbookStatus.value = e.message || '当前无法同步教务官方教材'
-        }
-
-        loading.value = false
-        // 自动高亮当前所在的短学期
-        selectedMiniSemester.value = currentMiniSemester.value
-        return
-      }
-    } catch {
-      error.value = '后端不可用，使用本地模拟课表'
-    }
+  try {
+    const data = await postJson('/api/schedule', {})
+    courses.value = data.courses || []
+    termInfo.value = data.termInfo
+    isReal.value = data.source === 'zju'
+    officialTextbookStatus.value = isReal.value ? '已通过浙大统一身份认证同步真实课表' : '未认证用户当前展示模拟课表'
+    if (data.raw) cacheZjuProfile(data.raw)
+  } catch {
+    courses.value = []
+    error.value = '课表服务暂时不可用，请确认后端已启动后重试。'
+    officialTextbookStatus.value = '课表数据必须从后端 SQLite 或浙大教务同步获取'
+    isReal.value = false
   }
-  // 降级到本地模拟数据
-  const localRes = await fetch('/data/courses.json')
-  courses.value = await localRes.json()
-  officialTextbookStatus.value = '未登录或后端不可用，当前展示本地模拟课表'
-  isReal.value = false
   loading.value = false
   selectedMiniSemester.value = currentMiniSemester.value
+}
+
+const cacheZjuProfile = (raw) => {
+  if (raw.xm) localStorage.setItem('zook_real_name', raw.xm)
+  if (raw.xh) localStorage.setItem('zook_student_id', raw.xh)
+  if (raw.xy) localStorage.setItem('zook_college', raw.xy)
+  if (raw.zy) localStorage.setItem('zook_major', raw.zy)
+  if (raw.xzb) localStorage.setItem('zook_class', raw.xzb)
 }
 
 // 3. 动态短学期选项卡
@@ -342,6 +316,9 @@ const addToCart = async (bookId) => {
 <template>
   <div class="max-w-7xl mx-auto flex flex-col gap-8 animate-google-in">
     <SchedulePageHeader :is-real="isReal" :loading="loading" :term-info="termInfo" @reload="loadSchedule" />
+    <RouterLink v-if="!isReal" to="/profile" class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm font-bold text-amber-700 hover:bg-amber-100 transition-colors">
+      未完成浙大统一身份认证，当前为模拟课表。前往个人中心认证后可一键导入真实课表。
+    </RouterLink>
     <div v-if="error" class="bg-red-50 border border-red-200 rounded-2xl p-6 flex items-center gap-4">
       <AlertCircle class="w-6 h-6 text-red-500 shrink-0" />
       <div class="flex-1">

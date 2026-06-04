@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from json_store import find_by_id, mutate_json, new_id, now_text, read_json, write_json
+from upload_paths import save_upload
 
 books_bp = Blueprint("books_bp", __name__)
 
@@ -131,6 +132,14 @@ def create_book():
     book = mutate_json("books.json", add_book, [])
     notify("admin", "新书待审核", f"《{book['title']}》已提交上架审核。", "blue", book["id"])
     return jsonify({"success": True, "book": book, "matchedCount": 0})
+
+@books_bp.post("/api/books/cover")
+def upload_book_cover():
+    file = request.files.get("file")
+    if not file or not file.filename:
+        return jsonify({"success": False, "message": "请选择封面图片"}), 400
+    cover_url, _ = save_upload(file, "book")
+    return jsonify({"success": True, "cover": cover_url})
 
 @books_bp.patch("/api/books/<book_id>")
 def update_book(book_id):

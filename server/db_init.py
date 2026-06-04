@@ -16,6 +16,10 @@ def init_db():
     # 循环执行导入的所有建表 SQL
     for sql in TABLES_SQL:
         cursor.execute(sql)
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN email TEXT")
+    except Exception:
+        pass
         
     conn.commit()
     conn.close()

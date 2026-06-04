@@ -1,10 +1,13 @@
 # Flask backend
 
-`server/` 是浙里淘书的后端目录。当前后端使用 Flask，不依赖数据库；可变业务状态通过 `json_store.py` 写入 `client/public/data/*.json`。
+`server/` 是浙里淘书的后端目录。当前后端使用 Flask 和 SQLite；可变业务状态都持久化到 `server/zook.db`，`client/public/data/*.json` 只作为首次初始化种子数据。
 
 - `GET /api/health`
 - `POST /api/login`
 - `POST /api/register`
+- `GET /api/auth/session`
+- `POST /api/auth/zju`
+- `POST /api/logout`
 - `POST /api/schedule`
 - `POST /api/textbooks`
 - `POST /api/ai/chat`
@@ -19,14 +22,16 @@
 - `GET|PATCH /api/notes...`
 - `GET|POST /api/chats...`
 
-`app.py` 同时保留原有的 Socket.IO 内存消息事件：`register_user`、`search_user`、`join_room`、`send_message` 和 `ping_test`。
+`app.py` 同时保留原有的 Socket.IO 事件：`register_user`、`search_user`、`join_room`、`send_message` 和 `ping_test`；在线连接状态只作为临时会话状态，消息历史和用户搜索数据仍从 SQLite 读写。
 
 ## Files
 
 - `app.py`：Flask 路由和 Socket.IO 入口。
-- `json_store.py`：JSON 文件读写、原子替换、ID 和时间戳工具。
+- `json_store.py`：兼容旧调用的 SQLite 读写、ID 和时间戳工具。
+- `auth_repository.py`：用户和 JWT 会话持久化。
+- `jwt_service.py`：JWT 签发和校验。
 - `auth_service.py`：浙江大学 CAS 登录认证。
-- `schedule_service.py`：教务课表和官方教材抓取、清洗。
+- `schedule_helper.py`：教务课表抓取、清洗。
 - `ai_service.py`：DeepSeek 服务端代理。
 - `config.py`：本地环境变量读取和请求头配置。
 
@@ -61,15 +66,17 @@ PORT=3001
 DEBUG_CRAWLER=0
 ZOOK_DATA_DIR=../client/public/data
 ZOOK_ENV_FILE=.env.local
+JWT_SECRET=replace_with_a_long_random_secret
 ```
 
 前端 `桃酥 / AI 分析` 页面提供 DeepSeek 密钥配置入口，提交后会调用 `POST /api/ai/config` 并写入 `server/.env.local`。`GET /api/ai/config` 只返回是否已配置、脱敏后的密钥、模型和接口地址，不返回明文密钥。
 
-`ZOOK_DATA_DIR` 可在测试时指向临时 JSON 目录；不配置时默认使用 `client/public/data`。`ZOOK_ENV_FILE` 可在测试时指向临时 `.env.local`，避免把测试密钥写入真实配置。`DEBUG_CRAWLER=1` 时会在 `server/` 下写出抓取调试文件；这些文件已被仓库忽略。
+`ZOOK_DATA_DIR` 仅用于首次初始化 SQLite 种子数据；不配置时默认使用 `client/public/data`。`ZOOK_ENV_FILE` 可在测试时指向临时 `.env.local`，避免把测试密钥写入真实配置。`JWT_SECRET` 应使用足够长的随机字符串。`DEBUG_CRAWLER=1` 时会在 `server/` 下写出抓取调试文件；这些文件已被仓库忽略。
 
 ## Main workflows
 
-- 本地注册和 CAS 登录统一返回前端用户对象。
+- 邮箱注册和邮箱登录返回前端用户对象、JWT 与过期时间。
+- 个人中心的浙大统一身份认证成功后，会同步真实课表并写入 SQLite；未认证用户课表页展示 SQLite 中的模拟课表。
 - 发布书籍默认进入 `pending`，管理员审核通过后变成 `approved`，审核时会触发心愿匹配和通知。
 - 购物清单只允许加入 `approved` 书籍；结算创建 `unpaid` 订单，支付后进入 `pending`，确认后进入 `completed`，取消后进入 `cancelled`。
-- 已完成订单可以评价；收藏、笔记点赞下载、聊天消息和通知已读都会落盘到 JSON。
+- 已完成订单可以评价；收藏、笔记点赞下载、聊天消息和通知已读都会落盘到 SQLite。

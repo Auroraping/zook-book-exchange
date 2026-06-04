@@ -26,8 +26,7 @@ const fetchNotes = async () => {
 }
 
 onMounted(async () => {
-  const [, uiRes] = await Promise.all([fetchNotes(), fetch('/data/ui.json')])
-  const ui = await uiRes.json()
+  const [, ui] = await Promise.all([fetchNotes(), getJson('/api/ui')])
   filters.value = ui.community?.filters || []
   courseGroups.value = ui.community?.courseGroups || {}
   activeFilter.value = filters.value[0] || ''

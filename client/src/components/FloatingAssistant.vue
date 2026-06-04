@@ -1,7 +1,7 @@
 <script setup>
 import { ref, nextTick, onMounted } from 'vue'
 import { X, Send, Sparkles } from 'lucide-vue-next'
-import { postJson } from '../composables/useApi.js'
+import { getJson, postJson } from '../composables/useApi.js'
 
 const isOpen = ref(false)
 const messages = ref([])
@@ -11,8 +11,7 @@ const messagesEnd = ref(null)
 const offlineReply = ref('')
 
 onMounted(async () => {
-  const res = await fetch('/data/ui.json')
-  const ui = await res.json()
+  const ui = await getJson('/api/ui')
   messages.value = ui.floatingAssistant?.messages || []
   offlineReply.value = ui.floatingAssistant?.offlineReply || ''
 })

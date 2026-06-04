@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { Camera, UploadCloud, Info, BookOpen, CheckCircle2 } from 'lucide-vue-next'
-import { postJson } from '../composables/useApi.js'
+import { getJson, postJson, uploadFile as uploadApiFile } from '../composables/useApi.js'
 import { useAuth } from '../composables/useAuth.js'
 
 const { user } = useAuth()
@@ -10,11 +10,11 @@ const isSuccess = ref(false)
 const tags = ref([])
 const scanFileName = ref('')
 const scanPreview = ref('')
+const scanFile = ref(null)
 const listing = ref({ title: '', courseName: '', author: '', originalPrice: '', price: '', condition: '', description: '', campus: '紫金港校区' })
 
 onMounted(async () => {
-  const res = await fetch('/data/ui.json')
-  const ui = await res.json()
+  const ui = await getJson('/api/ui')
   tags.value = ui.publishTags || []
 })
 
@@ -25,19 +25,26 @@ const useTag = (tag) => {
 const acceptScan = (event) => {
   const file = event.target.files?.[0]
   if (!file) return
+  scanFile.value = file
   scanFileName.value = file.name
   if (!listing.value.title) listing.value.title = file.name.replace(/\.[^.]+$/, '')
   const reader = new FileReader()
   reader.onload = () => {
     scanPreview.value = String(reader.result || '')
-    listing.value.cover = scanPreview.value
   }
   reader.readAsDataURL(file)
   publishMode.value = 'manual'
 }
 
 const submitListing = async () => {
-  await postJson('/api/books', { sellerId: 'me', sellerName: user.value?.name, ...listing.value, condition: listing.value.condition || listing.value.description })
+  let cover = listing.value.cover
+  if (scanFile.value) {
+    const formData = new FormData()
+    formData.append('file', scanFile.value)
+    const uploaded = await uploadApiFile('/api/books/cover', formData)
+    cover = uploaded.cover
+  }
+  await postJson('/api/books', { sellerId: 'me', sellerName: user.value?.name, ...listing.value, cover, condition: listing.value.condition || listing.value.description })
   isSuccess.value = true
 }
 </script>
@@ -47,7 +54,7 @@ const submitListing = async () => {
     <div class="w-24 h-24 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8"><CheckCircle2 class="w-12 h-12" /></div>
     <h2 class="text-3xl font-medium text-gray-800 mb-4">书籍已提交</h2>
     <div class="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 mb-8 flex items-center gap-3 justify-center"><div class="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div><p class="text-sm text-blue-600 font-medium">管理员审核通过后会进入购书广场。</p></div>
-    <p class="text-gray-500 mb-12 w-2/3 mx-auto leading-relaxed">记录已保存到 JSON，您可以在个人中心查看发布状态。</p>
+    <p class="text-gray-500 mb-12 w-2/3 mx-auto leading-relaxed">记录已保存到 SQLite，您可以在个人中心查看发布状态。</p>
     <button @click="$router.push('/')" class="m3-btn-filled !px-10">返回首页</button>
   </div>
   <div v-else class="max-w-4xl mx-auto google-card overflow-hidden flex flex-col animate-google-in">

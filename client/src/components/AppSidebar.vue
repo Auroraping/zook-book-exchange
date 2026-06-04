@@ -8,7 +8,7 @@ import { getJson } from '../composables/useApi.js'
 
 const route = useRoute()
 const cartCount = ref(0)
-const { data: navItems } = useDataLoader('/data/ui.json', (json) => json.navigation || [])
+const { data: navItems } = useDataLoader('/api/ui', (json) => json.navigation || [])
 
 const updateCart = async () => {
   const cart = await getJson('/api/cart?userId=me').catch(() => ({ bookIds: JSON.parse(localStorage.getItem('cart') || '[]') }))

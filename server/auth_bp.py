@@ -1,125 +1,172 @@
+from datetime import datetime, timedelta, timezone
+from uuid import uuid4
+
 from flask import Blueprint, jsonify, request
-from werkzeug.security import generate_password_hash
-from json_store import find_by_id, mutate_json, new_id, now_text, read_json
-from auth_service import authenticate_zju
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from auth_repository import active_token, find_user, find_user_by_id, revoke_token, save_token, save_user
+from auth_validators import password_message, valid_email
+from json_store import new_id, now_text
+from jwt_service import create_jwt, decode_jwt, iso_date, timestamp
 from schedule_helper import fetch_schedule
 
 auth_bp = Blueprint("auth_bp", __name__)
 
+
 def request_payload():
     return request.get_json(silent=True) or {}
 
-def public_auth_user(user):
-    return {key: value for key, value in user.items() if key != "passwordHash"}
 
-def find_registered_user(username):
-    username_text = str(username or "").strip().lower()
-    if not username_text: 
-        return None
-    return next((u for u in read_json("users.json", []) if str(u.get("username") or "").lower() == username_text or str(u.get("studentId") or "").lower() == username_text), None)
+def public_auth_user(user):
+    return {key: value for key, value in (user or {}).items() if key != "passwordHash"}
+
+
+def token_response(user, remember=False):
+    hours = 24 * 14 if remember else 12
+    expire_dt = datetime.now(timezone.utc) + timedelta(hours=hours)
+    jti = uuid4().hex
+    payload = {"sub": user["id"], "jti": jti, "exp": timestamp(expire_dt)}
+    token = create_jwt(payload)
+    expire_date = iso_date(expire_dt)
+    save_token(jti, user["id"], expire_date)
+    return {"token": token, "tokenType": "Bearer", "expireDate": expire_date}
+
+
+def default_user(email, password, display_name=None):
+    local_name = email.split("@", 1)[0]
+    name = display_name or local_name or "浙大同学"
+    return {
+        "id": new_id("u"), "username": email, "email": email, "name": name,
+        "realName": "", "studentId": "", "college": "", "major": "",
+        "class": "", "credit": 5.0, "tradeCount": 0,
+        "points": 0, "level": "Lv.1 新同学", "zjuAuthenticated": False,
+        "avatar": f"https://api.dicebear.com/7.x/identicon/svg?seed={email}",
+        "bio": "邮箱注册用户。", "joinDate": now_text(),
+        "passwordHash": generate_password_hash(password),
+    }
+
+
+def apply_real_info(user, real_info):
+    fields = (
+        "realName", "studentId", "college", "major", "class",
+        "zjuAuthenticated", "zjuUsername", "scheduleSyncedAt", "scheduleData",
+    )
+    for key in fields:
+        if key in real_info:
+            user[key] = real_info[key]
+    return user
+
 
 @auth_bp.post("/api/login")
 def login():
     payload = request_payload()
-    username = str(payload.get("username") or "").strip()
+    email = str(payload.get("email") or payload.get("username") or "").strip().lower()
     password = str(payload.get("password") or "")
-    if not username or not password:
-        return jsonify({"success": False, "message": "请提供学号和密码"}), 400
+    remember = bool(payload.get("remember"))
+    if not valid_email(email):
+        return jsonify({"success": False, "message": "请输入正确的邮箱"}), 400
+    if not password:
+        return jsonify({"success": False, "message": "请输入密码"}), 400
 
-    # 尝试使用真实爬虫进行身份与实名爬取
-    real_info = {}
-    try:
-        auth_res = authenticate_zju(username, password)
-        if auth_res.get("success"):
-            sched = fetch_schedule(username, password)
-            raw = sched.get("raw") or {}
-            real_info = {
-                "realName": raw.get("xm") or username, 
-                "studentId": raw.get("xh") or username, 
-                "college": raw.get("xy") or "浙江大学", 
-                "major": raw.get("zy") or "未填写", 
-                "class": raw.get("xzb") or ""
-            }
-    except Exception as e:
-        print("[Auth] 尝试爬虫实名登录同步失败，降级为本地极简登录:", e)
+    user = find_user(email)
+    if user:
+        hash_value = user.get("passwordHash")
+        if not hash_value:
+            return jsonify({"success": False, "message": "账号未设置邮箱密码，请重新注册"}), 401
+        if not check_password_hash(hash_value, password):
+            return jsonify({"success": False, "message": "账号或密码不正确"}), 401
+    else:
+        return jsonify({"success": False, "message": "账号不存在，请先用邮箱注册"}), 404
 
-    local_user = find_registered_user(username)
-    if local_user:
-        def update_pass(users):
-            u = find_by_id(users, local_user["id"])
-            if u:
-                u["passwordHash"] = generate_password_hash(password)
-                # 仅同步实名字段，不覆盖用户自定义的名字/头像
-                if real_info:
-                    for key in ("realName", "studentId", "college", "major", "class"):
-                        if key in real_info:
-                            u[key] = real_info[key]
-                return u
-            return local_user
-            
-        user = mutate_json("users.json", update_pass, [])
-        return jsonify({"success": True, "user": public_auth_user(user)})
+    data = {"success": True, "user": public_auth_user(user)}
+    data.update(token_response(user, remember))
+    return jsonify(data)
 
-    def auto_register(users):
-        init_avatar = f"https://api.dicebear.com/7.x/identicon/svg?seed={username}"
-        init_name = real_info.get("realName") or f"浙大同学_{username[-4:] if len(username)>=4 else username}"
-
-        new_user = {
-            "id": new_id("u"), 
-            "username": username, 
-            "name": init_name, 
-            "realName": real_info.get("realName") or username,
-            "studentId": username, 
-            "college": real_info.get("college") or "浙江大学", 
-            "major": real_info.get("major") or "未填写", 
-            "class": real_info.get("class") or "", 
-            "credit": 5.0, 
-            "tradeCount": 0,
-            "points": 0, 
-            "level": "Lv.1 新同学", 
-            "avatar": init_avatar,
-            "bio": "本地自动激活的用户。", 
-            "joinDate": now_text(), 
-            "passwordHash": generate_password_hash(password)
-        }
-        users.append(new_user)
-        return new_user
-
-    user = mutate_json("users.json", auto_register, [])
-    return jsonify({"success": True, "user": public_auth_user(user)})
 
 @auth_bp.post("/api/register")
 def register():
     payload = request_payload()
-    username = str(payload.get("username") or "").strip()
+    email = str(payload.get("email") or "").strip().lower()
     password = str(payload.get("password") or "")
-    display_name = str(payload.get("name") or username or "浙大同学").strip()
-    if not username or not password or len(password) < 6:
-        return jsonify({"success": False, "message": "注册参数不完整，密码至少6位"}), 400
-    if find_registered_user(username):
-        return jsonify({"success": False, "message": "账号已存在，请直接登录"}), 409
+    confirm_password = str(payload.get("confirmPassword") or "")
+    display_name = str(payload.get("name") or email.split("@", 1)[0] or "浙大同学").strip()
+    remember = bool(payload.get("remember"))
+    if not valid_email(email):
+        return jsonify({"success": False, "message": "邮箱格式不正确"}), 400
+    if password != confirm_password:
+        return jsonify({"success": False, "message": "两次输入的密码不一致"}), 400
+    pass_msg = password_message(password)
+    if pass_msg:
+        return jsonify({"success": False, "message": pass_msg}), 400
+    if find_user(email):
+        return jsonify({"success": False, "message": "邮箱已注册，请直接登录"}), 409
 
-    def add_user(users):
-        user = {
-            "id": new_id("u"), 
-            "username": username, 
-            "name": display_name, 
-            "realName": display_name, 
-            "studentId": username,
-            "college": "浙江大学", 
-            "major": "未填写", 
-            "class": "", 
-            "credit": 5.0, 
-            "tradeCount": 0, 
-            "points": 0, 
-            "level": "Lv.1 新同学",
-            "avatar": f"https://api.dicebear.com/7.x/identicon/svg?seed={username}", 
-            "bio": "本地注册用户。", 
-            "joinDate": now_text(),
-            "passwordHash": generate_password_hash(password)
-        }
-        users.append(user)
-        return user
+    user = default_user(email, password, display_name=display_name)
+    save_user(user)
+    data = {"success": True, "user": public_auth_user(user)}
+    data.update(token_response(user, remember))
+    return jsonify(data)
 
-    user = mutate_json("users.json", add_user, [])
-    return jsonify({"success": True, "user": public_auth_user(user)})
+
+@auth_bp.get("/api/auth/session")
+def session():
+    token = str(request.headers.get("Authorization") or "").replace("Bearer ", "", 1)
+    try:
+        payload = decode_jwt(token)
+        if not active_token(payload.get("jti")):
+            raise ValueError("revoked token")
+        user = find_user_by_id(payload.get("sub"))
+        if not user:
+            raise ValueError("missing user")
+        return jsonify({"success": True, "user": public_auth_user(user), "expireDate": iso_date(datetime.fromtimestamp(payload["exp"], timezone.utc))})
+    except Exception:
+        return jsonify({"success": False, "message": "登录状态已失效，请重新登录"}), 401
+
+
+@auth_bp.post("/api/logout")
+def logout():
+    token = str(request.headers.get("Authorization") or "").replace("Bearer ", "", 1)
+    try:
+        payload = decode_jwt(token, verify_exp=False)
+        revoke_token(payload.get("jti"))
+    except Exception:
+        pass
+    return jsonify({"success": True, "message": "已退出登录"})
+
+
+@auth_bp.post("/api/auth/zju")
+def zju_auth():
+    token = str(request.headers.get("Authorization") or "").replace("Bearer ", "", 1)
+    payload = request_payload()
+    zju_username = str(payload.get("username") or "").strip()
+    zju_password = str(payload.get("password") or "")
+    if not zju_username or not zju_password:
+        return jsonify({"success": False, "message": "请输入浙大统一身份认证账号和密码"}), 400
+    try:
+        token_payload = decode_jwt(token)
+        if not active_token(token_payload.get("jti")):
+            raise ValueError("revoked token")
+        user = find_user_by_id(token_payload.get("sub"))
+        if not user:
+            raise ValueError("missing user")
+    except Exception:
+        return jsonify({"success": False, "message": "登录状态已失效，请重新登录"}), 401
+
+    try:
+        sched = fetch_schedule(zju_username, zju_password)
+        if not sched.get("courses"):
+            return jsonify({"success": False, "message": "统一身份认证成功，但未获取到课表数据"}), 502
+    except Exception as exc:
+        print("[Auth] ZJU bind failed:", exc)
+        return jsonify({"success": False, "message": "浙大统一身份认证失败或课表同步失败"}), 401
+
+    raw = sched.get("raw") or {}
+    real_info = {
+        "realName": raw.get("xm") or zju_username, "studentId": raw.get("xh") or zju_username,
+        "college": raw.get("xy") or "浙江大学", "major": raw.get("zy") or "未填写",
+        "class": raw.get("xzb") or "", "zjuAuthenticated": True,
+        "zjuUsername": zju_username, "scheduleSyncedAt": now_text(), "scheduleData": sched,
+    }
+    apply_real_info(user, real_info)
+    save_user(user)
+    return jsonify({"success": True, "user": public_auth_user(user), "courses": sched["courses"], "raw": raw})

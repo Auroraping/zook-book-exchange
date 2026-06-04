@@ -1,13 +1,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { Trophy, BookOpen, Star, Flame } from 'lucide-vue-next'
+import { getJson } from '../composables/useApi.js'
 
 const achievements = ref([])
 const iconMap = { Star, BookOpen, Flame, Trophy }
 
 onMounted(async () => {
-  const res = await fetch('/data/ui.json')
-  const ui = await res.json()
+  const ui = await getJson('/api/ui')
   achievements.value = ui.achievements || []
 })
 </script>

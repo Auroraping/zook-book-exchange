@@ -1,6 +1,6 @@
 # 数据库种子填充静态映射配置，独立文件以符合单个文件行数不超过 200 行的作业要求
 MAPPINGS = [
-    {"file": "users.json", "table": "users", "pk": "id", "columns": ["id", "username", "studentId", "passwordHash"], "singular": False},
+    {"file": "users.json", "table": "users", "pk": "id", "columns": ["id", "username", "email", "studentId", "passwordHash"], "singular": False},
     {"file": "books.json", "table": "books", "pk": "id", "columns": ["id", "title", "price", "sellerId", "status"], "singular": False},
     {"file": "orders.json", "table": "orders", "pk": "id", "columns": ["id", "userId", "bookId", "status"], "singular": False},
     {"file": "wishes.json", "table": "wishes", "pk": "id", "columns": ["id", "userId", "status"], "singular": False},

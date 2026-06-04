@@ -15,8 +15,7 @@ const { user } = useAuth()
 const currentUserId = computed(() => user.value?.id || 'me')
 
 onMounted(async () => {
-  const [ordersData, uiRes] = await Promise.all([getJson('/api/orders?userId=me'), fetch('/data/ui.json')])
-  const ui = await uiRes.json()
+  const [ordersData, ui] = await Promise.all([getJson('/api/orders?userId=me'), getJson('/api/ui')])
   orders.value = ordersData.orders
   tabs.value = ui.orders?.tabs || []
   statusInfo.value = ui.orders?.statusInfo || {}

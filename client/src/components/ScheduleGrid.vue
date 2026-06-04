@@ -8,7 +8,7 @@ const props = defineProps({
   selectedCourse: { type: Object, default: null }
 })
 const emit = defineEmits(['select'])
-const { data: scheduleUi } = useDataLoader('/data/ui.json', (json) => json.schedule || {}, {})
+const { data: scheduleUi } = useDataLoader('/api/ui', (json) => json.schedule || {}, {})
 
 const days = computed(() => scheduleUi.value.days || [])
 const periodTimes = computed(() => scheduleUi.value.periodTimes || {})

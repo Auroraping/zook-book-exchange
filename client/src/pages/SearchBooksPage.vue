@@ -18,8 +18,7 @@ const sortTabs = ref([])
 const categories = ref([])
 
 onMounted(async () => {
-  const [booksData, uiRes] = await Promise.all([getJson('/api/books?status=approved'), fetch('/data/ui.json')])
-  const ui = await uiRes.json()
+  const [booksData, ui] = await Promise.all([getJson('/api/books?status=approved'), getJson('/api/ui')])
   books.value = booksData.books
   campuses.value = ui.search?.campuses || []
   sortTabs.value = ui.search?.sortTabs || []

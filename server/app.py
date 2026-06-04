@@ -1,11 +1,13 @@
 import os
 from pathlib import Path
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room
 
-# 从强单例共享状态文件导入在线状态与注册字典，确保热重载数据一致性
-from socket_state import online_users, registered_users
+# 从强单例共享状态文件导入在线状态，业务数据仍持久化到 SQLite
+from socket_state import online_users
+from socket_helpers import append_room_message, room_history, search_registered_users
+from json_store import read_json
 
 # 引入所有业务路由蓝图以及新拆分的合规子蓝图
 from user_bp import user_bp
@@ -29,8 +31,6 @@ CORS(app)
 
 # 初始化 Socket.IO 长连接服务，并托管于 extensions 供跨蓝图共享调用
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
-
-messages = []
 
 # 批量注册各业务领域的模块化蓝图以及新解耦蓝图
 app.register_blueprint(user_bp)
@@ -69,12 +69,20 @@ def health():
         }
     )
 
+@app.get("/api/ui")
+def ui_config():
+    return jsonify(read_json("ui.json", {}))
+
+@app.get("/uploads/<path:filename>")
+def uploaded_file(filename):
+    upload_dir = Path(__file__).resolve().parent / "uploads"
+    return send_from_directory(upload_dir, filename)
+
 @socketio.on("register_user")
 def handle_register_user(user):
     if isinstance(user, dict) and user.get("id"):
         user_id = str(user["id"])
         display_name = user.get("name") or user.get("username") or "匿名用户"
-        registered_users[user_id] = display_name
         
         # 记录用户的 socket 会话，方便定向实时推送
         from flask import request
@@ -105,27 +113,18 @@ def search_user(query):
     if not query:
         emit("search_results", [])
         return
-    query_text = str(query).lower()
-    results = [
-        {"id": user_id, "name": name or "未知用户"}
-        for user_id, name in registered_users.items()
-        if query_text in user_id.lower() or query_text in str(name).lower()
-    ]
-    emit("search_results", results[:10])
+    emit("search_results", search_registered_users(query))
 
 @socketio.on("join_room")
 def handle_join_room(room_id):
     join_room(room_id)
-    history = [message for message in messages if message.get("roomId") == room_id]
-    emit("receive_history", history)
+    emit("receive_history", room_history(room_id))
 
 @socketio.on("send_message")
 def handle_send_message(data):
     if not isinstance(data, dict):
         return
-    from datetime import datetime, timezone
-    message_data = {**data, "timestamp": datetime.now(timezone.utc).isoformat()}
-    messages.append(message_data)
+    message_data = append_room_message(data)
     socketio.emit("receive_message", message_data, room=data.get("roomId"))
 
 @app.post("/api/diagnose/error")

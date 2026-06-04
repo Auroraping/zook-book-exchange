@@ -1,64 +1,63 @@
-import os
 from flask import Blueprint, jsonify, request
+
+from auth_repository import active_token, find_user_by_id
 from json_store import find_by_id, read_json
-from schedule_helper import fetch_schedule
+from jwt_service import decode_jwt
 
 schedule_bp = Blueprint("schedule_bp", __name__)
 
-def request_payload():
-    return request.get_json(silent=True) or {}
+
+def current_user():
+    token = str(request.headers.get("Authorization") or "").replace("Bearer ", "", 1)
+    try:
+        payload = decode_jwt(token)
+        if not active_token(payload.get("jti")):
+            return None
+        return find_user_by_id(payload.get("sub"))
+    except Exception:
+        return None
+
+
+def mock_courses():
+    return read_json("courses.json", [])
+
 
 @schedule_bp.post("/api/schedule")
 def schedule():
-    payload = request_payload()
-    username = str(payload.get("username") or "").strip()
-    password = str(payload.get("password") or "")
-    
-    # 优先发起真实选课爬虫请求获取真实课表
-    try:
-        if username and password:
-            sched = fetch_schedule(username, password)
-            return jsonify({
-                "success": True, 
-                "courses": sched["courses"], 
-                "semester": sched.get("termInfo", {}).get("semester") or "大二春夏学期", 
-                "raw": sched.get("raw", {})
-            })
-    except Exception as e:
-        print("[Schedule] 真实选课爬虫同步失败，降级为Mock数据:", e)
-        
-    courses = []
-    try:
-        import json
-        with open(os.path.join(os.path.dirname(__file__), "..", "client", "public", "data", "courses.json"), "r", encoding="utf-8") as f:
-            courses = json.load(f)
-    except Exception as e:
-        print("[Schedule] 无法读取兜底课表数据:", e)
-        
+    user = current_user()
+    schedule_data = (user or {}).get("scheduleData") or {}
+    courses = schedule_data.get("courses") or []
+    if user and user.get("zjuAuthenticated") and courses:
+        return jsonify({
+            "success": True,
+            "source": "zju",
+            "courses": courses,
+            "semester": schedule_data.get("termInfo", {}).get("semester") or "当前学期",
+            "termInfo": schedule_data.get("termInfo"),
+            "raw": schedule_data.get("raw") or {},
+        })
+
     return jsonify({
-        "success": True, 
-        "courses": courses, 
-        "semester": "大二春夏学期",
-        "raw": {"xm": "浙大同学", "xh": username or "student"}
+        "success": True,
+        "source": "mock",
+        "courses": mock_courses(),
+        "semester": "模拟学期",
+        "raw": {"xm": (user or {}).get("name") or "浙大同学"},
     })
+
 
 @schedule_bp.post("/api/textbooks")
 def textbooks():
-    # 动态匹配 SQLite 中在售的书籍进行推荐
     courses = read_json("courses.json", [])
     books = read_json("books.json", [])
     matched_books = []
-    for c in courses:
-        for bid in c.get("bookIds", []):
-            book = find_by_id(books, bid)
+    for course in courses:
+        for book_id in course.get("bookIds", []):
+            book = find_by_id(books, book_id)
             if book:
                 matched_books.append({
-                    "courseId": c["id"], 
-                    "courseName": c["name"], 
-                    "bookId": bid, 
-                    "title": book["title"],
-                    "price": book["price"], 
-                    "cover": book["cover"], 
-                    "seller": book["seller"]
+                    "courseId": course["id"], "courseName": course["name"], "bookId": book_id,
+                    "title": book["title"], "price": book["price"],
+                    "cover": book["cover"], "seller": book["seller"],
                 })
     return jsonify({"success": True, "textbooks": matched_books})

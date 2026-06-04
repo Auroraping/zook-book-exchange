@@ -7,6 +7,7 @@ TABLES_SQL = [
     CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         username TEXT,
+        email TEXT,
         studentId TEXT,
         passwordHash TEXT,
         data TEXT
@@ -112,6 +113,16 @@ TABLES_SQL = [
     CREATE TABLE IF NOT EXISTS ui (
         key TEXT PRIMARY KEY,
         data TEXT
+    )
+    """,
+    # 14. JWT 登录会话表，用于登出后撤销 token
+    """
+    CREATE TABLE IF NOT EXISTS auth_tokens (
+        jti TEXT PRIMARY KEY,
+        userId TEXT,
+        expiresAt TEXT,
+        revokedAt TEXT,
+        createdAt TEXT
     )
     """
 ]

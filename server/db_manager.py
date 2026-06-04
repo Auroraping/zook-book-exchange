@@ -53,7 +53,7 @@ def db_write_table(table_name, data, is_singular=False):
                 "courses": "id", "carts": "userId", "favorites": "userId"
             }
             cols_map = {
-                "users": ["id", "username", "studentId", "passwordHash"],
+                "users": ["id", "username", "email", "studentId", "passwordHash"],
                 "books": ["id", "title", "price", "sellerId", "status"],
                 "orders": ["id", "userId", "bookId", "status"],
                 "wishes": ["id", "userId", "status"],

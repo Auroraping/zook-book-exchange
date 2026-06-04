@@ -63,7 +63,7 @@ def fetch_schedule(username, password):
         try:
             start_period = int(str(item.get("djj")).strip())
         except:
-            start_period = int(str(item.get("jcs") or item.get("jc") or "1").split("-")[0], 1)
+            start_period = int(str(item.get("jcs") or item.get("jc") or "1").split("-")[0])
         try:
             duration = int(str(item.get("skcd")).strip())
         except:

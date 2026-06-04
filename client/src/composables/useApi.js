@@ -19,6 +19,11 @@ const parseJsonResponse = async (response) => {
   return data
 }
 
+const authHeader = (overrideToken) => {
+  const token = overrideToken || localStorage.getItem('auth_token')
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 const requestJson = async (path, options = {}) => {
   let response
   try {
@@ -26,6 +31,7 @@ const requestJson = async (path, options = {}) => {
       method: options.method || 'GET',
       headers: {
         Accept: 'application/json',
+        ...authHeader(options.token),
         ...(options.body ? { 'Content-Type': 'application/json' } : {}),
       },
       ...(options.body ? { body: JSON.stringify(options.body) } : {}),
@@ -39,7 +45,7 @@ const requestJson = async (path, options = {}) => {
 
 export const getJson = (path) => requestJson(path)
 
-export const postJson = (path, payload) => requestJson(path, { method: 'POST', body: payload })
+export const postJson = (path, payload, token) => requestJson(path, { method: 'POST', body: payload, token })
 
 export const patchJson = (path, payload) => requestJson(path, { method: 'PATCH', body: payload })
 
@@ -50,6 +56,7 @@ export const uploadFile = async (path, formData) => {
   try {
     response = await fetch(apiUrl(path), {
       method: 'POST',
+      headers: authHeader(),
       body: formData,
     })
   } catch {

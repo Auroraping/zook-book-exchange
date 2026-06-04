@@ -24,10 +24,10 @@ const configSuccess = ref(false)
 onMounted(async () => {
   const [booksData, uiRes, configData] = await Promise.all([
     getJson('/api/books?status=approved'),
-    fetch('/data/ui.json'),
+    getJson('/api/ui'),
     getJson('/api/ai/config'),
   ])
-  const ui = await uiRes.json()
+  const ui = uiRes
   books.value = booksData.books
   aiConfig.value = configData
   apiUrl.value = configData.apiUrl || 'https://api.deepseek.com/chat/completions'

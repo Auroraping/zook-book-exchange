@@ -1,9 +1,7 @@
-import os
 import json
-import time
-import uuid
 from flask import Blueprint, jsonify, request
 from json_store import find_by_id, mutate_json, new_id, now_text, read_json, write_json
+from upload_paths import save_upload
 
 notes_bp = Blueprint("notes_bp", __name__)
 
@@ -67,15 +65,8 @@ def create_note():
     file_name_orig = None
     
     if file and file.filename:
-        upload_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "client", "public", "uploads")
-        os.makedirs(upload_folder, exist_ok=True)
-        
         file_name_orig = file.filename
-        ext = os.path.splitext(file.filename)[1]
-        unique_filename = f"note_{int(time.time())}_{uuid.uuid4().hex[:6]}{ext}"
-        file_path = os.path.join(upload_folder, unique_filename)
-        file.save(file_path)
-        file_url = f"/uploads/{unique_filename}"
+        file_url, _ = save_upload(file, "note")
         
     def add_note(notes):
         tags_raw = request.form.get("tags", "")

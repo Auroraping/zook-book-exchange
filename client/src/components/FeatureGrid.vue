@@ -3,7 +3,7 @@ import { RouterLink } from 'vue-router'
 import { ShoppingCart, Upload, FileText, Zap } from 'lucide-vue-next'
 import { useDataLoader } from '../composables/useDataLoader.js'
 
-const { data: features } = useDataLoader('/data/ui.json', (json) => json.featureCards || [])
+const { data: features } = useDataLoader('/api/ui', (json) => json.featureCards || [])
 const iconMap = { ShoppingCart, Upload, FileText, Zap }
 </script>
 
