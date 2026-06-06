@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuth } from '../composables/useAuth.js'
 import { getJson, postJson } from '../composables/useApi.js'
+import { getStored, removeStoredMany, setStored } from '../composables/useSessionStore.js'
 import { Bell, BookMarked, Heart, Package, Sparkles, FileText } from 'lucide-vue-next'
 import ProfileHeaderCard from '../components/ProfileHeaderCard.vue'
 import ProfileLoginPrompt from '../components/ProfileLoginPrompt.vue'
@@ -28,6 +29,7 @@ const profileUser = ref({})
 const nicknameSaving = ref(false)
 const nicknameError = ref('')
 const zjuAuthLoading = ref(false)
+const zjuUnbindLoading = ref(false)
 const zjuAuthError = ref('')
 const iconMap = { Package, Heart, Sparkles, Bell, BookMarked, FileText }
 
@@ -131,12 +133,31 @@ const hydrateRealProfile = (name, sid, coll, maj, cls) => {
 }
 
 const cacheZjuProfile = (raw) => {
-  if (raw.xm) localStorage.setItem('zook_real_name', raw.xm)
-  if (raw.xh) localStorage.setItem('zook_student_id', raw.xh)
-  if (raw.xy) localStorage.setItem('zook_college', raw.xy)
-  if (raw.zy) localStorage.setItem('zook_major', raw.zy)
-  if (raw.xzb) localStorage.setItem('zook_class', raw.xzb)
+  setStored('zook_real_name', raw.xm)
+  setStored('zook_student_id', raw.xh)
+  setStored('zook_college', raw.xy)
+  setStored('zook_major', raw.zy)
+  setStored('zook_class', raw.xzb)
 }
+
+const clearZjuProfile = () => {
+  removeStoredMany(['zook_real_name', 'zook_student_id', 'zook_college', 'zook_major', 'zook_class'])
+}
+
+const zjuClearedUser = (baseUser) => ({
+  ...baseUser,
+  realName: '',
+  studentId: '',
+  college: '',
+  major: '',
+  class: '',
+  classText: '',
+  zjuUsername: '',
+  zjuAuthenticated: false,
+  scheduleSyncedAt: '',
+  scheduleData: {},
+  bio: '邮箱注册用户。'
+})
 
 onMounted(async () => {
   const [ordersData, booksData, wishesData, noticesData, favoritesData, uiRes, notesData] = await Promise.all([
@@ -159,7 +180,7 @@ onMounted(async () => {
   if (isMe) {
     // 核心：如果 useAuth 缓存中已有此用户的独立头像和网名，优先采用缓存，绝不被静态默认 defaultUser 污染
     let cachedInfo = {}
-    const cachedUser = localStorage.getItem('user')
+    const cachedUser = getStored('user')
     if (cachedUser) {
       try {
         cachedInfo = JSON.parse(cachedUser) || {}
@@ -168,7 +189,8 @@ onMounted(async () => {
 
     profileUser.value = { 
       ...(ui.profile?.defaultUser || {}),
-      ...cachedInfo
+      ...cachedInfo,
+      zjuAuthenticated: !!cachedInfo.zjuAuthenticated
     }
     tabs.value = ui.profile?.tabs || []
     
@@ -184,7 +206,7 @@ onMounted(async () => {
       avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${targetUserId}`,
       bio: `Ta在浙里淘书发布了 ${books.value.length} 本闲置书籍`,
       credit: books.value.length > 0 ? books.value[0].credit : 4.8,
-      studentId: '', college: '', major: '', classText: ''
+      studentId: '', college: '', major: '', classText: '', zjuAuthenticated: false
     }
     tabs.value = [
       { id: 'books', label: 'Ta 的闲置', icon: 'Package' }
@@ -247,7 +269,7 @@ const authenticateZju = async (payload) => {
   zjuAuthLoading.value = true
   try {
     const data = await postJson('/api/auth/zju', payload)
-    const nextUser = { ...data.user, id: 'me', realId: data.user.id }
+    const nextUser = { ...data.user, id: 'me', realId: data.user.id, classText: data.user.class || '' }
     profileUser.value = { ...profileUser.value, ...nextUser }
     cacheZjuProfile(data.raw || {})
     updateUser(nextUser)
@@ -255,6 +277,23 @@ const authenticateZju = async (payload) => {
     zjuAuthError.value = err.message || '浙大统一身份认证失败'
   } finally {
     zjuAuthLoading.value = false
+  }
+}
+
+const unbindZju = async () => {
+  if (!confirm('确定取消浙大统一身份认证吗？取消后该账号将显示为未认证，课表会回到模拟课表。')) return
+  zjuAuthError.value = ''
+  zjuUnbindLoading.value = true
+  try {
+    const data = await postJson('/api/auth/zju/unbind', {})
+    const nextUser = zjuClearedUser({ ...data.user, id: 'me', realId: data.user.id })
+    profileUser.value = { ...profileUser.value, ...nextUser }
+    clearZjuProfile()
+    updateUser(nextUser)
+  } catch (err) {
+    zjuAuthError.value = err.message || '取消认证失败'
+  } finally {
+    zjuUnbindLoading.value = false
   }
 }
 </script>
@@ -265,7 +304,7 @@ const authenticateZju = async (payload) => {
     <ProfileHeaderCard :profile-user="profileUser" :is-me="isMe" @edit-avatar="openAvatarModal" />
     <div v-if="isMe" class="grid md:grid-cols-2 gap-6">
       <ProfileNicknameForm :nickname="profileUser.name" :saving="nicknameSaving" :error="nicknameError" @save="saveNickname" />
-      <ProfileZjuAuthCard :profile-user="profileUser" :loading="zjuAuthLoading" :error="zjuAuthError" @authenticate="authenticateZju" />
+      <ProfileZjuAuthCard :profile-user="profileUser" :loading="zjuAuthLoading" :unbinding="zjuUnbindLoading" :error="zjuAuthError" @authenticate="authenticateZju" @unbind="unbindZju" />
     </div>
     <div class="flex gap-8">
       <ProfileSidebar v-model:activeTab="activeTab" :profile-user="profileUser" :tabs="tabs" :icon-map="iconMap" />

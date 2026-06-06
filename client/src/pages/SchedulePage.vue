@@ -3,11 +3,11 @@ import { ref, onMounted, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { AlertCircle, Loader2 } from 'lucide-vue-next'
 import { getJson, postJson } from '../composables/useApi.js'
+import { setStored } from '../composables/useSessionStore.js'
 import ScheduleGrid from '../components/ScheduleGrid.vue'
 import ScheduleBookList from '../components/ScheduleBookList.vue'
 import SchedulePageHeader from '../components/SchedulePageHeader.vue'
 import ScheduleTermToolbar from '../components/ScheduleTermToolbar.vue'
-import ScheduleTextbookList from '../components/ScheduleTextbookList.vue'
 
 const courses = ref([])
 const books = ref([])
@@ -17,59 +17,6 @@ const error = ref('')
 const isReal = ref(false)
 const termInfo = ref(null)
 const scheduleUi = ref({})
-
-const officialTextbooks = ref([])
-const officialTextbookStatus = ref('')
-
-const hasOfficialBookDetail = (book) => {
-  return book?.bookName && book.bookName !== '无教材' && book.bookName !== '暂无教材详情' && book.bookName !== '教材详情暂未填写'
-}
-
-// 获取真实的官方指定教材（仅提取真实爬取数据，绝不编造或硬编码，无法获取时老实交代）
-const getRealOfficialBook = (courseName) => {
-  if (!courseName) return null
-
-  // 1. 优先使用教务系统实时预选抓取的数据 (比如在选书窗口期内)
-  if (officialTextbooks.value && officialTextbooks.value.length > 0) {
-    const match = officialTextbooks.value.find(ot => 
-      courseName.includes(ot.courseName) || 
-      ot.courseName.includes(courseName)
-    )
-    if (match) {
-      if (!hasOfficialBookDetail(match)) return null
-      return {
-        ...match,
-        source: '教务网实时预订'
-      }
-    }
-  }
-
-  // 2. 体育/定向越野等已知不需要教材的课程，物理判定为“无需教材”状态
-  const cleanName = courseName.replace(/（[^）]+）/g, '').replace(/\([^)]+\)/g, '').trim();
-  const isSports = (scheduleUi.value.sportsKeywords || []).some((keyword) => cleanName.includes(keyword))
-  
-  if (isSports) {
-    return {
-      courseName,
-      bookName: '无教材',
-      author: '无',
-      press: '无',
-      version: '无',
-      status: '无需预订',
-      source: '无需教材',
-      orderTime: ''
-    }
-  }
-
-  // 其他情况（如窗口关闭、接口返回 500 时）一律老老实实返回 null 表示无法获取，绝不无端编造数据
-  return null
-}
-
-// 计算属性：当前选中课程的官方教材匹配项
-const matchedOfficialTextbook = computed(() => {
-  if (!selectedCourse.value) return null
-  return getRealOfficialBook(selectedCourse.value.name)
-})
 
 onMounted(async () => {
   const [booksData, ui] = await Promise.all([getJson('/api/books?status=approved'), getJson('/api/ui')])
@@ -128,17 +75,6 @@ const currentMiniSemester = computed(() => {
 })
 
 const selectedMiniSemester = ref(currentMiniSemester.value)
-const currentView = ref('grid') // 'grid' (课表网格) 或 'list' (集体教材省钱清单)
-
-// 匹配某门课程钦定的教务处官方教材
-const getOfficialBook = (course) => {
-  return getRealOfficialBook(course.name)
-}
-
-// 匹配某门课程在本平台出售中的二手教材列表
-const getSecondhandBooks = (course) => {
-  return books.value.filter(b => (course.bookIds || []).includes(b.id))
-}
 
 const loadSchedule = async () => {
   loading.value = true
@@ -148,12 +84,10 @@ const loadSchedule = async () => {
     courses.value = data.courses || []
     termInfo.value = data.termInfo
     isReal.value = data.source === 'zju'
-    officialTextbookStatus.value = isReal.value ? '已通过浙大统一身份认证同步真实课表' : '未认证用户当前展示模拟课表'
     if (data.raw) cacheZjuProfile(data.raw)
   } catch {
     courses.value = []
     error.value = '课表服务暂时不可用，请确认后端已启动后重试。'
-    officialTextbookStatus.value = '课表数据必须从后端 SQLite 或浙大教务同步获取'
     isReal.value = false
   }
   loading.value = false
@@ -161,11 +95,11 @@ const loadSchedule = async () => {
 }
 
 const cacheZjuProfile = (raw) => {
-  if (raw.xm) localStorage.setItem('zook_real_name', raw.xm)
-  if (raw.xh) localStorage.setItem('zook_student_id', raw.xh)
-  if (raw.xy) localStorage.setItem('zook_college', raw.xy)
-  if (raw.zy) localStorage.setItem('zook_major', raw.zy)
-  if (raw.xzb) localStorage.setItem('zook_class', raw.xzb)
+  setStored('zook_real_name', raw.xm)
+  setStored('zook_student_id', raw.xh)
+  setStored('zook_college', raw.xy)
+  setStored('zook_major', raw.zy)
+  setStored('zook_class', raw.xzb)
 }
 
 // 3. 动态短学期选项卡
@@ -334,27 +268,21 @@ const addToCart = async (bookId) => {
     </div>
     <template v-if="!loading">
       <ScheduleTermToolbar
-        v-model:currentView="currentView"
         v-model:selectedMiniSemester="selectedMiniSemester"
         :tabs="availableTabs"
         :course-count="filteredCourses.length"
       />
-      <template v-if="currentView === 'grid'">
-        <ScheduleGrid
-          :courses="filteredCourses"
-          :selected-course="selectedCourse"
-          @select="selectedCourse = $event"
-        />
-        <ScheduleBookList
-          :selected-course="selectedCourse"
-          :matched-books="books.filter((b) => (selectedCourse?.bookIds || []).includes(b.id))"
-          :official-textbook="matchedOfficialTextbook"
-          :textbook-status-message="officialTextbookStatus"
-          @add-to-cart="addToCart"
-          @close="selectedCourse = null"
-        />
-      </template>
-      <ScheduleTextbookList v-else :courses="filteredCourses" :get-official-book="getOfficialBook" :get-secondhand-books="getSecondhandBooks" :textbook-status-message="officialTextbookStatus" @add-to-cart="addToCart" />
+      <ScheduleGrid
+        :courses="filteredCourses"
+        :selected-course="selectedCourse"
+        @select="selectedCourse = $event"
+      />
+      <ScheduleBookList
+        :selected-course="selectedCourse"
+        :matched-books="books.filter((b) => (selectedCourse?.bookIds || []).includes(b.id))"
+        @add-to-cart="addToCart"
+        @close="selectedCourse = null"
+      />
     </template>
   </div>
 </template>

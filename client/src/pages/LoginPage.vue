@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth.js'
 import { postJson } from '../composables/useApi.js'
+import { removeStored, setStored } from '../composables/useSessionStore.js'
 import AppLogo from '../components/AppLogo.vue'
 import AuthErrorMessage from '../components/auth/AuthErrorMessage.vue'
 import AuthSubmitActions from '../components/auth/AuthSubmitActions.vue'
@@ -18,21 +19,21 @@ const router = useRouter()
 const { login } = useAuth()
 
 const cacheRealInfo = (userData) => {
-  localStorage.setItem('zook_username', userData.username || userData.email || email.value)
-  if (userData.id) localStorage.setItem('zook_user_uuid', userData.id)
+  setStored('zook_username', userData.username || userData.email || email.value)
+  if (userData.id) setStored('zook_user_uuid', userData.id)
   if (!userData.zjuAuthenticated) {
-    localStorage.removeItem('zook_real_name')
-    localStorage.removeItem('zook_student_id')
-    localStorage.removeItem('zook_college')
-    localStorage.removeItem('zook_major')
-    localStorage.removeItem('zook_class')
+    removeStored('zook_real_name')
+    removeStored('zook_student_id')
+    removeStored('zook_college')
+    removeStored('zook_major')
+    removeStored('zook_class')
     return
   }
-  if (userData.realName) localStorage.setItem('zook_real_name', userData.realName)
-  if (userData.studentId) localStorage.setItem('zook_student_id', userData.studentId)
-  if (userData.college) localStorage.setItem('zook_college', userData.college)
-  if (userData.major) localStorage.setItem('zook_major', userData.major)
-  if (userData.class) localStorage.setItem('zook_class', userData.class)
+  setStored('zook_real_name', userData.realName)
+  setStored('zook_student_id', userData.studentId)
+  setStored('zook_college', userData.college)
+  setStored('zook_major', userData.major)
+  setStored('zook_class', userData.class)
 }
 
 const validateBeforeSubmit = () => {

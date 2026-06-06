@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { X, Heart, MessageSquare, Sparkles, CheckCircle2, User, Clock, Tag, Trash2 } from 'lucide-vue-next'
 import { postJson, deleteJson } from '../composables/useApi.js'
 import { useAuth } from '../composables/useAuth.js'
+import { getStored } from '../composables/useSessionStore.js'
 
 const props = defineProps({
   isOpen: { type: Boolean, required: true },
@@ -32,7 +33,7 @@ const seekerCount = computed(() => {
 })
 
 const { user } = useAuth()
-const currentUserId = computed(() => user.value?.id || 'me')
+const currentUserId = computed(() => user.value?.realId || getStored('zook_user_uuid') || 'me')
 
 const isMyWish = computed(() => {
   if (!props.wish) return false
@@ -68,7 +69,8 @@ const startChat = async () => {
       contactName: props.wish.userName || '浙大同学',
       avatar: props.wish.avatar,
       initialMsg: initialMsg,
-      bookTitle: props.wish.title
+      bookTitle: props.wish.title,
+      userId: currentUserId.value
     })
     
     emit('close')

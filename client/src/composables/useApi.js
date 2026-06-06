@@ -20,7 +20,7 @@ const parseJsonResponse = async (response) => {
 }
 
 const authHeader = (overrideToken) => {
-  const token = overrideToken || localStorage.getItem('auth_token')
+  const token = overrideToken || sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token')
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 

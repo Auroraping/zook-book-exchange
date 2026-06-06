@@ -20,6 +20,10 @@ def init_db():
         cursor.execute("ALTER TABLE users ADD COLUMN email TEXT")
     except Exception:
         pass
+    try:
+        cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL AND email != ''")
+    except Exception:
+        pass
         
     conn.commit()
     conn.close()

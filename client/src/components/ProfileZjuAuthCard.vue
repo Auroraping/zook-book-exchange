@@ -1,15 +1,17 @@
 <script setup>
 import { ref } from 'vue'
-import { Loader2, ShieldCheck } from 'lucide-vue-next'
+import { Loader2, ShieldCheck, XCircle } from 'lucide-vue-next'
 
 defineProps({
   profileUser: { type: Object, required: true },
   loading: { type: Boolean, default: false },
+  unbinding: { type: Boolean, default: false },
   error: { type: String, default: '' }
 })
 
 const emit = defineEmits({
-  authenticate: (payload) => !!payload.username && !!payload.password
+  authenticate: (payload) => !!payload.username && !!payload.password,
+  unbind: () => true
 })
 
 const username = ref('')
@@ -41,6 +43,17 @@ const submitAuth = () => {
         {{ profileUser.zjuAuthenticated ? '重新导入课表' : '认证并一键导入' }}
       </button>
     </form>
+    <button
+      v-if="profileUser.zjuAuthenticated"
+      type="button"
+      :disabled="loading || unbinding"
+      @click="emit('unbind')"
+      class="h-10 px-4 rounded-xl border border-red-200 bg-red-50 text-red-600 text-xs font-black flex items-center justify-center gap-2 hover:bg-red-100 disabled:opacity-60"
+    >
+      <Loader2 v-if="unbinding" class="w-4 h-4 animate-spin" />
+      <XCircle v-else class="w-4 h-4" />
+      取消浙大统一身份认证
+    </button>
     <p v-if="error" class="text-xs font-bold text-red-500">{{ error }}</p>
   </section>
 </template>

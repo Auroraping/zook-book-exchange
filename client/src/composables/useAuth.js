@@ -2,28 +2,38 @@ import { ref, readonly, computed } from 'vue'
 import { getJson, postJson } from './useApi.js'
 
 const user = ref(null)
-const token = ref(localStorage.getItem('auth_token') || '')
-const expireDate = ref(localStorage.getItem('auth_expire_date') || '')
+const token = ref(sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token') || '')
+const expireDate = ref(sessionStorage.getItem('auth_expire_date') || localStorage.getItem('auth_expire_date') || '')
 
 const isExpired = (value) => value && new Date(value).getTime() <= Date.now()
+const readStored = (key) => sessionStorage.getItem(key) || localStorage.getItem(key)
 
-const clearStorage = () => {
-  localStorage.removeItem('user')
-  localStorage.removeItem('auth_token')
-  localStorage.removeItem('auth_expire_date')
-  localStorage.removeItem('zook_password')
-  localStorage.removeItem('zook_username')
-  localStorage.removeItem('zook_real_name')
-  localStorage.removeItem('zook_student_id')
-  localStorage.removeItem('zook_college')
-  localStorage.removeItem('zook_major')
-  localStorage.removeItem('zook_class')
-  sessionStorage.removeItem('zook_password')
+const authKeys = [
+  'user', 'auth_token', 'auth_expire_date', 'zook_password',
+  'zook_username', 'zook_user_uuid', 'zook_real_name',
+  'zook_student_id', 'zook_college', 'zook_major', 'zook_class'
+]
+
+const clearStorage = (all = false) => {
+  authKeys.forEach((key) => sessionStorage.removeItem(key))
+  if (all) authKeys.forEach((key) => localStorage.removeItem(key))
 }
 
-const savedUser = localStorage.getItem('user')
+const clearLocalIfToken = (value) => {
+  if (value && localStorage.getItem('auth_token') === value) {
+    authKeys.forEach((key) => localStorage.removeItem(key))
+  }
+}
+
+const persistSession = (newUser) => {
+  sessionStorage.setItem('user', JSON.stringify(newUser))
+  if (token.value) sessionStorage.setItem('auth_token', token.value)
+  if (expireDate.value) sessionStorage.setItem('auth_expire_date', expireDate.value)
+}
+
+const savedUser = readStored('user')
 if (isExpired(expireDate.value)) {
-  clearStorage()
+  clearStorage(true)
   token.value = ''
   expireDate.value = ''
 } else if (savedUser) {
@@ -47,9 +57,12 @@ export function useAuth() {
     user.value = newUser
     token.value = authData.token || token.value
     expireDate.value = authData.expireDate || expireDate.value
-    localStorage.setItem('user', JSON.stringify(newUser))
-    if (token.value) localStorage.setItem('auth_token', token.value)
-    if (expireDate.value) localStorage.setItem('auth_expire_date', expireDate.value)
+    persistSession(newUser)
+    if (authData.remember !== false) {
+      localStorage.setItem('user', JSON.stringify(newUser))
+      if (token.value) localStorage.setItem('auth_token', token.value)
+      if (expireDate.value) localStorage.setItem('auth_expire_date', expireDate.value)
+    }
   }
 
   const logout = async () => {
@@ -58,12 +71,16 @@ export function useAuth() {
     token.value = ''
     expireDate.value = ''
     clearStorage()
+    clearLocalIfToken(oldToken)
     if (oldToken) await postJson('/api/logout', {}, oldToken).catch(() => {})
   }
 
   const restoreSession = async () => {
+    const hasTabSession = !!sessionStorage.getItem('auth_token')
     if (!token.value || isExpired(expireDate.value)) {
-      clearStorage()
+      const staleToken = token.value
+      clearStorage(isExpired(expireDate.value))
+      clearLocalIfToken(staleToken)
       user.value = null
       token.value = ''
       expireDate.value = ''
@@ -71,10 +88,19 @@ export function useAuth() {
     }
     try {
       const data = await getJson('/api/auth/session')
-      if (data.user) login(data.user, '浙大同学', { token: token.value, expireDate: data.expireDate })
+      if (data.user) {
+        const sameRememberedToken = localStorage.getItem('auth_token') === token.value
+        login(data.user, '浙大同学', {
+          token: token.value,
+          expireDate: data.expireDate,
+          remember: !hasTabSession || sameRememberedToken
+        })
+      }
       return true
     } catch {
+      const staleToken = token.value
       clearStorage()
+      clearLocalIfToken(staleToken)
       user.value = null
       token.value = ''
       expireDate.value = ''
@@ -85,7 +111,10 @@ export function useAuth() {
   const updateUser = (data) => {
     const newUser = { ...user.value, ...data }
     user.value = newUser
-    localStorage.setItem('user', JSON.stringify(newUser))
+    sessionStorage.setItem('user', JSON.stringify(newUser))
+    if (localStorage.getItem('auth_token') === token.value) {
+      localStorage.setItem('user', JSON.stringify(newUser))
+    }
   }
 
   return {

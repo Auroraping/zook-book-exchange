@@ -57,6 +57,17 @@ def apply_real_info(user, real_info):
     return user
 
 
+def current_auth_user():
+    token = str(request.headers.get("Authorization") or "").replace("Bearer ", "", 1)
+    payload = decode_jwt(token)
+    if not active_token(payload.get("jti")):
+        raise ValueError("revoked token")
+    user = find_user_by_id(payload.get("sub"))
+    if not user:
+        raise ValueError("missing user")
+    return user
+
+
 @auth_bp.post("/api/login")
 def login():
     payload = request_payload()
@@ -136,19 +147,13 @@ def logout():
 
 @auth_bp.post("/api/auth/zju")
 def zju_auth():
-    token = str(request.headers.get("Authorization") or "").replace("Bearer ", "", 1)
     payload = request_payload()
     zju_username = str(payload.get("username") or "").strip()
     zju_password = str(payload.get("password") or "")
     if not zju_username or not zju_password:
         return jsonify({"success": False, "message": "请输入浙大统一身份认证账号和密码"}), 400
     try:
-        token_payload = decode_jwt(token)
-        if not active_token(token_payload.get("jti")):
-            raise ValueError("revoked token")
-        user = find_user_by_id(token_payload.get("sub"))
-        if not user:
-            raise ValueError("missing user")
+        user = current_auth_user()
     except Exception:
         return jsonify({"success": False, "message": "登录状态已失效，请重新登录"}), 401
 
@@ -170,3 +175,17 @@ def zju_auth():
     apply_real_info(user, real_info)
     save_user(user)
     return jsonify({"success": True, "user": public_auth_user(user), "courses": sched["courses"], "raw": raw})
+
+
+@auth_bp.post("/api/auth/zju/unbind")
+def zju_unbind():
+    try:
+        user = current_auth_user()
+    except Exception:
+        return jsonify({"success": False, "message": "登录状态已失效，请重新登录"}), 401
+    for key in ("realName", "studentId", "college", "major", "class", "zjuUsername", "scheduleSyncedAt"):
+        user[key] = ""
+    user["zjuAuthenticated"] = False
+    user["scheduleData"] = {}
+    save_user(user)
+    return jsonify({"success": True, "user": public_auth_user(user), "message": "已取消浙大统一身份认证"})

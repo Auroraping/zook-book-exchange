@@ -4,6 +4,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { Search, ArrowRight, Bell, LogOut } from 'lucide-vue-next'
 import { useAuth } from '../composables/useAuth.js'
 import { getJson } from '../composables/useApi.js'
+import { getStored } from '../composables/useSessionStore.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,6 +12,10 @@ const { isLoggedIn, logout, user } = useAuth()
 
 const searchTerm = ref(new URLSearchParams(route.query).get('q') || '')
 const unreadNotifications = ref(0)
+
+const currentAccountId = () => {
+  return user.value?.realId || getStored('zook_user_uuid') || 'me'
+}
 
 watch(() => route.fullPath, () => {
   searchTerm.value = new URLSearchParams(route.query).get('q') || ''
@@ -27,9 +32,10 @@ const refreshNotifications = async () => {
     return
   }
   try {
+    const currentUserId = currentAccountId()
     const [noticesData, chatData] = await Promise.all([
       getJson('/api/notifications?userId=me').catch(() => ({ notifications: [] })),
-      getJson('/api/chats').catch(() => ({ contacts: [] }))
+      getJson(`/api/chats?userId=${currentUserId}`).catch(() => ({ contacts: [] }))
     ])
     const systemUnread = (noticesData.notifications || []).filter((item) => !item.isRead).length
     const chatUnread = (chatData.contacts || []).reduce((sum, item) => sum + (parseInt(item.unread) || 0), 0)
@@ -76,7 +82,6 @@ onUnmounted(() => {
         </RouterLink>
         <div class="text-right hidden xl:block">
           <p class="text-sm font-bold text-gray-800">你好，求是校友</p>
-          <p class="text-[10px] text-emerald-500 font-black uppercase">已认证用户</p>
         </div>
         <RouterLink to="/profile" class="w-14 h-14 rounded-[20px] border-4 border-white shadow-2xl overflow-hidden hover:scale-110 transition-all rotate-3">
           <img :src="user?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'" class="w-full h-full object-cover" />

@@ -4,12 +4,19 @@ from json_store import read_json, write_json
 def request_payload():
     return request.get_json(silent=True) or {}
 
+def primary_account_match(user, value):
+    value_text = str(value or "").strip().lower()
+    if not value_text:
+        return False
+    candidates = (user.get("id"), user.get("email"), user.get("username"))
+    return any(str(item or "").strip().lower() == value_text for item in candidates)
+
 def normalize_user_id(user_id):
     user_id_str = str(user_id or "").strip()
     if not user_id_str or user_id_str == "me":
         return "me"
     users = read_json("users.json", [])
-    u = next((item for item in users if str(item.get("id")) == user_id_str or str(item.get("studentId")) == user_id_str or str(item.get("username")) == user_id_str), None)
+    u = next((item for item in users if primary_account_match(item, user_id_str)), None)
     if u and u.get("id"):
         return str(u["id"])
     return user_id_str
@@ -19,17 +26,19 @@ def get_user_info(user_id):
     if not user_id_str or user_id_str == "me":
         return {"id": "me", "studentId": "me", "name": "浙大同学", "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=me"}
     users = read_json("users.json", [])
-    u = next((item for item in users if str(item.get("id")) == user_id_str or str(item.get("studentId")) == user_id_str or str(item.get("username")) == user_id_str), None)
+    u = next((item for item in users if primary_account_match(item, user_id_str)), None)
     if u:
         return {
             "id": u.get("id"),
-            "studentId": u.get("studentId") or u.get("username") or "",
+            "email": u.get("email") or u.get("username") or "",
+            "studentId": u.get("studentId") or "",
             "name": u.get("name") or u.get("realName") or f"用户_{user_id_str}",
             "avatar": u.get("avatar") or f"https://api.dicebear.com/7.x/identicon/svg?seed={user_id_str}"
         }
     return {
         "id": user_id_str,
-        "studentId": user_id_str,
+        "email": "",
+        "studentId": "",
         "name": f"同学_{user_id_str[-4:] if len(user_id_str)>=4 else user_id_str}",
         "avatar": f"https://api.dicebear.com/7.x/identicon/svg?seed={user_id_str}"
     }

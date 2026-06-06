@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, current_app
 from json_store import mutate_json, new_id, now_text
-from socket_state import online_users
 from chats_helper import normalize_user_id, get_user_info, seed_chat_state, request_payload
 
 chat_messages_bp = Blueprint("chat_messages_bp", __name__)
@@ -15,7 +14,6 @@ def create_chat_message(chat_id):
     sender_id = normalize_user_id(payload.get("userId") or "me")
     receiver_id = normalize_user_id(chat_id)
 
-    is_receiver_online = receiver_id in online_users
     is_mock_bot = receiver_id.startswith("U_MOCK_")
 
     def update(chat_state):
@@ -88,15 +86,11 @@ def create_chat_message(chat_id):
 
     result = mutate_json("chat.json", update, {})
     
-    # 3. 实时消息 Socket 推送（全局大厅容灾广播与多维冗余信道）
+    # 3. 实时消息只投递到接收方主账号房间，学号仅作为绑定资料展示。
     if not is_mock_bot:
-        r_info = get_user_info(receiver_id)
-        s_info = get_user_info(sender_id)
         event_data = {
             "chatId": sender_id,
-            "senderStudentId": s_info.get("studentId") or "",
             "receiverId": receiver_id,
-            "receiverStudentId": r_info.get("studentId") or "",
             "message": {
                 "id": result["message"]["id"],
                 "role": "other",
@@ -106,19 +100,7 @@ def create_chat_message(chat_id):
         }
         socketio = current_app.extensions.get("socketio")
         if socketio:
-            # 1. 精准信道一：面向接收者当前会话 ID 的房间推送
             socketio.emit("receive_message", event_data, room=receiver_id)
-            
-            # 2. 精准信道二：如果其真实 UUID 存在且与当前 ID 不同，追加向真实 UUID 房间推送
-            real_rec_id = r_info.get("id")
-            if real_rec_id and str(real_rec_id) != str(receiver_id):
-                socketio.emit("receive_message", event_data, room=str(real_rec_id))
-                
-            # 3. 精准信道三：如果接收方学号存在且与前两者都不同，追加向学号房间推送
-            rec_student_id = r_info.get("studentId")
-            if rec_student_id and str(rec_student_id) != str(receiver_id) and str(rec_student_id) != str(real_rec_id):
-                socketio.emit("receive_message", event_data, room=str(rec_student_id))
-
-            print(f"[Socket] 多维冗余精准投递成功：房间 {receiver_id}、UUID房间 {real_rec_id}、学号房间 {rec_student_id} 已同步投递！")
+            print(f"[Socket] 消息已投递到主账号房间 {receiver_id}")
         
     return jsonify({"success": True, **result})

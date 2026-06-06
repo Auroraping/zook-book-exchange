@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { Bell, Search, X, MessageSquare } from 'lucide-vue-next'
 import { getJson } from '../composables/useApi.js'
 import { useAuth } from '../composables/useAuth.js'
+import { getStored } from '../composables/useSessionStore.js'
 
 const props = defineProps({
   chats: { type: Array, required: true },
@@ -17,12 +18,16 @@ const searchQuery = ref('')
 const searchResults = ref([])
 const searching = ref(false)
 
+const currentAccountId = () => {
+  return user.value?.realId || getStored('zook_user_uuid') || 'me'
+}
+
 const handleSearch = async () => {
   const q = searchQuery.value.trim()
   
   // 发送工业级原生 fetch 触发诊断，无视 getJson 本身可能被 catch 阻断的影响
   try {
-    const currentUserId = user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || localStorage.getItem('zook_student_id') || 'me'
+    const currentUserId = currentAccountId()
     fetch('http://localhost:3001/api/diagnose/search_trigger', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -37,7 +42,7 @@ const handleSearch = async () => {
   }
   searching.value = true
   try {
-    const currentUserId = user.value?.realId || localStorage.getItem('zook_user_uuid') || user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || 'me'
+    const currentUserId = currentAccountId()
     const res = await getJson(`/api/users/search?q=${encodeURIComponent(q)}&userId=${currentUserId}`)
     searchResults.value = res.users || []
   } catch (err) {
@@ -69,7 +74,7 @@ const clearSearch = () => {
           v-model="searchQuery" 
           @input="handleSearch"
           @keyup.enter="handleSearch"
-          placeholder="输入学号或姓名搜人..." 
+          placeholder="输入邮箱、昵称或学号搜人..." 
           class="w-full text-xs font-bold pl-10 pr-8 py-2.5 bg-gray-150/70 border border-transparent rounded-2xl outline-none focus:border-blue-500 focus:bg-white transition-all shadow-inner"
         />
         <Search class="absolute left-3.5 top-3 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
@@ -92,7 +97,8 @@ const clearSearch = () => {
               <img :src="u.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.name}`" class="w-9 h-9 rounded-full border border-gray-150 bg-white object-cover" />
               <div class="min-w-0">
                 <h5 class="font-bold text-xs text-gray-800 truncate leading-snug">{{ u.name }}</h5>
-                <p class="text-[9px] text-gray-400 font-bold leading-normal truncate mt-0.5">{{ u.studentId || u.username }}</p>
+                <p class="text-[9px] text-gray-400 font-bold leading-normal truncate mt-0.5">{{ u.email || u.username }}</p>
+                <p v-if="u.studentId" class="text-[9px] text-blue-400 font-bold leading-normal truncate mt-0.5">绑定学号：{{ u.studentId }}</p>
               </div>
             </div>
             <button @click="emit('start-chat', u); clearSearch()" class="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-[10px] font-black rounded-xl shadow-sm flex items-center gap-1 transition-all active:scale-95 shrink-0">

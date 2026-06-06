@@ -1,13 +1,12 @@
 <script setup>
-import { BookOpen, CalendarDays } from 'lucide-vue-next'
+import { CalendarDays } from 'lucide-vue-next'
 
 const props = defineProps({
   tabs: { type: Array, required: true },
   selectedMiniSemester: { type: String, required: true },
-  currentView: { type: String, required: true },
   courseCount: { type: Number, required: true }
 })
-const emit = defineEmits(['update:selectedMiniSemester', 'update:currentView'])
+const emit = defineEmits(['update:selectedMiniSemester'])
 </script>
 
 <template>
@@ -18,8 +17,7 @@ const emit = defineEmits(['update:selectedMiniSemester', 'update:currentView'])
     <div class="flex items-center gap-4">
       <div class="text-xs font-bold text-gray-400 hidden md:block">当前学期已加载 <span class="text-blue-600 font-black text-sm">{{ courseCount }}</span> 门课程</div>
       <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200/40">
-        <button @click="emit('update:currentView', 'grid')" :class="['px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 duration-300', currentView === 'grid' ? 'bg-white text-gray-900 shadow-sm' : 'text-slate-500 hover:text-slate-700']"><CalendarDays class="w-4 h-4" /> 课表网格视图</button>
-        <button @click="emit('update:currentView', 'list')" :class="['px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 duration-300', currentView === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-slate-500 hover:text-slate-700']"><BookOpen class="w-4 h-4" /> 教材指定清单</button>
+        <div class="px-5 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 bg-white text-gray-900 shadow-sm"><CalendarDays class="w-4 h-4" /> 课表网格视图</div>
       </div>
     </div>
   </div>

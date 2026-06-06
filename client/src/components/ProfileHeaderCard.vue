@@ -1,7 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { RouterLink } from 'vue-router'
-import { Calendar, ShieldCheck, Star, Camera, Pencil, Sparkles } from 'lucide-vue-next'
+import { Calendar, Mail, ShieldCheck, Star, Camera, Pencil, Sparkles, UserCircle } from 'lucide-vue-next'
 import { postJson } from '../composables/useApi.js'
 import { useAuth } from '../composables/useAuth.js'
 
@@ -35,9 +34,8 @@ const saveName = async () => {
   savingName.value = true
   try {
     const res = await postJson('/api/user/update', { 
-      userId: props.profileUser.id || 'me', 
-      name: newName,
-      studentId: localStorage.getItem('zook_username')
+      userId: props.profileUser.realId || props.profileUser.id || 'me',
+      name: newName
     })
     if (res.success) {
       props.profileUser.name = newName
@@ -91,20 +89,35 @@ const saveName = async () => {
             </div>
             
             <p class="text-gray-500 font-medium text-sm mb-3">{{ profileUser.bio }}</p>
-            <div v-if="profileUser.studentId" class="flex flex-wrap gap-2 mb-4">
-              <span class="px-2.5 py-1 bg-gray-50 text-gray-600 text-xs font-bold rounded-lg border border-gray-100 shadow-sm">学院：{{ profileUser.college }}</span>
-              <span class="px-2.5 py-1 bg-gray-50 text-gray-600 text-xs font-bold rounded-lg border border-gray-100 shadow-sm">专业：{{ profileUser.major }}</span>
-              <span class="px-2.5 py-1 bg-gray-50 text-gray-600 text-xs font-bold rounded-lg border border-gray-100 shadow-sm">学号：{{ profileUser.studentId }}</span>
-              <span v-if="isMe" class="px-2.5 py-1 bg-amber-50 text-amber-700 text-xs font-bold rounded-lg border border-amber-200 shadow-sm flex items-center gap-1.5">
+            <div class="grid md:grid-cols-3 gap-3 mb-4 max-w-3xl">
+              <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                <div class="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest"><Mail class="w-3.5 h-3.5" /> 注册邮箱</div>
+                <p class="mt-1 text-xs font-extrabold text-gray-800 truncate">{{ profileUser.email || profileUser.username || '未填写' }}</p>
+              </div>
+              <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                <div class="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest"><UserCircle class="w-3.5 h-3.5" /> 账号昵称</div>
+                <p class="mt-1 text-xs font-extrabold text-gray-800 truncate">{{ profileUser.name || '未填写' }}</p>
+              </div>
+              <div :class="['rounded-2xl border px-4 py-3', profileUser.zjuAuthenticated ? 'border-emerald-100 bg-emerald-50/70' : 'border-amber-200 bg-amber-50']">
+                <div :class="['flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest', profileUser.zjuAuthenticated ? 'text-emerald-600' : 'text-amber-700']"><ShieldCheck class="w-3.5 h-3.5" /> 浙大身份</div>
+                <p :class="['mt-1 text-xs font-extrabold truncate', profileUser.zjuAuthenticated ? 'text-emerald-800' : 'text-amber-700']">{{ profileUser.zjuAuthenticated ? '已认证' : '未认证' }}</p>
+              </div>
+            </div>
+            <div v-if="profileUser.zjuAuthenticated" class="flex flex-wrap gap-2 mb-4">
+              <span class="px-2.5 py-1 bg-gray-50 text-gray-600 text-xs font-bold rounded-lg border border-gray-100 shadow-sm">姓名：{{ profileUser.realName || '未填写' }}</span>
+              <span class="px-2.5 py-1 bg-gray-50 text-gray-600 text-xs font-bold rounded-lg border border-gray-100 shadow-sm">学号：{{ profileUser.studentId || '未填写' }}</span>
+              <span class="px-2.5 py-1 bg-gray-50 text-gray-600 text-xs font-bold rounded-lg border border-gray-100 shadow-sm">学院：{{ profileUser.college || '未填写' }}</span>
+              <span class="px-2.5 py-1 bg-gray-50 text-gray-600 text-xs font-bold rounded-lg border border-gray-100 shadow-sm">专业：{{ profileUser.major || '未填写' }}</span>
+              <span v-if="profileUser.classText || profileUser.class" class="px-2.5 py-1 bg-gray-50 text-gray-600 text-xs font-bold rounded-lg border border-gray-100 shadow-sm">班级：{{ profileUser.classText || profileUser.class }}</span>
+            </div>
+            <div v-if="isMe" class="flex flex-wrap gap-2 mb-4">
+              <span class="px-2.5 py-1 bg-amber-50 text-amber-700 text-xs font-bold rounded-lg border border-amber-200 shadow-sm flex items-center gap-1.5">
                 <Sparkles class="w-3.5 h-3.5 fill-current text-amber-500 animate-pulse" /> 我的积分：{{ profileUser.points || 0 }}
               </span>
             </div>
-            <div v-else class="mb-4">
-              <RouterLink to="/schedule" class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 text-xs font-bold rounded-xl transition-all shadow-sm">提示：前往「我的课表」同步教务，即可一键完成实名认证</RouterLink>
-            </div>
             <div class="flex items-center gap-6">
               <div class="flex items-center gap-1.5 text-xs text-gray-400 font-bold"><Calendar class="w-4 h-4" /> 加入时间: {{ profileUser.joinDate }}</div>
-              <div class="flex items-center gap-1.5 text-xs text-gray-400 font-bold"><ShieldCheck :class="['w-4 h-4', profileUser.studentId ? 'text-green-500' : 'text-gray-300']" /> {{ profileUser.studentId ? '已通过浙大统一身份认证' : '未完成统一身份认证' }}</div>
+              <div class="flex items-center gap-1.5 text-xs text-gray-400 font-bold"><ShieldCheck :class="['w-4 h-4', profileUser.zjuAuthenticated ? 'text-green-500' : 'text-gray-300']" /> {{ profileUser.zjuAuthenticated ? '已通过浙大统一身份认证' : '未认证' }}</div>
             </div>
           </div>
         </div>

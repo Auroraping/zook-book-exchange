@@ -75,17 +75,19 @@ def search_users():
         
     users = read_json("users.json", [])
     
-    # 只按主账户 id 排除自己；相同浙大身份的其他邮箱账号仍然是独立账户。
+    # 只按主账户字段排除自己；相同浙大身份的其他邮箱账号仍然是独立账户。
     my_real_user = None
-    if current_uid == "me":
-        real_users = [u for u in users if u.get("username") and u.get("id") != "me"]
-        if real_users:
-            my_real_user = real_users[-1]
-    else:
-        my_real_user = next((u for u in users if str(u.get("id")) == current_uid or str(u.get("username")).lower() == current_uid.lower()), None)
+    if current_uid != "me":
+        my_real_user = next((
+            u for u in users
+            if str(u.get("id")) == current_uid
+            or str(u.get("email") or "").lower() == current_uid.lower()
+            or str(u.get("username") or "").lower() == current_uid.lower()
+        ), None)
 
     my_real_id = my_real_user.get("id") if my_real_user else None
     my_username = my_real_user.get("username") if my_real_user else None
+    my_email = my_real_user.get("email") if my_real_user else None
 
     matched = []
     for u in users:
@@ -95,11 +97,14 @@ def search_users():
         # 严格过滤掉发起搜索的当前用户自身，防止搜出自己
         uid_str = str(u.get("id"))
         uname_str = str(u.get("username") or "").lower()
+        email_str = str(u.get("email") or "").lower()
         
         is_self = False
         if uid_str == current_uid or uid_str == my_real_id:
             is_self = True
         if my_username and uname_str == str(my_username).lower():
+            is_self = True
+        if my_email and email_str == str(my_email).lower():
             is_self = True
             
         if is_self:
@@ -108,8 +113,9 @@ def search_users():
         name_match = query in str(u.get("name") or "").lower()
         realname_match = query in str(u.get("realName") or "").lower()
         username_match = query in str(u.get("username") or "").lower()
+        email_match = query in str(u.get("email") or "").lower()
         studentid_match = query in str(u.get("studentId") or "").lower()
         
-        if name_match or realname_match or username_match or studentid_match:
+        if name_match or realname_match or username_match or email_match or studentid_match:
             matched.append(public_auth_user(u))
     return jsonify({"success": True, "users": matched})

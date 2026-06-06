@@ -102,6 +102,7 @@ def create_chat():
             if is_receiver_online:
                 event_data = {
                     "chatId": current_user_id,
+                    "receiverId": contact_id,
                     "message": {
                         "id": msg_id_1,
                         "role": "other",

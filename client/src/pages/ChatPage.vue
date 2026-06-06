@@ -5,8 +5,11 @@ import { Send } from 'lucide-vue-next'
 import ChatContactList from '../components/ChatContactList.vue'
 import ChatWindowHeader from '../components/ChatWindowHeader.vue'
 import { getJson, postJson } from '../composables/useApi.js'
+import { useAuth } from '../composables/useAuth.js'
+import { getStored } from '../composables/useSessionStore.js'
 
 const route = useRoute()
+const { user } = useAuth()
 const books = ref([])
 const activeChatId = ref(1)
 const draft = ref('')
@@ -15,8 +18,13 @@ const chats = ref([])
 const chatMessages = ref({})
 const activeChat = ref(null)
 
+const currentAccountId = () => {
+  return user.value?.realId || getStored('zook_user_uuid') || 'me'
+}
+
 onMounted(async () => {
-  const [booksData, chatData] = await Promise.all([getJson('/api/books?status=approved'), getJson('/api/chats')])
+  const currentUserId = currentAccountId()
+  const [booksData, chatData] = await Promise.all([getJson('/api/books?status=approved'), getJson(`/api/chats?userId=${currentUserId}`)])
   books.value = booksData.books
   chats.value = chatData.contacts || []
   chatMessages.value = chatData.messages || {}
@@ -31,7 +39,7 @@ onMounted(async () => {
   }
   if (activeChat.value && activeChat.value.unread > 0) {
     activeChat.value.unread = 0
-    postJson(`/api/chats/${activeChat.value.id}/read`).catch(() => {})
+    postJson(`/api/chats/${activeChat.value.id}/read`, { userId: currentUserId }).catch(() => {})
     window.dispatchEvent(new Event('notificationsUpdated'))
   }
   scrollToBottom()
@@ -42,7 +50,7 @@ const selectChat = (chat) => {
   activeChat.value = chat
   if (chat.unread > 0) {
     chat.unread = 0
-    postJson(`/api/chats/${chat.id}/read`).catch(() => {})
+    postJson(`/api/chats/${chat.id}/read`, { userId: currentAccountId() }).catch(() => {})
     window.dispatchEvent(new Event('notificationsUpdated'))
   }
   scrollToBottom()
@@ -55,8 +63,8 @@ const sendMessage = async () => {
   if (!text) return
   draft.value = ''
   if (!chatMessages.value[activeChatId.value]) chatMessages.value[activeChatId.value] = []
-  const data = await postJson(`/api/chats/${activeChatId.value}/messages`, { text })
-  chatMessages.value[activeChatId.value].push(data.message, data.reply)
+  const data = await postJson(`/api/chats/${activeChatId.value}/messages`, { text, userId: currentAccountId() })
+  chatMessages.value[activeChatId.value].push(...[data.message, data.reply].filter(Boolean))
   scrollToBottom()
 }
 

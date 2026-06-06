@@ -8,6 +8,7 @@ import MessagesContactList from '../components/MessagesContactList.vue'
 import MessagesHeader from '../components/MessagesHeader.vue'
 import MessagesSystemPanel from '../components/MessagesSystemPanel.vue'
 import { getJson, patchJson, postJson } from '../composables/useApi.js'
+import { getStored } from '../composables/useSessionStore.js'
 
 const route = useRoute()
 const { user } = useAuth()
@@ -36,8 +37,12 @@ window.onerror = function (message, url, line, col, error) {
 
 let socket = null
 
+const currentAccountId = () => {
+  return user.value?.realId || getStored('zook_user_uuid') || 'me'
+}
+
 onMounted(async () => {
-  const currentUserId = user.value?.realId || localStorage.getItem('zook_user_uuid') || user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || 'me'
+  const currentUserId = currentAccountId()
   const [booksData, chatData, noticesData] = await Promise.all([getJson('/api/books?status=approved'), getJson(`/api/chats?userId=${currentUserId}`), getJson('/api/notifications?userId=me')])
   books.value = booksData.books
   chats.value = [{ id: 'system', type: 'system', name: '消息通知', unread: noticesData.notifications.filter((item) => !item.isRead).length }, ...(chatData.contacts || []).map((chat) => ({ ...chat, type: 'chat' }))]
@@ -59,7 +64,7 @@ onMounted(async () => {
   socket = io('http://localhost:3001')
 
   const reportSocketDiagnose = (event, details) => {
-    const currentUserId = user.value?.realId || localStorage.getItem('zook_user_uuid') || user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || 'me'
+    const currentUserId = currentAccountId()
     const currentUserName = user.value?.name || '浙大同学'
     fetch('http://localhost:3001/api/diagnose/socket', {
       method: 'POST',
@@ -74,7 +79,7 @@ onMounted(async () => {
   }
 
   socket.on('connect', () => {
-    const currentUserId = user.value?.realId || localStorage.getItem('zook_user_uuid') || user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || 'me'
+    const currentUserId = currentAccountId()
     const currentUserName = user.value?.name || '浙大同学'
     console.log(`%c[Socket.IO] 长连接连接成功！注册 ID: ${currentUserId}`, 'color: #10b981; font-weight: bold;');
     // 2. 长连接建立后向后端注册身份，以便加入专属广播房间
@@ -94,35 +99,18 @@ onMounted(async () => {
 
   // 3. 监听实时收到聊天消息广播事件
   socket.on('receive_message', async (data) => {
-    const myUuid = user.value?.realId || localStorage.getItem('zook_user_uuid')
-    const myStudentId = user.value?.studentId || user.value?.username || localStorage.getItem('zook_username')
+    const myUuid = currentAccountId()
+    const isForMe = data.receiverId && myUuid && String(data.receiverId) === String(myUuid)
     
-    // 【双重高可用容灾防御】：只要指定的接收者 UUID 或接收者学号中任意一个匹配当前登录用户，即认定为是发给我的
-    let isForMe = false
-    let matchType = 'none'
-    if (data.receiverId && myUuid && String(data.receiverId) === String(myUuid)) {
-      isForMe = true
-      matchType = 'uuid'
-    }
-    if (data.receiverStudentId && myStudentId && String(data.receiverStudentId) === String(myStudentId)) {
-      isForMe = true
-      matchType = 'student_id'
-    }
-    
-    // 触发收到消息的比对诊断回传，帮助在后端控制台一眼看穿消息匹配问题
     reportSocketDiagnose('RECEIVE_MESSAGE_MATCH_DIAGNOSE', {
       incomingReceiverId: data.receiverId,
-      incomingReceiverStudentId: data.receiverStudentId,
       myUuid: myUuid,
-      myStudentId: myStudentId,
       isForMe: isForMe,
-      matchType: matchType,
       messageContent: data.message?.content
     })
     
-    console.log(`[Socket.IO] 收到实时广播，匹配结果为: ${isForMe} (匹配类型: ${matchType})`, data);
+    console.log(`[Socket.IO] 收到实时广播，主账号匹配结果为: ${isForMe}`, data);
     
-    // 若两级容灾比对均匹配失败，则判定为别人的消息，直接安全静默丢弃，绝不越权显示
     if (!isForMe) {
       return
     }
@@ -150,7 +138,7 @@ onMounted(async () => {
     if (!chat) {
       // 全新会话，拉取最新会话列表并置顶
       try {
-        const chatData = await getJson(`/api/chats?userId=${myUuid || myStudentId || 'me'}`)
+        const chatData = await getJson(`/api/chats?userId=${myUuid}`)
         chats.value = [
           { id: 'system', type: 'system', name: '消息通知', unread: systemNotifications.value.filter((item) => !item.isRead).length },
           ...(chatData.contacts || []).map((c) => ({ ...c, type: 'chat' }))
@@ -214,7 +202,7 @@ const selectChat = (chatId) => {
 }
 
 const sendMessage = async (text) => {
-  const currentUserId = user.value?.realId || localStorage.getItem('zook_user_uuid') || user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || 'me'
+  const currentUserId = currentAccountId()
   const data = await postJson(`/api/chats/${activeChatId.value}/messages`, { text, userId: currentUserId })
   
   if (!chatMessages.value[activeChatId.value]) {
@@ -242,7 +230,7 @@ const sendMessage = async (text) => {
 const handleStartChat = async (targetUser) => {
   if (!targetUser) return
   try {
-    const currentUserId = user.value?.realId || localStorage.getItem('zook_user_uuid') || user.value?.studentId || user.value?.username || localStorage.getItem('zook_username') || 'me'
+    const currentUserId = currentAccountId()
     const res = await postJson('/api/chats', {
       contactId: targetUser.id,
       contactName: targetUser.name,
