@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 
 from auth_repository import active_token, find_user_by_id
-from json_store import find_by_id, read_json
+from json_store import read_json
 from jwt_service import decode_jwt
 
 schedule_bp = Blueprint("schedule_bp", __name__)
@@ -44,20 +44,3 @@ def schedule():
         "semester": "模拟学期",
         "raw": {"xm": (user or {}).get("name") or "浙大同学"},
     })
-
-
-@schedule_bp.post("/api/textbooks")
-def textbooks():
-    courses = read_json("courses.json", [])
-    books = read_json("books.json", [])
-    matched_books = []
-    for course in courses:
-        for book_id in course.get("bookIds", []):
-            book = find_by_id(books, book_id)
-            if book:
-                matched_books.append({
-                    "courseId": course["id"], "courseName": course["name"], "bookId": book_id,
-                    "title": book["title"], "price": book["price"],
-                    "cover": book["cover"], "seller": book["seller"],
-                })
-    return jsonify({"success": True, "textbooks": matched_books})

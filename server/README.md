@@ -10,7 +10,6 @@
 - `POST /api/auth/zju/unbind`
 - `POST /api/logout`
 - `POST /api/schedule`
-- `POST /api/textbooks`
 - `POST /api/ai/chat`
 - `GET /api/ai/config`
 - `POST /api/ai/config`
@@ -79,4 +78,4 @@ JWT_SECRET=replace_with_a_long_random_secret
 - 个人中心的浙大统一身份认证成功后，会同步真实课表并写入 SQLite；未认证用户课表页展示 SQLite 中的模拟课表。
 - 发布书籍需登录邮箱主账号并上传至少一张图片；发布后直接变为 `approved` 并上架。
 - 购买入口统一进入聊天，买家在聊天中发交易提议，卖家接受后生成订单；平台不保留购物车清单功能。
-- 已完成订单可以评价；收藏、笔记点赞下载、聊天消息和通知已读都会落盘到 SQLite。
+- 已完成订单可以评价；收藏、笔记点赞下载、聊天消息和通知已读都会落盘到 SQLite。课表页不保留固定指定教材清单，只按当前上架书籍做动态匹配提示。

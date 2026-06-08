@@ -15,7 +15,7 @@ const chatLink = (book) => {
 
 <template>
   <div v-if="books.length > 0">
-    <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">匹配到 {{ books.length }} 本教材</h4>
+    <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">匹配到 {{ books.length }} 本同学上架书籍</h4>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div v-for="book in books" :key="book.id" class="flex gap-5 p-5 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all group">
         <RouterLink :to="`/book/${book.id}`" class="shrink-0">

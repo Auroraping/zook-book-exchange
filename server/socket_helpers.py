@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+from avatar_utils import local_avatar
 from json_store import mutate_json, read_json
 
 
@@ -9,9 +10,18 @@ def search_registered_users(query):
         return []
     results = []
     for user in read_json("users.json", []):
-        values = (user.get("id"), user.get("name"), user.get("realName"), user.get("username"), user.get("studentId"))
+        values = (
+            user.get("id"), user.get("email"), user.get("username"),
+            user.get("name"), user.get("realName"), user.get("studentId"),
+        )
         if any(query_text in str(value or "").lower() for value in values):
-            results.append({"id": user.get("id"), "name": user.get("name") or user.get("realName") or "未知用户"})
+            results.append({
+                "id": user.get("id"),
+                "email": user.get("email") or user.get("username") or "",
+                "studentId": user.get("studentId") or "",
+                "name": user.get("name") or user.get("realName") or "未知用户",
+                "avatar": local_avatar(user.get("avatar")),
+            })
     return results[:10]
 
 
