@@ -1,11 +1,12 @@
 from flask import request
+from account_identity import normalize_account_id
 from json_store import find_by_id, mutate_json, new_id, now_text, read_json
 
 def request_payload():
     return request.get_json(silent=True) or {}
 
 def current_user_id():
-    return request.args.get("userId") or request_payload().get("userId") or "me"
+    return normalize_account_id(request.args.get("userId") or request_payload().get("userId") or "me")
 
 def enrich_order(order):
     # 1. 安全扩充 isPaid、isDelivered 状态
@@ -27,11 +28,12 @@ def enrich_order(order):
             
     # 3. 动态确定对外公开的 status 状态
     status = order.get("status")
-    if status != "cancelled":
+    known_statuses = {"unpaid", "paid_unconfirmed", "paid", "delivered", "completed", "cancelled"}
+    if status not in known_statuses:
         if is_paid and is_delivered:
             status = "completed"
         elif is_paid and not is_delivered:
-            status = "paid"
+            status = "paid" if order.get("sellerConfirmed") or order.get("status") == "paid" else "paid_unconfirmed"
         elif not is_paid and is_delivered:
             status = "delivered"
         else:

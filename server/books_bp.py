@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
-from json_store import find_by_id, mutate_json, new_id, now_text, read_json, write_json
+from account_identity import calculate_user_credit, normalize_account_id, public_account
+from json_store import find_by_id, mutate_json, new_id, now_text, read_json
 from upload_paths import save_upload
 
 books_bp = Blueprint("books_bp", __name__)
@@ -8,22 +9,7 @@ def request_payload():
     return request.get_json(silent=True) or {}
 
 def public_user(user_id):
-    if user_id == "me":
-        ui_data = read_json("ui.json", {})
-        default_user = ui_data.get("profile", {}).get("defaultUser", {})
-        return {
-            "id": "me",
-            "name": default_user.get("name") or "浙大同学",
-            "avatar": default_user.get("avatar") or "/user_avatar.png",
-            "credit": 4.9,
-        }
-    users = read_json("users.json", [])
-    return find_by_id(users, user_id) or {
-        "id": user_id,
-        "name": "浙大同学",
-        "avatar": f"https://api.dicebear.com/7.x/identicon/svg?seed={user_id}",
-        "credit": 4.8,
-    }
+    return public_account(user_id)
 
 def notify(user_id, title, content, tone="blue", book_id=None):
     def add_notice(notifications):
@@ -78,7 +64,10 @@ def list_books():
     if status:
         books = [book for book in books if book.get("status") == status]
     if seller_id:
-        books = [book for book in books if book.get("sellerId") == seller_id]
+        seller_id = normalize_account_id(seller_id)
+        books = [book for book in books if str(book.get("sellerId")) == seller_id]
+    for book in books:
+        book["credit"] = calculate_user_credit(book.get("sellerId") or "me")
     return jsonify({"success": True, "books": books})
 
 @books_bp.get("/api/books/<book_id>")
@@ -86,12 +75,13 @@ def get_book(book_id):
     book = find_by_id(read_json("books.json", []), book_id)
     if not book:
         return jsonify({"success": False, "message": "书籍不存在"}), 404
+    book["credit"] = calculate_user_credit(book.get("sellerId") or "me")
     return jsonify({"success": True, "book": book})
 
 @books_bp.post("/api/books")
 def create_book():
     payload = request_payload()
-    user_id = payload.get("sellerId") or "me"
+    user_id = normalize_account_id(payload.get("sellerId") or "me")
     user = public_user(user_id)
     seller_name = str(payload.get("sellerName") or user.get("name") or "浙大同学").strip()
     title = str(payload.get("title") or "").strip()
@@ -121,17 +111,18 @@ def create_book():
             "category": str(payload.get("category") or ""),
             "courseName": str(payload.get("courseName") or ""),
             "aiScore": int(payload.get("aiScore") or 80),
-            "aiSummary": str(payload.get("aiSummary") or "新发布教材，已通过安全检查并进入待审核队列。"),
+            "aiSummary": str(payload.get("aiSummary") or "新发布教材，已通过安全检查并成功上架广场。"),
             "cover": str(payload.get("cover") or "/book_programming.png"),
-            "status": "pending",
+            "status": "approved",
             "createdAt": now_text(),
         }
         books.insert(0, book)
         return book
 
     book = mutate_json("books.json", add_book, [])
-    notify("admin", "新书待审核", f"《{book['title']}》已提交上架审核。", "blue", book["id"])
-    return jsonify({"success": True, "book": book, "matchedCount": 0})
+    matched = match_wishes_for_book(book)
+    notify(user_id, "书籍发布成功", f"你的书籍《{book['title']}》已直接发布并上架到购书广场。", "green", book["id"])
+    return jsonify({"success": True, "book": book, "matchedCount": len(matched)})
 
 @books_bp.post("/api/books/cover")
 def upload_book_cover():

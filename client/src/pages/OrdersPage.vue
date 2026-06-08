@@ -1,9 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Package, MapPin, CheckCircle2, Clock, XCircle, CreditCard, Star } from 'lucide-vue-next'
+import { Package, CheckCircle2, Clock, XCircle, CreditCard, Star, ShieldAlert } from 'lucide-vue-next'
 import { getJson, patchJson, postJson } from '../composables/useApi.js'
-import { useAuth } from '../composables/useAuth.js'
+import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -11,40 +11,43 @@ const orders = ref([])
 const tabs = ref([])
 const statusInfo = ref({})
 const activeTab = ref(route.query.tab || 'all')
-const { user } = useAuth()
-const currentUserId = computed(() => user.value?.id || 'me')
+const { accountId } = useCurrentAccount()
 
 onMounted(async () => {
-  const [ordersData, ui] = await Promise.all([getJson('/api/orders?userId=me'), getJson('/api/ui')])
+  const [ordersData, ui] = await Promise.all([getJson(`/api/orders?userId=${accountId.value}`), getJson('/api/ui')])
   orders.value = ordersData.orders
   tabs.value = ui.orders?.tabs || []
   statusInfo.value = ui.orders?.statusInfo || {}
 })
 
 const filteredOrders = computed(() => activeTab.value === 'all' ? orders.value : orders.value.filter((o) => o.status === activeTab.value))
-const getStatusInfo = (status) => statusInfo.value[status] || statusInfo.value.cancelled || {}
+const isBuyer = (order) => String(order.userId) === String(accountId.value)
+const isSeller = (order) => String(order.sellerId) === String(accountId.value)
+
+const getStatusInfo = (status) => status === 'paid_unconfirmed'
+  ? { label: '已付款待收款', color: 'text-amber-500', bg: 'bg-amber-50/40', border: 'border-amber-100' }
+  : statusInfo.value[status] || statusInfo.value.cancelled || {}
 
 const runOrderAction = async (order, action) => {
   if (action === 'review') return router.push(`/evaluate/${order.id}`)
   if (action === 'rebuy') {
-    const cart = await postJson('/api/cart', { userId: 'me', bookId: order.bookId })
+    const cart = await postJson('/api/cart', { userId: accountId.value, bookId: order.bookId })
     localStorage.setItem('cart', JSON.stringify(cart.bookIds))
     window.dispatchEvent(new Event('cartUpdated'))
     return router.push('/cart')
   }
   try {
     const data = await patchJson(`/api/orders/${order.id}`, { action })
-    if (data.success) {
-      Object.assign(order, data.order)
-      if (data.order.status === 'completed') {
-        alert('🎉 交易已圆满完成！您与交易对方各获得 5 积分奖励！')
-      }
-    } else {
-      alert(data.message || '操作失败，请重试')
-    }
+    Object.assign(order, data.order)
+    if (data.order.status === 'completed') alert('交易已完成，双方各获得 5 积分奖励。')
   } catch (err) {
-    alert(err.message || '网络通讯异常，请重试')
+    alert(err.message || '操作失败，请重试')
   }
+}
+
+const triggerFeedback = (order) => {
+  const initialMsg = `你好，我的订单 TRD-${order.id.toUpperCase()} 遇到了问题，想发起申诉和反馈。`
+  router.push(`/messages?contactId=customer-service&contactName=官方客服&initialMsg=${encodeURIComponent(initialMsg)}`)
 }
 </script>
 
@@ -58,7 +61,7 @@ const runOrderAction = async (order, action) => {
           <div class="flex items-center gap-6 text-[11px] font-bold text-gray-400"><span class="text-gray-600">{{ order.date }}</span><span>Order: TRD-{{ order.id.toUpperCase() }}</span></div>
           <div :class="['text-sm font-black flex items-center gap-1.5', getStatusInfo(order.status).color]">
             <Clock v-if="order.status === 'unpaid'" class="w-4 h-4" />
-            <CreditCard v-if="order.status === 'paid'" class="w-4 h-4" />
+            <CreditCard v-if="order.status === 'paid_unconfirmed' || order.status === 'paid'" class="w-4 h-4" />
             <Package v-if="order.status === 'delivered'" class="w-4 h-4" />
             <CheckCircle2 v-if="order.status === 'completed'" class="w-4 h-4" />
             <XCircle v-if="order.status === 'cancelled'" class="w-4 h-4" />
@@ -66,14 +69,17 @@ const runOrderAction = async (order, action) => {
           </div>
         </div>
         <div class="p-8 flex flex-col md:flex-row gap-8 items-center">
-          <div class="flex-1 flex gap-6"><img :src="order.cover" class="w-24 h-32 object-cover rounded-2xl border border-gray-100 shadow-md" /><div class="flex flex-col justify-center"><h3 class="font-bold text-gray-800 text-xl mb-2">{{ order.title }}</h3><div class="flex items-center gap-2 text-sm text-gray-500">卖家：<span class="font-bold text-gray-700">{{ order.seller }}</span></div></div></div>
+          <div class="flex-1 flex gap-6"><img :src="order.cover" class="w-24 h-32 object-cover rounded-2xl border border-gray-100 shadow-md" /><div class="flex flex-col justify-center"><h3 class="font-bold text-gray-800 text-xl mb-2">{{ order.title }}</h3><div class="text-sm text-gray-500">卖家：<span class="font-bold text-gray-700">{{ order.seller }}</span></div><div class="text-xs text-gray-400 mt-2">取货地：{{ order.location || '未约定' }}</div></div></div>
           <div class="flex flex-col items-end gap-4 min-w-[220px]">
-            <div class="text-3xl font-black text-gray-800">¥ {{ order.price.toFixed(2) }}</div>
-            <div class="flex gap-3">
-              <button v-if="order.isPaid === false && order.status !== 'cancelled' && (order.userId === currentUserId || order.userId === 'me')" @click="runOrderAction(order, 'pay')" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-xl shadow-blue-200 flex items-center gap-2 transition-all active:scale-95"><CreditCard class="w-4 h-4" /> 支付</button>
-              <button v-if="order.isDelivered === false && order.status !== 'cancelled' && order.sellerId === currentUserId" @click="runOrderAction(order, 'deliver')" class="bg-purple-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-xl shadow-purple-200 flex items-center gap-2 transition-all active:scale-95"><Package class="w-4 h-4" /> 确认交付</button>
-              <button v-if="order.isPaid === false && order.isDelivered === false && order.status !== 'cancelled'" @click="runOrderAction(order, 'cancel')" class="bg-white border border-gray-200 text-gray-500 px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:text-red-500 hover:border-red-100 transition-all active:scale-95"><XCircle class="w-4 h-4" /> 取消</button>
-              <button v-if="order.status === 'completed' && !order.reviewed" @click="runOrderAction(order, 'review')" class="bg-white border-2 border-blue-600 text-blue-600 px-8 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all active:scale-95"><Star class="w-4 h-4" /> 评价</button>
+            <div class="text-3xl font-black text-gray-800">¥ {{ Number(order.price || 0).toFixed(2) }}</div>
+            <div class="flex flex-wrap gap-3 justify-end">
+              <button v-if="order.status === 'unpaid' && isBuyer(order)" @click="runOrderAction(order, 'pay')" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-xl shadow-blue-200 flex items-center gap-2"><CreditCard class="w-4 h-4" /> 支付</button>
+              <button v-if="order.status === 'paid_unconfirmed' && isSeller(order)" @click="runOrderAction(order, 'confirm_receipt')" class="bg-purple-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-xl shadow-purple-200 flex items-center gap-2"><CreditCard class="w-4 h-4" /> 我已收款</button>
+              <button v-if="order.status === 'paid' && isSeller(order)" @click="runOrderAction(order, 'deliver')" class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-xl shadow-indigo-200 flex items-center gap-2"><Package class="w-4 h-4" /> 我已发货</button>
+              <button v-if="order.status === 'delivered' && isBuyer(order)" @click="runOrderAction(order, 'confirm')" class="bg-green-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-xl shadow-green-200 flex items-center gap-2"><CheckCircle2 class="w-4 h-4" /> 已到货</button>
+              <button v-if="order.status === 'unpaid'" @click="runOrderAction(order, 'cancel')" class="bg-white border border-gray-200 text-gray-500 px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1.5 hover:text-red-500"><XCircle class="w-4 h-4" /> 取消</button>
+              <button v-if="order.status === 'completed' && !order.reviewed && isBuyer(order)" @click="runOrderAction(order, 'review')" class="bg-white border-2 border-blue-600 text-blue-600 px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1.5"><Star class="w-4 h-4" /> 评价</button>
+              <button @click="triggerFeedback(order)" class="bg-rose-50 text-rose-600 px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1.5 hover:bg-rose-100"><ShieldAlert class="w-4 h-4" /> 反馈</button>
               <button v-if="order.status === 'cancelled'" @click="runOrderAction(order, 'rebuy')" class="text-sm font-bold text-blue-600 hover:underline">再次购买</button>
             </div>
           </div>

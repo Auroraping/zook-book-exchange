@@ -13,6 +13,7 @@ def create_chat():
     avatar = payload.get("avatar")
     initial_msg = payload.get("initialMsg")
     book_title = payload.get("bookTitle", "求购教材")
+    book_id = payload.get("bookId")
     current_user_id = normalize_user_id(payload.get("userId") or "me")
     
     if not contact_id or not contact_name:
@@ -41,6 +42,8 @@ def create_chat():
             a_contacts.remove(existing_b)
             existing_b["lastMsg"] = initial_msg or "同学你好，我有这本书。"
             existing_b["time"] = "刚刚"
+            if book_id:
+                existing_b["bookId"] = book_id
             a_contacts.insert(0, existing_b)
         else:
             new_b_contact = {
@@ -49,7 +52,8 @@ def create_chat():
                 "avatar": avatar or f"https://api.dicebear.com/7.x/identicon/svg?seed={contact_name}",
                 "time": "刚刚",
                 "unread": 0,
-                "lastMsg": initial_msg or "同学你好，我有这本书。"
+                "lastMsg": initial_msg or "同学你好，我有这本书。",
+                "bookId": book_id,
             }
             a_contacts.insert(0, new_b_contact)
             
@@ -77,6 +81,8 @@ def create_chat():
                 existing_a["lastMsg"] = initial_msg or "同学你好，我有这本书。"
                 existing_a["time"] = "刚刚"
                 existing_a["unread"] = (existing_a.get("unread") or 0) + 1
+                if book_id:
+                    existing_a["bookId"] = book_id
                 b_contacts.insert(0, existing_a)
             else:
                 new_a_contact = {
@@ -85,7 +91,8 @@ def create_chat():
                     "avatar": a_info["avatar"],
                     "time": "刚刚",
                     "unread": 1,
-                    "lastMsg": initial_msg or "同学你好，我有这本书。"
+                    "lastMsg": initial_msg or "同学你好，我有这本书。",
+                    "bookId": book_id,
                 }
                 b_contacts.insert(0, new_a_contact)
                 

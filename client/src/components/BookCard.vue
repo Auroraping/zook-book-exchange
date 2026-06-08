@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ArrowRight, Bookmark } from 'lucide-vue-next'
 import { getJson, postJson } from '../composables/useApi.js'
+import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
 const props = defineProps({
   book: {
@@ -12,14 +13,15 @@ const props = defineProps({
 })
 
 const isBookmarked = ref(false)
+const { accountId } = useCurrentAccount()
 
 onMounted(async () => {
-  const data = await getJson('/api/favorites?userId=me').catch(() => ({ bookIds: [] }))
+  const data = await getJson(`/api/favorites?userId=${accountId.value}`).catch(() => ({ bookIds: [] }))
   isBookmarked.value = data.bookIds.includes(props.book.id)
 })
 
 const toggleBookmark = async () => {
-  const data = await postJson('/api/favorites/toggle', { userId: 'me', bookId: props.book.id })
+  const data = await postJson('/api/favorites/toggle', { userId: accountId.value, bookId: props.book.id })
   isBookmarked.value = data.favorited
 }
 </script>

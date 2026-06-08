@@ -23,7 +23,7 @@ const configSuccess = ref(false)
 
 onMounted(async () => {
   const [booksData, uiRes, configData] = await Promise.all([
-    getJson('/api/books?status=approved'),
+    getJson('/api/ai/recommend'),
     getJson('/api/ui'),
     getJson('/api/ai/config'),
   ])

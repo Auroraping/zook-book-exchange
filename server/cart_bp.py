@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify
+from account_identity import normalize_account_id
 from json_store import find_by_id, mutate_json, new_id, now_text, read_json
 from orders_helper import current_user_id, request_payload, notify
 
@@ -16,7 +17,7 @@ def get_cart():
 @cart_bp.post("/api/cart")
 def add_cart_item():
     payload = request_payload()
-    user_id = payload.get("userId") or "me"
+    user_id = normalize_account_id(payload.get("userId") or "me")
     book_id = payload.get("bookId")
     book = find_by_id(read_json("books.json", []), book_id)
     if not book:
@@ -52,7 +53,7 @@ def remove_cart_item(book_id):
 @cart_bp.post("/api/cart/checkout")
 def checkout_cart():
     payload = request_payload()
-    user_id = payload.get("userId") or "me"
+    user_id = normalize_account_id(payload.get("userId") or "me")
     carts = read_json("carts.json", [])
     entry = next((item for item in carts if item.get("userId") == user_id), {"bookIds": []})
     book_ids = list(entry.get("bookIds", []))
@@ -87,15 +88,6 @@ def checkout_cart():
         return created
 
     created_orders = mutate_json("orders.json", add_orders, [])
-
-    # 下单结账的瞬间，自动将结算的所有图书状态变更为 "sold"（已售出），以在广场上同步瞬间消失！
-    def mark_books_sold(books_list):
-        for b_id in book_ids:
-            b = find_by_id(books_list, b_id)
-            if b:
-                b["status"] = "sold"
-        return books_list
-    mutate_json("books.json", mark_books_sold, [])
 
     def clear_cart(carts_data):
         cart_entry = next((item for item in carts_data if item.get("userId") == user_id), None)

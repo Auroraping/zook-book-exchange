@@ -5,23 +5,25 @@ import CartItemList from '../components/CartItemList.vue'
 import CartSuccess from '../components/CartSuccess.vue'
 import CartSummary from '../components/CartSummary.vue'
 import { deleteJson, getJson, postJson } from '../composables/useApi.js'
+import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
 const cartItems = ref([])
 const isSuccess = ref(false)
+const { accountId } = useCurrentAccount()
 
 onMounted(async () => {
   const savedCart = JSON.parse(localStorage.getItem('cart') || '[]')
-  let data = await getJson('/api/cart?userId=me')
+  let data = await getJson(`/api/cart?userId=${accountId.value}`)
   if (data.bookIds.length === 0 && savedCart.length > 0) {
-    await Promise.all(savedCart.map((bookId) => postJson('/api/cart', { userId: 'me', bookId })))
-    data = await getJson('/api/cart?userId=me')
+    await Promise.all(savedCart.map((bookId) => postJson('/api/cart', { userId: accountId.value, bookId })))
+    data = await getJson(`/api/cart?userId=${accountId.value}`)
   }
   cartItems.value = data.items
   localStorage.setItem('cart', JSON.stringify(data.bookIds))
 })
 
 const removeFromCart = async (id) => {
-  const data = await deleteJson(`/api/cart/${id}?userId=me`)
+  const data = await deleteJson(`/api/cart/${id}?userId=${accountId.value}`)
   cartItems.value = cartItems.value.filter((item) => item.id !== id)
   localStorage.setItem('cart', JSON.stringify(data.bookIds))
   window.dispatchEvent(new Event('cartUpdated'))
@@ -30,7 +32,7 @@ const removeFromCart = async (id) => {
 const totalPrice = computed(() => cartItems.value.reduce((sum, item) => sum + item.price, 0))
 
 const submitOrder = async () => {
-  await postJson('/api/cart/checkout', { userId: 'me' })
+  await postJson('/api/cart/checkout', { userId: accountId.value })
   isSuccess.value = true
   cartItems.value = []
   localStorage.setItem('cart', '[]')

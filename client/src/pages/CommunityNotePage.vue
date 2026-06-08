@@ -1,81 +1,96 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import { ArrowLeft, Download, Lock, ThumbsUp } from 'lucide-vue-next'
-import { getJson, patchJson } from '../composables/useApi.js'
+import { getJson, patchJson, postJson } from '../composables/useApi.js'
 import { useAuth } from '../composables/useAuth.js'
+import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
 const route = useRoute()
-const router = useRouter()
 const note = ref(null)
-
-const { user } = useAuth()
-const currentUserId = computed(() => user.value?.id || 'me')
+const commentText = ref('')
+const isSubmittingComment = ref(false)
+const { updateUser } = useAuth()
+const { user, accountId } = useCurrentAccount()
 
 onMounted(async () => {
   note.value = (await getJson(`/api/notes/${route.params.id}`)).note
 })
 
+const downloadVirtualNote = () => {
+  let text = `《${note.value.title}》复习参考\n\n`
+  text += `课程：${note.value.course}\n类型：${note.value.type}\n作者：${note.value.author}\n\n`
+  text += `${note.value.desc || '暂无概述说明。'}\n\n`
+  ;(note.value.sections || []).forEach((section, index) => {
+    text += `${index + 1}. ${section.heading}\n${section.body}\n\n`
+  })
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${note.value.title}_复习参考.txt`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
 const recordAction = async (action) => {
-  note.value = (await patchJson(`/api/notes/${note.value.id}`, { action })).note
-  
-  if (action === 'download') {
-    if (note.value.fileUrl) {
-      // 触发真实附件下载
-      const link = document.createElement('a')
-      link.href = note.value.fileUrl
-      link.download = note.value.fileName || `${note.value.title}.txt`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-    } else {
-      // 虚拟附件生成降级机制：如果数据库没有上传文件，当场拼装整篇笔记的详实内容生成 txt 供下载，拉满体验！
-      let text = `========================================================================\n`
-      text += `                  《${note.value.title}》考前复习讲义\n`
-      text += `========================================================================\n\n`
-      text += `【课程科目】：${note.value.course}\n`
-      text += `【资料类型】：${note.value.type}\n`
-      text += `【整理作者】：${note.value.author}\n`
-      text += `【难度建议】：${note.value.difficulty}\n`
-      text += `【更新时间】：${note.value.updatedAt}\n\n`
-      text += `【资料概述】：\n${note.value.desc || '暂无概述说明。'}\n\n`
-      text += `------------------------------------------------------------------------\n`
-      text += `【章节大纲与复习概要】\n`
-      text += `------------------------------------------------------------------------\n\n`
-      
-      if (note.value.sections && note.value.sections.length > 0) {
-        note.value.sections.forEach((sec, idx) => {
-          text += `${idx + 1}. 【${sec.heading}】\n`
-          text += `   ${sec.body}\n\n`
-        })
-      } else {
-        text += `   （本篇复习资料未录入细分章节，请直接查阅附件大纲。）\n\n`
-      }
-      
-      text += `========================================================================\n`
-      text += `     浙里淘书 zook 知识社区 · 好书淘不尽，浙里 top three · 知识共创\n`
-      text += `========================================================================\n`
-      
-      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `${note.value.title}_复习参考.txt`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
+  const points = Number(note.value.pointsRequired || 0)
+  const isAuthor = String(note.value.userId || 'me') === String(accountId.value)
+  if (action === 'download' && points > 0 && !isAuthor) {
+    if ((user.value?.points || 0) < points) {
+      alert(`积分不足。下载本篇资料需要 ${points} 积分，您当前有 ${user.value?.points || 0} 积分。`)
+      return
     }
+    if (!confirm(`下载将消耗 ${points} 积分，确定兑换吗？`)) return
+  }
+  try {
+    const res = await patchJson(`/api/notes/${note.value.id}`, { action, userId: accountId.value })
+    note.value = res.note
+    if (action === 'download') {
+      if (points > 0 && !isAuthor) updateUser({ points: (user.value?.points || 0) - points })
+      if (note.value.fileUrl) {
+        const link = document.createElement('a')
+        link.href = note.value.fileUrl
+        link.download = note.value.fileName || `${note.value.title}.txt`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } else {
+        downloadVirtualNote()
+      }
+    }
+  } catch (err) {
+    alert(err.message || '操作失败，请重试')
+  }
+}
+
+const submitComment = async () => {
+  if (!commentText.value.trim()) return
+  isSubmittingComment.value = true
+  try {
+    const res = await postJson(`/api/notes/${note.value.id}/comments`, {
+      userId: accountId.value,
+      author: user.value?.name || '浙大同学',
+      content: commentText.value.trim()
+    })
+    note.value.comments = res.note.comments
+    commentText.value = ''
+  } catch (err) {
+    alert(err.message || '发表评论失败')
+  } finally {
+    isSubmittingComment.value = false
   }
 }
 </script>
 
 <template>
-  <div v-if="note" class="max-w-4xl mx-auto flex flex-col gap-8 animate-google-in">
+  <div v-if="note" class="max-w-4xl mx-auto flex flex-col gap-8 animate-google-in pb-12">
     <RouterLink to="/community" class="inline-flex items-center gap-2 text-sm font-black text-gray-500 hover:text-blue-600 w-fit"><ArrowLeft class="w-4 h-4" /> 返回知识社区</RouterLink>
     <article class="bg-white border border-gray-100 rounded-[32px] shadow-sm overflow-hidden">
       <div class="px-10 py-9 border-b border-gray-100 bg-blue-50/40">
-        <div class="flex flex-wrap gap-2 mb-5"><span class="bg-blue-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full">{{ note.course }}</span><span class="bg-white text-slate-600 text-[10px] font-black px-3 py-1.5 rounded-full border border-slate-100">{{ note.type }}</span><span v-if="note.isPaid" class="bg-orange-50 text-orange-600 text-[10px] font-black px-3 py-1.5 rounded-full border border-orange-100 flex items-center gap-1"><Lock class="w-3 h-3" /> 积分兑换</span></div>
+        <div class="flex flex-wrap gap-2 mb-5"><span class="bg-blue-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full">{{ note.course }}</span><span class="bg-white text-slate-600 text-[10px] font-black px-3 py-1.5 rounded-full border border-slate-100">{{ note.type }}</span><span v-if="note.pointsRequired > 0" class="bg-orange-50 text-orange-600 text-[10px] font-black px-3 py-1.5 rounded-full border border-orange-100 flex items-center gap-1"><Lock class="w-3 h-3" /> {{ note.pointsRequired }} 积分兑换</span></div>
         <h1 class="text-4xl font-black text-gray-900 tracking-tight leading-tight">{{ note.title }}</h1>
         <p class="text-gray-500 mt-4 leading-relaxed">{{ note.desc }}</p>
       </div>
@@ -93,67 +108,30 @@ const recordAction = async (action) => {
         </span>
       </div>
     </article>
+
+    <div class="bg-white border border-gray-100 rounded-[32px] shadow-sm p-10 flex flex-col gap-6">
+      <div class="flex items-center justify-between border-b border-gray-50 pb-5"><h3 class="text-xl font-black text-gray-900">讨论与评论 <span class="bg-blue-50 text-blue-600 text-xs font-black px-2.5 py-1 rounded-lg">{{ note.comments?.length || 0 }}</span></h3></div>
+      <div v-if="note.comments && note.comments.length > 0" class="flex flex-col gap-5 max-h-[400px] overflow-y-auto pr-2">
+        <div v-for="c in note.comments" :key="c.id" class="p-5 bg-slate-50/50 rounded-2xl border border-gray-100/50 flex gap-4">
+          <img :src="`https://api.dicebear.com/7.x/identicon/svg?seed=${c.author}`" class="w-10 h-10 rounded-full border border-gray-100 bg-white shadow-sm object-cover" />
+          <div class="flex-1 min-w-0"><div class="flex justify-between items-center mb-1"><span class="font-bold text-xs text-gray-700">{{ c.author }}</span><span class="text-[10px] text-gray-400 font-bold">{{ c.createdAt }}</span></div><p class="text-xs text-gray-650 leading-relaxed">{{ c.content }}</p></div>
+        </div>
+      </div>
+      <div v-else class="py-8 text-center text-xs text-gray-400 font-bold">暂无讨论，快来发表第一条评论。</div>
+      <div class="flex gap-4 items-start border-t border-gray-50 pt-6">
+        <img :src="user?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'" class="w-10 h-10 rounded-full border border-gray-100 bg-white shadow-sm object-cover" />
+        <div class="flex-1 flex flex-col gap-3">
+          <textarea v-model="commentText" placeholder="写下你的想法或对资料的反馈..." rows="2" class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 text-xs font-medium transition-colors resize-none outline-none"></textarea>
+          <button @click="submitComment" :disabled="isSubmittingComment || !commentText.trim()" class="self-end px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold disabled:opacity-50">{{ isSubmittingComment ? '提交中...' : '发表评论' }}</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.rich-content :deep(img) {
-  max-width: 100%;
-  height: auto;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-  margin: 1.5rem auto;
-  display: block;
-}
-
-.rich-content :deep(a) {
-  color: #2563eb;
-  font-weight: 700;
-  text-decoration: none;
-  transition: all 0.2s;
-}
-
-.rich-content :deep(a:hover) {
-  color: #1d4ed8;
-  text-decoration: underline;
-}
-
-.rich-content :deep(a.download-file) {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: #eff6ff;
-  color: #1d4ed8;
-  padding: 0.5rem 1.25rem;
-  border-radius: 12px;
-  border: 1px solid #dbeafe;
-  margin: 0.5rem 0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s;
-}
-
-.rich-content :deep(a.download-file:hover) {
-  background-color: #dbeafe;
-  transform: translateY(-1px);
-  text-decoration: none !important;
-}
-
-.rich-content :deep(div.visibleImage) {
-  display: none;
-}
-
-/* 引用块美化，完美搭配卡片质感 */
-.rich-content :deep(div[style*="background-color"]) {
-  background-color: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 16px !important;
-  padding: 1.25rem !important;
-  margin: 1.25rem 0 !important;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.01) !important;
-}
-
-.rich-content :deep(article) {
-  white-space: pre-wrap;
-  word-break: break-word;
-}
+.rich-content :deep(img) { max-width: 100%; height: auto; border-radius: 16px; margin: 1.5rem auto; display: block; }
+.rich-content :deep(a) { color: #2563eb; font-weight: 700; text-decoration: none; }
+.rich-content :deep(a:hover) { color: #1d4ed8; text-decoration: underline; }
+.rich-content :deep(article) { white-space: pre-wrap; word-break: break-word; }
 </style>

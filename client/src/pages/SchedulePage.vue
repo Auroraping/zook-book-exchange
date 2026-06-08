@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { AlertCircle, Loader2 } from 'lucide-vue-next'
 import { getJson, postJson } from '../composables/useApi.js'
-import { setStored } from '../composables/useSessionStore.js'
+import { getStored, setStored } from '../composables/useSessionStore.js'
 import ScheduleGrid from '../components/ScheduleGrid.vue'
 import ScheduleBookList from '../components/ScheduleBookList.vue'
 import SchedulePageHeader from '../components/SchedulePageHeader.vue'
@@ -17,6 +17,7 @@ const error = ref('')
 const isReal = ref(false)
 const termInfo = ref(null)
 const scheduleUi = ref({})
+const currentAccountId = () => getStored('zook_user_uuid') || 'me'
 
 onMounted(async () => {
   const [booksData, ui] = await Promise.all([getJson('/api/books?status=approved'), getJson('/api/ui')])
@@ -241,7 +242,7 @@ const filteredCourses = computed(() => {
 })
 
 const addToCart = async (bookId) => {
-  const cart = await postJson('/api/cart', { userId: 'me', bookId })
+  const cart = await postJson('/api/cart', { userId: currentAccountId(), bookId })
   localStorage.setItem('cart', JSON.stringify(cart.bookIds))
   window.dispatchEvent(new Event('cartUpdated'))
 }

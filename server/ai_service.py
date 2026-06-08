@@ -1,5 +1,6 @@
 import os
 import requests
+import json
 
 SYSTEM_PROMPT = """
 你是“小酥”，浙大二手书交易系统里的 AI 助手。你首先是一名通用 AI 助手，可以回答一般知识、学习规划、编程、写作、生活建议等常规问题。
@@ -87,3 +88,57 @@ def ask_taosu(payload):
         raise ApiError("DeepSeek 未返回有效回复")
 
     return {"reply": reply, "model": data.get("model") or model, "usage": data.get("usage")}
+
+def get_recommendation_from_ai(courses, books):
+    api_key = os.getenv("DEEPSEEK_API_KEY")
+    if not api_key:
+        return None
+    simple_books = [
+        {"id": b.get("id"), "title": b.get("title"), "author": b.get("author", ""), "category": b.get("category", "")}
+        for b in books
+    ]
+    course_names = [c.get("name") for c in courses if c.get("name")]
+    prompt = (
+        "你是教材推荐系统。根据用户课程和在售书籍，为每本书返回匹配评分。"
+        f"课程：{', '.join(course_names)}\n书籍：{json.dumps(simple_books, ensure_ascii=False)}\n"
+        "只返回 JSON 数组，格式为 [{\"id\":\"书籍ID\",\"aiScore\":90,\"aiSummary\":\"理由\"}]。"
+    )
+    try:
+        response = requests.post(
+            os.getenv("DEEPSEEK_API_URL", "https://api.deepseek.com/chat/completions"),
+            json={
+                "model": os.getenv("DEEPSEEK_MODEL", "deepseek-v4-pro"),
+                "messages": [
+                    {"role": "system", "content": "你只输出纯 JSON 数组。"},
+                    {"role": "user", "content": prompt},
+                ],
+                "stream": False,
+                "temperature": 0.3,
+                "max_tokens": 1500,
+            },
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            timeout=25,
+        )
+        response.raise_for_status()
+        content = response.json()["choices"][0]["message"]["content"].strip()
+        if content.startswith("```"):
+            content = "\n".join(content.splitlines()[1:-1]).strip()
+        return json.loads(content)
+    except Exception as exc:
+        print("[AI Recommend] fallback:", exc)
+        return None
+
+def get_recommendation_fallback(courses, books):
+    course_names = [c.get("name", "") for c in courses if c.get("name")]
+    results = []
+    for book in books:
+        title = book.get("title", "")
+        matched = next((name for name in course_names if name and (name in title or title in name)), None)
+        if matched:
+            score = 90
+            summary = f"此教材与当前课程《{matched}》高度相关，建议优先考虑。"
+        else:
+            score = 60
+            summary = "该教材与当前课表课程暂无明显关联，建议按个人需要谨慎购买。"
+        results.append({"id": book.get("id"), "aiScore": score, "aiSummary": summary})
+    return results

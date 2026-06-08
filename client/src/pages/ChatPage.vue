@@ -24,7 +24,7 @@ const currentAccountId = () => {
 
 onMounted(async () => {
   const currentUserId = currentAccountId()
-  const [booksData, chatData] = await Promise.all([getJson('/api/books?status=approved'), getJson(`/api/chats?userId=${currentUserId}`)])
+  const [booksData, chatData] = await Promise.all([getJson('/api/books'), getJson(`/api/chats?userId=${currentUserId}`)])
   books.value = booksData.books
   chats.value = chatData.contacts || []
   chatMessages.value = chatData.messages || {}

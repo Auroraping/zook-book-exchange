@@ -3,6 +3,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import { ChevronRight, Heart, Sparkles, Trash2, FileText, CreditCard, Package } from 'lucide-vue-next'
 import { useAuth } from '../composables/useAuth.js'
 import { deleteJson, postJson, patchJson } from '../composables/useApi.js'
+import { getStored } from '../composables/useSessionStore.js'
 
 const props = defineProps({
   activeTab: { type: String, required: true },
@@ -19,12 +20,13 @@ const emit = defineEmits(['wish-deleted', 'note-deleted', 'favorite-deleted', 'o
 
 const router = useRouter()
 const { user } = useAuth()
-const currentUserId = user.value?.id || 'me'
+const currentUserId = user.value?.realId || getStored('zook_user_uuid') || 'me'
 
 const statusMap = {
   unpaid: { label: '待支付', class: 'bg-orange-50 text-orange-600 border border-orange-100' },
-  paid: { label: '已支付 (待交付)', class: 'bg-blue-50 text-blue-600 border border-blue-100' },
-  delivered: { label: '已交付 (待支付)', class: 'bg-purple-50 text-purple-600 border border-purple-100' },
+  paid_unconfirmed: { label: '已付款待收款', class: 'bg-amber-50 text-amber-600 border border-amber-100' },
+  paid: { label: '卖家已收款', class: 'bg-blue-50 text-blue-600 border border-blue-100' },
+  delivered: { label: '已发货待确认', class: 'bg-purple-50 text-purple-600 border border-purple-100' },
   completed: { label: '交易完成', class: 'bg-green-50 text-green-600 border border-green-100' },
   cancelled: { label: '已关闭', class: 'bg-gray-50 text-gray-400 border border-gray-100' }
 }
@@ -110,12 +112,14 @@ const handleRemoveFavorite = async (book) => {
                 {{ getStatusStyle(order.status).label }}
               </span>
               <!-- 买家视图：未支付时显示支付按钮，点击跳转至订单中心待支付选项卡 -->
-              <button v-if="order.isPaid === false && order.status !== 'cancelled' && (order.userId === currentUserId || order.userId === 'me')" @click="router.push('/orders?tab=unpaid')" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
+              <button v-if="order.status === 'unpaid' && order.userId === currentUserId" @click="router.push('/orders?tab=unpaid')" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
                 <CreditCard class="w-3.5 h-3.5" /> 去支付
               </button>
-              <!-- 卖家视图：未交付时显示交付按钮 -->
-              <button v-if="order.isDelivered === false && order.status !== 'cancelled' && order.sellerId === currentUserId" @click="handleOrderAction(order, 'deliver')" class="px-4 py-1.5 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
-                <Package class="w-3.5 h-3.5" /> 确认交付
+              <button v-if="order.status === 'paid_unconfirmed' && order.sellerId === currentUserId" @click="handleOrderAction(order, 'confirm_receipt')" class="px-4 py-1.5 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
+                <CreditCard class="w-3.5 h-3.5" /> 我已收款
+              </button>
+              <button v-if="order.status === 'paid' && order.sellerId === currentUserId" @click="handleOrderAction(order, 'deliver')" class="px-4 py-1.5 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
+                <Package class="w-3.5 h-3.5" /> 我已发货
               </button>
             </div>
           </div>
@@ -126,7 +130,7 @@ const handleRemoveFavorite = async (book) => {
         </div>
       </div>
       <div v-else-if="activeTab === 'wishes'" class="flex flex-col gap-4">
-        <div v-for="wish in wishes.filter((w) => w.userId === currentUserId || (w.coSeekers && (w.coSeekers.includes(currentUserId) || w.coSeekers.includes('me'))))" :key="wish.id" class="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex justify-between items-center">
+        <div v-for="wish in wishes.filter((w) => w.userId === currentUserId || (w.coSeekers && w.coSeekers.includes(currentUserId)))" :key="wish.id" class="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex justify-between items-center">
           <div>
             <h4 class="text-xl font-black text-gray-800 mb-2">{{ wish.title }}</h4>
             <p class="text-sm text-gray-500">
@@ -136,10 +140,10 @@ const handleRemoveFavorite = async (book) => {
           </div>
           <button @click="handleDeleteWish(wish)" class="p-3 bg-red-50 text-red-500 hover:bg-red-100 hover:scale-105 active:scale-95 rounded-2xl transition-all" :title="wish.userId === currentUserId ? '删除求购心愿' : '取消同求此书'"><Trash2 class="w-5 h-5" /></button>
         </div>
-        <div v-if="wishes.filter((w) => w.userId === currentUserId || (w.coSeekers && (w.coSeekers.includes(currentUserId) || w.coSeekers.includes('me')))).length === 0" class="py-24 text-center"><Sparkles class="w-16 h-16 text-gray-100 mx-auto mb-4" /><p class="text-gray-400 font-black">暂无心愿</p></div>
+        <div v-if="wishes.filter((w) => w.userId === currentUserId || (w.coSeekers && w.coSeekers.includes(currentUserId))).length === 0" class="py-24 text-center"><Sparkles class="w-16 h-16 text-gray-100 mx-auto mb-4" /><p class="text-gray-400 font-black">暂无心愿</p></div>
       </div>
       <div v-else-if="activeTab === 'notes'" class="flex flex-col gap-4">
-        <div v-for="note in notes.filter((n) => n.userId === currentUserId || (n.userId === 'me' && currentUserId === 'u202605271552105251') || (n.userId === 'u202605271552105251' && currentUserId === 'me'))" :key="note.id" class="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex justify-between items-center">
+        <div v-for="note in notes.filter((n) => n.userId === currentUserId)" :key="note.id" class="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex justify-between items-center">
           <div>
             <div class="flex items-center gap-2 mb-2">
               <span class="bg-blue-50 text-blue-600 text-[10px] font-black px-2.5 py-1 rounded border border-blue-100">{{ note.course }}</span>
@@ -150,7 +154,7 @@ const handleRemoveFavorite = async (book) => {
           </div>
           <button @click="handleDeleteNote(note)" class="p-3 bg-red-50 text-red-500 hover:bg-red-100 hover:scale-105 active:scale-95 rounded-2xl transition-all" title="删除笔记"><Trash2 class="w-5 h-5" /></button>
         </div>
-        <div v-if="notes.filter((n) => n.userId === currentUserId || (n.userId === 'me' && currentUserId === 'u202605271552105251') || (n.userId === 'u202605271552105251' && currentUserId === 'me')).length === 0" class="py-24 text-center"><FileText class="w-16 h-16 text-gray-100 mx-auto mb-4" /><p class="text-gray-400 font-black">暂无社区发布</p></div>
+        <div v-if="notes.filter((n) => n.userId === currentUserId).length === 0" class="py-24 text-center"><FileText class="w-16 h-16 text-gray-100 mx-auto mb-4" /><p class="text-gray-400 font-black">暂无社区发布</p></div>
       </div>
       <div v-else-if="activeTab === 'notifications'" class="flex flex-col gap-4">
         <div v-for="notif in notifications" :key="notif.id" class="p-6 rounded-3xl border bg-white border-blue-100 shadow-sm flex gap-6"><div class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-blue-50 text-blue-600 shadow-sm"><Sparkles class="w-7 h-7" /></div><div class="flex-1"><h4 class="font-black text-gray-800 text-lg">{{ notif.title }}</h4><p class="text-sm text-gray-500 leading-relaxed mt-2 mb-4">{{ notif.content }}</p><RouterLink v-if="notif.bookId" :to="`/book/${notif.bookId}`" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-blue-200">查看书籍<ChevronRight class="w-4 h-4" /></RouterLink></div></div>

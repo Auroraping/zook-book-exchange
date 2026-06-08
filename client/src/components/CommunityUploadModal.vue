@@ -2,9 +2,9 @@
 import { ref } from 'vue'
 import { X, Upload, File, AlertCircle, CheckCircle } from 'lucide-vue-next'
 import { uploadFile } from '../composables/useApi.js'
-import { useAuth } from '../composables/useAuth.js'
+import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
-const { user } = useAuth()
+const { user, accountId } = useCurrentAccount()
 
 const props = defineProps({
   isOpen: { type: Boolean, required: true }
@@ -16,6 +16,7 @@ const course = ref('')
 const type = ref('课程笔记')
 const difficulty = ref('基础夯实')
 const isPaid = ref(false)
+const pointsRequired = ref(1)
 const desc = ref('')
 const tags = ref('')
 const file = ref(null)
@@ -93,10 +94,11 @@ const handleSubmit = async () => {
     formData.append('type', type.value)
     formData.append('difficulty', difficulty.value)
     formData.append('isPaid', String(isPaid.value))
+    formData.append('pointsRequired', String(isPaid.value ? pointsRequired.value : 0))
     formData.append('desc', desc.value.trim())
     formData.append('tags', tags.value.trim())
     formData.append('file', file.value)
-    formData.append('userId', user.value?.id || 'me')
+    formData.append('userId', accountId.value)
     formData.append('author', user.value?.name || '浙大同学')
     
     // 如果没有输入具体 sections，由后端默认生成
@@ -120,6 +122,7 @@ const resetForm = () => {
   type.value = '课程笔记'
   difficulty.value = '基础夯实'
   isPaid.value = false
+  pointsRequired.value = 1
   desc.value = ''
   tags.value = ''
   file.value = null
@@ -193,11 +196,17 @@ const resetForm = () => {
           </div>
 
           <!-- 积分机制 -->
-          <div class="flex flex-col justify-center">
+          <div class="flex flex-col md:col-span-2 gap-3 p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
             <label class="flex items-center gap-3 cursor-pointer mt-4 select-none">
               <input v-model="isPaid" type="checkbox" class="w-4 h-4 text-blue-600 border-gray-200 rounded focus:ring-blue-500 focus:ring-offset-0" />
-              <span class="text-sm font-black text-gray-600">需要消耗积分下载（积分兑换）</span>
+              <span class="text-sm font-black text-gray-700">需要消耗积分下载（积分兑换）</span>
             </label>
+            <div v-if="isPaid" class="flex items-center gap-3">
+              <span class="text-xs font-bold text-gray-400">下载所需积分：</span>
+              <select v-model="pointsRequired" class="px-3 py-1.5 rounded-xl border border-gray-200 focus:border-blue-600 text-xs font-bold bg-white outline-none">
+                <option v-for="p in 10" :key="p" :value="p">{{ p }} 积分</option>
+              </select>
+            </div>
           </div>
 
           <!-- 标签 -->

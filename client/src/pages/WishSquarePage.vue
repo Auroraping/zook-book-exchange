@@ -4,6 +4,7 @@ import { Heart, Search, Tag, Clock, CheckCircle2, Flame, Plus, Sparkles, X, PenT
 import WishDetailModal from '../components/WishDetailModal.vue'
 import { getJson, postJson } from '../composables/useApi.js'
 import { useAuth } from '../composables/useAuth.js'
+import { getStored } from '../composables/useSessionStore.js'
 
 const wishes = ref([])
 const searchTerm = ref('')
@@ -22,6 +23,7 @@ const isSubmitting = ref(false)
 const presetTags = ['专业课教材', '考研必读', '学术通识', '外语学习', '公选课教材', '技术IT', '其它']
 
 const { user, isLoggedIn } = useAuth()
+const currentAccountId = () => user.value?.realId || getStored('zook_user_uuid') || 'me'
 
 onMounted(async () => {
   await fetchWishes()
@@ -100,7 +102,7 @@ const submitWish = async () => {
     }
     
     const res = await postJson('/api/wishes', {
-      userId: user.value?.id || 'me',
+      userId: currentAccountId(),
       title: title,
       author: newWishAuthor.value.trim() || '待补充',
       priceRange: newWishPrice.value.trim() || '面议',

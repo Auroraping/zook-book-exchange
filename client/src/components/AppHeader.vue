@@ -34,7 +34,7 @@ const refreshNotifications = async () => {
   try {
     const currentUserId = currentAccountId()
     const [noticesData, chatData] = await Promise.all([
-      getJson('/api/notifications?userId=me').catch(() => ({ notifications: [] })),
+      getJson(`/api/notifications?userId=${currentUserId}`).catch(() => ({ notifications: [] })),
       getJson(`/api/chats?userId=${currentUserId}`).catch(() => ({ contacts: [] }))
     ])
     const systemUnread = (noticesData.notifications || []).filter((item) => !item.isRead).length

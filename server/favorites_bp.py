@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify
+from account_identity import normalize_account_id
 from json_store import find_by_id, mutate_json, read_json
 from orders_helper import current_user_id, request_payload
 
@@ -16,7 +17,7 @@ def list_favorites():
 @favorites_bp.post("/api/favorites/toggle")
 def toggle_favorite():
     payload = request_payload()
-    user_id = payload.get("userId") or "me"
+    user_id = normalize_account_id(payload.get("userId") or "me")
     book_id = payload.get("bookId")
     if not find_by_id(read_json("books.json", []), book_id):
         return jsonify({"success": False, "message": "书籍不存在"}), 404

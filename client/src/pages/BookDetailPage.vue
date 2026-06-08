@@ -7,27 +7,29 @@ import BookDetailGallery from '../components/BookDetailGallery.vue'
 import BookPurchaseInfo from '../components/BookPurchaseInfo.vue'
 import BookSellerSummary from '../components/BookSellerSummary.vue'
 import { getJson, postJson } from '../composables/useApi.js'
+import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
 const route = useRoute()
+const { accountId } = useCurrentAccount()
 const book = ref(null)
 const isFavorited = ref(false)
 const stockCount = ref(1)
 
 onMounted(async () => {
-  const [bookData, favorites] = await Promise.all([getJson(`/api/books/${route.params.id}`), getJson('/api/favorites?userId=me')])
+  const [bookData, favorites] = await Promise.all([getJson(`/api/books/${route.params.id}`), getJson(`/api/favorites?userId=${accountId.value}`)])
   book.value = bookData.book
   stockCount.value = (book.value.id.charCodeAt(book.value.id.length - 1) % 5) + 1
   isFavorited.value = favorites.bookIds.includes(route.params.id)
 })
 
 const addToCart = async () => {
-  const data = await postJson('/api/cart', { userId: 'me', bookId: route.params.id })
+  const data = await postJson('/api/cart', { userId: accountId.value, bookId: route.params.id })
   localStorage.setItem('cart', JSON.stringify(data.bookIds))
   window.dispatchEvent(new Event('cartUpdated'))
 }
 
 const toggleFavorite = async () => {
-  const data = await postJson('/api/favorites/toggle', { userId: 'me', bookId: route.params.id })
+  const data = await postJson('/api/favorites/toggle', { userId: accountId.value, bookId: route.params.id })
   isFavorited.value = data.favorited
 }
 

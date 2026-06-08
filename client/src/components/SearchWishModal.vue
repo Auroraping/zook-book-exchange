@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { X, PenTool, Sparkles } from 'lucide-vue-next'
 import { postJson } from '../composables/useApi.js'
-import { useAuth } from '../composables/useAuth.js'
+import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
 const props = defineProps({
   show: { type: Boolean, required: true }
@@ -15,7 +15,7 @@ const priceRange = ref('')
 const tagText = ref('')
 const submitting = ref(false)
 
-const { user } = useAuth()
+const { accountId } = useCurrentAccount()
 
 const submitWish = async () => {
   if (!title.value.trim() || submitting.value) return
@@ -33,7 +33,7 @@ const submitWish = async () => {
   }
   
   try {
-    const currentUserId = user.value?.id || 'me'
+    const currentUserId = accountId.value
     await postJson('/api/wishes', {
       userId: currentUserId,
       title: title.value,

@@ -5,13 +5,15 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import AppLogo from './AppLogo.vue'
 import { useDataLoader } from '../composables/useDataLoader.js'
 import { getJson } from '../composables/useApi.js'
+import { getStored } from '../composables/useSessionStore.js'
 
 const route = useRoute()
 const cartCount = ref(0)
 const { data: navItems } = useDataLoader('/api/ui', (json) => json.navigation || [])
+const currentAccountId = () => getStored('zook_user_uuid') || 'me'
 
 const updateCart = async () => {
-  const cart = await getJson('/api/cart?userId=me').catch(() => ({ bookIds: JSON.parse(localStorage.getItem('cart') || '[]') }))
+  const cart = await getJson(`/api/cart?userId=${currentAccountId()}`).catch(() => ({ bookIds: JSON.parse(localStorage.getItem('cart') || '[]') }))
   cartCount.value = cart.bookIds.length
   localStorage.setItem('cart', JSON.stringify(cart.bookIds))
 }

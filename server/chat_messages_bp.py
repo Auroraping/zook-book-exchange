@@ -13,6 +13,8 @@ def create_chat_message(chat_id):
 
     sender_id = normalize_user_id(payload.get("userId") or "me")
     receiver_id = normalize_user_id(chat_id)
+    msg_type = payload.get("msgType") or "text"
+    proposal_data = payload.get("proposalData")
 
     is_mock_bot = receiver_id.startswith("U_MOCK_")
 
@@ -29,6 +31,10 @@ def create_chat_message(chat_id):
         msg_id = new_id("m")
         timestamp = now_text()
         message = {"id": msg_id, "role": "me", "content": text, "timestamp": timestamp}
+        if msg_type != "text":
+            message["msgType"] = msg_type
+        if proposal_data:
+            message["proposalData"] = proposal_data
         a_room.append(message)
         
         # 更新 A 侧联系人卡片的最后消息
@@ -47,7 +53,12 @@ def create_chat_message(chat_id):
             b_messages = b_chats.setdefault("messages", {})
             b_room = b_messages.setdefault(sender_id, [])
             
-            b_room.append({"id": msg_id, "role": "other", "content": text, "timestamp": timestamp})
+            b_message = {"id": msg_id, "role": "other", "content": text, "timestamp": timestamp}
+            if msg_type != "text":
+                b_message["msgType"] = msg_type
+            if proposal_data:
+                b_message["proposalData"] = proposal_data
+            b_room.append(b_message)
             
             # 更新 B 侧 A 联系人卡片的最后消息与未读数
             found_a = False
@@ -95,7 +106,9 @@ def create_chat_message(chat_id):
                 "id": result["message"]["id"],
                 "role": "other",
                 "content": text,
-                "timestamp": result["message"]["timestamp"]
+                "timestamp": result["message"]["timestamp"],
+                **({"msgType": msg_type} if msg_type != "text" else {}),
+                **({"proposalData": proposal_data} if proposal_data else {})
             }
         }
         socketio = current_app.extensions.get("socketio")
@@ -104,3 +117,24 @@ def create_chat_message(chat_id):
             print(f"[Socket] 消息已投递到主账号房间 {receiver_id}")
         
     return jsonify({"success": True, **result})
+
+@chat_messages_bp.patch("/api/chats/<chat_id>/messages/<msg_id>/accept")
+def accept_proposal(chat_id, msg_id):
+    sender_id = normalize_user_id(request_payload().get("userId") or "me")
+    receiver_id = normalize_user_id(chat_id)
+
+    def update(chat_state):
+        user_chats = chat_state.setdefault("user_chats", {})
+        for uid in (sender_id, receiver_id):
+            room_id = receiver_id if uid == sender_id else sender_id
+            messages = user_chats.get(uid, {}).get("messages", {}).get(room_id, [])
+            for message in messages:
+                if str(message.get("id")) == str(msg_id) and message.get("proposalData"):
+                    message["proposalData"]["status"] = "accepted"
+        return {"success": True}
+
+    mutate_json("chat.json", update, {})
+    socketio = current_app.extensions.get("socketio")
+    if socketio:
+        socketio.emit("proposal_accepted", {"chatId": sender_id, "msgId": msg_id}, room=receiver_id)
+    return jsonify({"success": True})

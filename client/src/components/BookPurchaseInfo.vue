@@ -26,7 +26,7 @@ const isAvailable = computed(() => props.book.status === 'approved')
       <button @click="emit('addToCart')" :disabled="!isAvailable" :class="['flex-[2] m3-btn-filled !rounded-[24px] !py-5 flex items-center justify-center gap-3 text-lg', !isAvailable ? 'opacity-50 cursor-not-allowed' : '']">
         <ShoppingBag class="w-6 h-6" /> {{ isAvailable ? '加入购书清单' : '暂不可购买' }}
       </button>
-      <RouterLink to="/messages" class="flex-1 bg-white border border-gray-200 text-gray-800 !rounded-[24px] flex items-center justify-center gap-3 text-lg hover:bg-gray-50 rounded-3xl py-5">
+      <RouterLink :to="`/messages?contactId=${encodeURIComponent(book.sellerId || 'me')}&contactName=${encodeURIComponent(book.seller || '浙大同学')}&bookId=${encodeURIComponent(book.id)}&bookTitle=${encodeURIComponent(book.title)}`" class="flex-1 bg-white border border-gray-200 text-gray-800 !rounded-[24px] flex items-center justify-center gap-3 text-lg hover:bg-gray-50 rounded-3xl py-5">
         <MessageSquare class="w-6 h-6" /> 聊一聊
       </RouterLink>
     </div>

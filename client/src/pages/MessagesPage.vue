@@ -43,7 +43,7 @@ const currentAccountId = () => {
 
 onMounted(async () => {
   const currentUserId = currentAccountId()
-  const [booksData, chatData, noticesData] = await Promise.all([getJson('/api/books?status=approved'), getJson(`/api/chats?userId=${currentUserId}`), getJson('/api/notifications?userId=me')])
+  const [booksData, chatData, noticesData] = await Promise.all([getJson('/api/books'), getJson(`/api/chats?userId=${currentUserId}`), getJson(`/api/notifications?userId=${currentUserId}`)])
   books.value = booksData.books
   chats.value = [{ id: 'system', type: 'system', name: '消息通知', unread: noticesData.notifications.filter((item) => !item.isRead).length }, ...(chatData.contacts || []).map((chat) => ({ ...chat, type: 'chat' }))]
   chatMessages.value = chatData.messages || {}
@@ -166,6 +166,35 @@ onMounted(async () => {
       }
     }
   })
+
+  socket.on('proposal_accepted', (data) => {
+    const { chatId, msgId } = data
+    const room = chatMessages.value[chatId] || []
+    const msg = room.find((item) => String(item.id) === String(msgId))
+    if (msg?.proposalData) {
+      msg.proposalData.status = 'accepted'
+      chatMessages.value = { ...chatMessages.value }
+    }
+  })
+
+  const queryContactId = route.query.contactId || route.query.activeId
+  const queryContactName = route.query.contactName || (route.query.activeId ? '浙大同学' : null)
+  if (queryContactId && queryContactName) {
+    setTimeout(async () => {
+      const exists = chats.value.some((c) => String(c.id) === String(queryContactId))
+      if (exists) {
+        selectChat(queryContactId)
+      } else {
+        await handleStartChat({
+          id: queryContactId,
+          name: queryContactName,
+          bookId: route.query.bookId,
+          bookTitle: route.query.bookTitle || '教材沟通',
+          initialMsg: route.query.initialMsg
+        })
+      }
+    }, 300)
+  }
 })
 
 onUnmounted(() => {
@@ -179,7 +208,7 @@ const updateActiveChat = () => {
 }
 
 const markNotificationsRead = async () => {
-  await patchJson('/api/notifications/read', { userId: 'me' })
+  await patchJson('/api/notifications/read', { userId: currentAccountId() })
   systemNotifications.value = systemNotifications.value.map((item) => ({ ...item, isRead: true }))
   const systemChat = chats.value.find((chat) => chat.id === 'system')
   if (systemChat) systemChat.unread = 0
@@ -195,13 +224,28 @@ const selectChat = (chatId) => {
     const chat = chats.value.find((c) => c.id === chatId)
     if (chat && chat.unread > 0) {
       chat.unread = 0
-      postJson(`/api/chats/${chatId}/read`).catch(() => {})
+      postJson(`/api/chats/${chatId}/read`, { userId: currentAccountId() }).catch(() => {})
       window.dispatchEvent(new Event('notificationsUpdated'))
     }
   }
 }
 
-const sendMessage = async (text) => {
+const sendMessage = async (payload) => {
+  if (typeof payload === 'object' && payload.type === 'special_proposal') {
+    if (!chatMessages.value[activeChatId.value]) {
+      chatMessages.value[activeChatId.value] = []
+    }
+    chatMessages.value[activeChatId.value] = [...chatMessages.value[activeChatId.value], payload.message]
+    chatMessages.value = { ...chatMessages.value }
+    const chat = chats.value.find((c) => c.id === activeChatId.value)
+    if (chat) {
+      chat.lastMsg = '[交易报价]'
+      chat.time = '刚刚'
+    }
+    return
+  }
+
+  const text = payload
   const currentUserId = currentAccountId()
   const data = await postJson(`/api/chats/${activeChatId.value}/messages`, { text, userId: currentUserId })
   
@@ -235,8 +279,9 @@ const handleStartChat = async (targetUser) => {
       contactId: targetUser.id,
       contactName: targetUser.name,
       avatar: targetUser.avatar,
-      initialMsg: `你好，${targetUser.name}同学！我想与你交流一下教材交易和信息沟通。`,
-      bookTitle: '教材沟通',
+      initialMsg: targetUser.initialMsg || `你好，${targetUser.name}同学！我想与你交流一下${targetUser.bookTitle ? `《${targetUser.bookTitle}》` : '教材'}的交易事宜。`,
+      bookTitle: targetUser.bookTitle || '教材沟通',
+      bookId: targetUser.bookId,
       userId: currentUserId
     })
     
@@ -247,7 +292,7 @@ const handleStartChat = async (targetUser) => {
         ...(chatData.contacts || []).map((chat) => ({ ...chat, type: 'chat' }))
       ]
       chatMessages.value = chatData.messages || {}
-      selectChat(targetUser.id)
+      selectChat(res.contactId || targetUser.id)
     }
   } catch (err) {
     alert(err.message || '发起对话失败，请重试')

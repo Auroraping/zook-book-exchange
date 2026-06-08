@@ -70,3 +70,7 @@ def mutate_json(file_name, callback, fallback=None):
 def find_by_id(items, item_id):
     """辅助查询工具：根据 id 从项列表中查找对应项"""
     return next((item for item in items if str(item.get("id")) == str(item_id)), None)
+
+def calculate_user_credit(user_id):
+    from account_identity import calculate_user_credit as _calculate
+    return _calculate(user_id)

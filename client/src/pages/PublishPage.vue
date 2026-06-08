@@ -2,9 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { Camera, UploadCloud, Info, BookOpen, CheckCircle2 } from 'lucide-vue-next'
 import { getJson, postJson, uploadFile as uploadApiFile } from '../composables/useApi.js'
-import { useAuth } from '../composables/useAuth.js'
+import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
-const { user } = useAuth()
+const { user, accountId } = useCurrentAccount()
 const publishMode = ref('scan')
 const isSuccess = ref(false)
 const tags = ref([])
@@ -44,7 +44,7 @@ const submitListing = async () => {
     const uploaded = await uploadApiFile('/api/books/cover', formData)
     cover = uploaded.cover
   }
-  await postJson('/api/books', { sellerId: 'me', sellerName: user.value?.name, ...listing.value, cover, condition: listing.value.condition || listing.value.description })
+  await postJson('/api/books', { sellerId: accountId.value, sellerName: user.value?.name, ...listing.value, cover, condition: listing.value.condition || listing.value.description })
   isSuccess.value = true
 }
 </script>
@@ -52,9 +52,9 @@ const submitListing = async () => {
 <template>
   <div v-if="isSuccess" class="max-w-3xl mx-auto google-card p-16 text-center animate-google-in">
     <div class="w-24 h-24 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8"><CheckCircle2 class="w-12 h-12" /></div>
-    <h2 class="text-3xl font-medium text-gray-800 mb-4">书籍已提交</h2>
-    <div class="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 mb-8 flex items-center gap-3 justify-center"><div class="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div><p class="text-sm text-blue-600 font-medium">管理员审核通过后会进入购书广场。</p></div>
-    <p class="text-gray-500 mb-12 w-2/3 mx-auto leading-relaxed">记录已保存到 SQLite，您可以在个人中心查看发布状态。</p>
+    <h2 class="text-3xl font-medium text-gray-800 mb-4">书籍已上架</h2>
+    <div class="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 mb-8 flex items-center gap-3 justify-center"><div class="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div><p class="text-sm text-blue-600 font-medium">发布成功后已直接进入购书广场。</p></div>
+    <p class="text-gray-500 mb-12 w-2/3 mx-auto leading-relaxed">记录已保存到 SQLite，您可以在个人中心查看上架信息。</p>
     <button @click="$router.push('/')" class="m3-btn-filled !px-10">返回首页</button>
   </div>
   <div v-else class="max-w-4xl mx-auto google-card overflow-hidden flex flex-col animate-google-in">
@@ -77,7 +77,7 @@ const submitListing = async () => {
           <div class="space-y-2"><label class="text-xs font-bold text-blue-600 uppercase tracking-widest px-1">转让价</label><input v-model="listing.price" type="number" min="0" step="0.01" required placeholder="18.00" class="w-full bg-blue-50/50 border-2 border-blue-200 rounded-2xl h-14 px-6 text-sm text-blue-600 font-bold focus:bg-white focus:border-blue-600 focus:ring-0 transition-all" /></div>
         </div>
         <div class="space-y-4"><label class="text-xs font-bold text-gray-500 uppercase tracking-widest px-1">成色说明</label><div class="flex flex-wrap gap-3 mb-2"><button v-for="tag in tags" :key="tag" type="button" @click="useTag(tag)" class="px-4 py-2 border border-gray-200 rounded-full text-sm text-gray-600 hover:border-blue-600 hover:text-blue-600 transition-all">{{ tag }}</button></div><textarea v-model="listing.description" rows="5" class="w-full bg-gray-50 border-none rounded-[24px] p-6 text-sm text-gray-800 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all resize-none" placeholder="请说明划线、笔记、封面情况和建议交付地点..."></textarea></div>
-        <div class="bg-gray-50 p-6 rounded-[24px] flex items-start gap-4"><Info class="w-5 h-5 text-blue-600 mt-0.5" /><p class="text-xs text-gray-500 leading-relaxed">交易建议选择校内公共地点。管理员审核通过后，买家才可以下单。</p></div>
+        <div class="bg-gray-50 p-6 rounded-[24px] flex items-start gap-4"><Info class="w-5 h-5 text-blue-600 mt-0.5" /><p class="text-xs text-gray-500 leading-relaxed">交易建议选择校内公共地点。提交后会直接上架，买家可立即发起沟通与交易。</p></div>
         <div class="flex justify-end pt-6"><button type="submit" class="m3-btn-filled !px-12 !py-4">提交发布</button></div>
       </form>
     </div>

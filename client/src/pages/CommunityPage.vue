@@ -7,7 +7,7 @@ import CommunityHero from '../components/CommunityHero.vue'
 import CommunityNoteCard from '../components/CommunityNoteCard.vue'
 import CommunityUploadModal from '../components/CommunityUploadModal.vue'
 import { getJson, deleteJson } from '../composables/useApi.js'
-import { useAuth } from '../composables/useAuth.js'
+import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
 const notes = ref([])
 const activeFilter = ref('')
@@ -37,9 +37,9 @@ const onUploadSuccess = async () => {
   await fetchNotes()
 }
 
-const { user } = useAuth()
+const { accountId } = useCurrentAccount()
 const handleDeleteNote = async (noteId) => {
-  const currentUserId = user.value?.id || 'me'
+  const currentUserId = accountId.value
   try {
     const res = await deleteJson(`/api/notes/${noteId}?userId=${currentUserId}`)
     if (res.success) {

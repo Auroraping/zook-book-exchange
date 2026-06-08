@@ -3,14 +3,16 @@ import { Star, CheckCircle2 } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { postJson } from '../composables/useApi.js'
+import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
 const route = useRoute()
+const { accountId } = useCurrentAccount()
 const rating = ref(5)
 const content = ref('')
 const submitted = ref(false)
 
 const submitReview = async () => {
-  await postJson(`/api/orders/${route.params.id}/review`, { userId: 'me', rating: rating.value, content: content.value })
+  await postJson(`/api/orders/${route.params.id}/review`, { userId: accountId.value, rating: rating.value, content: content.value })
   submitted.value = true
 }
 </script>

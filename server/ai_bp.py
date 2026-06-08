@@ -1,7 +1,10 @@
 import os
 from pathlib import Path
 from flask import Blueprint, jsonify, request
-from ai_service import ask_taosu, ApiError
+from auth_repository import active_token, find_user_by_id
+from ai_service import ask_taosu, ApiError, get_recommendation_fallback, get_recommendation_from_ai
+from json_store import read_json
+from jwt_service import decode_jwt
 
 ai_bp = Blueprint("ai_bp", __name__)
 
@@ -20,6 +23,16 @@ ENV_LOCAL_PATH = resolve_local_env_path()
 
 def request_payload():
     return request.get_json(silent=True) or {}
+
+def current_user():
+    token = str(request.headers.get("Authorization") or "").replace("Bearer ", "", 1)
+    try:
+        payload = decode_jwt(token)
+        if active_token(payload.get("jti")):
+            return find_user_by_id(payload.get("sub"))
+    except Exception:
+        return None
+    return None
 
 def mask_secret(value):
     text = str(value or "")
@@ -111,3 +124,15 @@ def ai_chat():
     except Exception as exc:
         print("[AI] request failed:", exc)
         return jsonify({"success": False, "message": "小酥暂时无法连接模型服务，请稍后再试"}), 502
+
+@ai_bp.get("/api/ai/recommend")
+def ai_recommend():
+    user = current_user() or {}
+    courses = ((user.get("scheduleData") or {}).get("courses")) or read_json("courses.json", [])
+    books = [book for book in read_json("books.json", []) if book.get("status") == "approved"]
+    recs = get_recommendation_from_ai(courses, books) or get_recommendation_fallback(courses, books)
+    for book in books:
+        rec = next((item for item in recs if str(item.get("id")) == str(book.get("id"))), None)
+        book["aiScore"] = int((rec or {}).get("aiScore") or 60)
+        book["aiSummary"] = (rec or {}).get("aiSummary") or "该书籍当前不在您的修读课表关联范围内。"
+    return jsonify({"success": True, "books": books})

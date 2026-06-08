@@ -16,6 +16,7 @@ const route = useRoute()
 const { isLoggedIn, updateUser } = useAuth()
 const targetUserId = route.params.id || 'me'
 const isMe = targetUserId === 'me'
+const currentAccountId = () => getStored('zook_user_uuid') || 'me'
 
 const activeTab = ref(isMe ? 'orders' : 'books')
 const orders = ref([])
@@ -160,12 +161,13 @@ const zjuClearedUser = (baseUser) => ({
 })
 
 onMounted(async () => {
+  const accountId = currentAccountId()
   const [ordersData, booksData, wishesData, noticesData, favoritesData, uiRes, notesData] = await Promise.all([
-    isMe ? getJson('/api/orders?userId=me') : { orders: [] }, 
-    getJson(isMe ? '/api/books' : `/api/books?sellerId=${targetUserId}`), 
-    getJson('/api/wishes'), 
-    isMe ? getJson('/api/notifications?userId=me') : { notifications: [] }, 
-    isMe ? getJson('/api/favorites?userId=me') : { items: [] }, 
+    isMe ? getJson(`/api/orders?userId=${accountId}`) : { orders: [] },
+    getJson(isMe ? '/api/books' : `/api/books?sellerId=${targetUserId}`),
+    getJson('/api/wishes'),
+    isMe ? getJson(`/api/notifications?userId=${accountId}`) : { notifications: [] },
+    isMe ? getJson(`/api/favorites?userId=${accountId}`) : { items: [] },
     getJson('/api/ui'),
     getJson('/api/notes')
   ])
@@ -232,9 +234,10 @@ const handleFavoriteDeleted = (bookId) => {
 }
 
 const handleOrderUpdated = async () => {
+  const accountId = currentAccountId()
   const [ordersData, favoritesData] = await Promise.all([
-    isMe ? getJson('/api/orders?userId=me') : { orders: [] }, 
-    isMe ? getJson('/api/favorites?userId=me') : { items: [] }
+    isMe ? getJson(`/api/orders?userId=${accountId}`) : { orders: [] },
+    isMe ? getJson(`/api/favorites?userId=${accountId}`) : { items: [] }
   ])
   orders.value = ordersData.orders || []
   favoriteBooks.value = favoritesData.items || []
