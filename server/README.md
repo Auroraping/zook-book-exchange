@@ -7,6 +7,7 @@
 - `POST /api/register`
 - `GET /api/auth/session`
 - `POST /api/auth/zju`
+- `POST /api/auth/zju/unbind`
 - `POST /api/logout`
 - `POST /api/schedule`
 - `POST /api/textbooks`
@@ -14,7 +15,6 @@
 - `GET /api/ai/config`
 - `POST /api/ai/config`
 - `GET|POST|PATCH /api/books...`
-- `GET|POST|DELETE /api/cart...`
 - `GET|PATCH|POST /api/orders...`
 - `GET|POST /api/wishes`
 - `GET|POST /api/favorites...`
@@ -48,7 +48,7 @@ python app.py
 
 默认监听 `http://localhost:3001`，前端 Vite 已将 `/api` 代理到这个地址。
 
-## Local env
+## Local Env
 
 AI 密钥只放在后端本地环境文件中。复制 `.env.example` 或运行：
 
@@ -73,10 +73,10 @@ JWT_SECRET=replace_with_a_long_random_secret
 
 `ZOOK_DATA_DIR` 仅用于首次初始化 SQLite 种子数据；不配置时默认使用 `client/public/data`。`ZOOK_ENV_FILE` 可在测试时指向临时 `.env.local`，避免把测试密钥写入真实配置。`JWT_SECRET` 应使用足够长的随机字符串。`DEBUG_CRAWLER=1` 时会在 `server/` 下写出抓取调试文件；这些文件已被仓库忽略。
 
-## Main workflows
+## Main Workflows
 
 - 邮箱注册和邮箱登录返回前端用户对象、JWT 与过期时间。
 - 个人中心的浙大统一身份认证成功后，会同步真实课表并写入 SQLite；未认证用户课表页展示 SQLite 中的模拟课表。
-- 发布书籍默认进入 `pending`，管理员审核通过后变成 `approved`，审核时会触发心愿匹配和通知。
-- 购物清单只允许加入 `approved` 书籍；结算创建 `unpaid` 订单，支付后进入 `pending`，确认后进入 `completed`，取消后进入 `cancelled`。
+- 发布书籍需登录邮箱主账号并上传至少一张图片；发布后直接变为 `approved` 并上架。
+- 购买入口统一进入聊天，买家在聊天中发交易提议，卖家接受后生成订单；平台不保留购物车清单功能。
 - 已完成订单可以评价；收藏、笔记点赞下载、聊天消息和通知已读都会落盘到 SQLite。

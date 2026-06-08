@@ -1,4 +1,5 @@
 from json_store import find_by_id, mutate_json, read_json
+from avatar_utils import DEFAULT_AVATAR, local_avatar
 
 
 def account_match(user, value):
@@ -28,12 +29,13 @@ def public_account(value):
     if user:
         return {
             **{key: val for key, val in user.items() if key != "passwordHash"},
+            "avatar": local_avatar(user.get("avatar")),
             "credit": calculate_user_credit(user_id),
         }
     return {
         "id": user_id or "me",
         "name": "浙大同学",
-        "avatar": f"https://api.dicebear.com/7.x/identicon/svg?seed={user_id or 'me'}",
+        "avatar": DEFAULT_AVATAR,
         "credit": calculate_user_credit(user_id),
     }
 

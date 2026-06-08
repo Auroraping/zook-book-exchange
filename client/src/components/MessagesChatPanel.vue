@@ -167,7 +167,7 @@ const triggerFeedback = () => {
     <div class="flex-1 p-8 overflow-y-auto bg-gray-50/30 flex flex-col gap-6">
       <template v-for="message in messages" :key="message.id">
         <div v-if="message.role === 'other'" class="flex items-start gap-4 max-w-[85%]">
-          <img :src="activeChat.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${activeChat.name}`" class="w-9 h-9 rounded-full border border-gray-100 bg-white shadow-sm object-cover" />
+          <img :src="activeChat.avatar || '/user_avatar.png'" class="w-9 h-9 rounded-full border border-gray-100 bg-white shadow-sm object-cover" />
           <div v-if="message.msgType === 'proposal'" class="bg-white border border-blue-200 p-4 rounded-2xl rounded-tl-none shadow-sm min-w-[220px]">
             <div class="flex items-center gap-1.5 text-blue-600 font-black text-xs mb-2"><ShoppingBag class="w-3.5 h-3.5"/> 收到交易报价</div>
             <div class="text-2xl font-black text-gray-800 mb-1">¥{{ Number(message.proposalData.price).toFixed(2) }}</div>
@@ -185,7 +185,7 @@ const triggerFeedback = () => {
             <div class="w-full py-1.5 bg-blue-700/50 rounded-lg text-xs font-black text-center">{{ message.proposalData.status === 'pending' ? '等待对方确认' : '对方已接受' }}</div>
           </div>
           <div v-else class="bg-blue-600 text-white p-4 rounded-2xl rounded-tr-none text-sm shadow leading-relaxed whitespace-pre-wrap break-words">{{ message.content }}</div>
-          <img :src="user?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'" class="w-9 h-9 rounded-full border-2 border-white shadow object-cover bg-white shrink-0" />
+          <img :src="user?.avatar || '/user_avatar.png'" class="w-9 h-9 rounded-full border-2 border-white shadow object-cover bg-white shrink-0" />
         </div>
       </template>
     </div>

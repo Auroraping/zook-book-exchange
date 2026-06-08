@@ -113,13 +113,13 @@ const submitComment = async () => {
       <div class="flex items-center justify-between border-b border-gray-50 pb-5"><h3 class="text-xl font-black text-gray-900">讨论与评论 <span class="bg-blue-50 text-blue-600 text-xs font-black px-2.5 py-1 rounded-lg">{{ note.comments?.length || 0 }}</span></h3></div>
       <div v-if="note.comments && note.comments.length > 0" class="flex flex-col gap-5 max-h-[400px] overflow-y-auto pr-2">
         <div v-for="c in note.comments" :key="c.id" class="p-5 bg-slate-50/50 rounded-2xl border border-gray-100/50 flex gap-4">
-          <img :src="`https://api.dicebear.com/7.x/identicon/svg?seed=${c.author}`" class="w-10 h-10 rounded-full border border-gray-100 bg-white shadow-sm object-cover" />
+          <img src="/user_avatar.png" class="w-10 h-10 rounded-full border border-gray-100 bg-white shadow-sm object-cover" />
           <div class="flex-1 min-w-0"><div class="flex justify-between items-center mb-1"><span class="font-bold text-xs text-gray-700">{{ c.author }}</span><span class="text-[10px] text-gray-400 font-bold">{{ c.createdAt }}</span></div><p class="text-xs text-gray-650 leading-relaxed">{{ c.content }}</p></div>
         </div>
       </div>
       <div v-else class="py-8 text-center text-xs text-gray-400 font-bold">暂无讨论，快来发表第一条评论。</div>
       <div class="flex gap-4 items-start border-t border-gray-50 pt-6">
-        <img :src="user?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'" class="w-10 h-10 rounded-full border border-gray-100 bg-white shadow-sm object-cover" />
+        <img :src="user?.avatar || '/user_avatar.png'" class="w-10 h-10 rounded-full border border-gray-100 bg-white shadow-sm object-cover" />
         <div class="flex-1 flex flex-col gap-3">
           <textarea v-model="commentText" placeholder="写下你的想法或对资料的反馈..." rows="2" class="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 text-xs font-medium transition-colors resize-none outline-none"></textarea>
           <button @click="submitComment" :disabled="isSubmittingComment || !commentText.trim()" class="self-end px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold disabled:opacity-50">{{ isSubmittingComment ? '提交中...' : '发表评论' }}</button>

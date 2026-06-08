@@ -12,12 +12,37 @@ def request_payload():
     return request.get_json(silent=True) or {}
 
 
+def note_summary(note):
+    keys = [
+        "id", "title", "course", "type", "difficulty", "author", "likes",
+        "downloads", "updatedAt", "isPaid", "tags", "desc", "pointsRequired",
+        "userId", "fileUrl", "fileName",
+    ]
+    return {key: note.get(key) for key in keys if key in note}
+
+
+def ensure_note_defaults(notes):
+    mapping = {
+        "calculus-note": ("/uploads/calculus-note.txt", "微积分极限、导数与积分考前笔记.txt"),
+        "linear-note": ("/uploads/linear-note.txt", "线性代数矩阵、秩与方程组笔记.txt"),
+        "mao-outline": ("/uploads/mao-outline.txt", "毛概核心章节框架与时间线.txt"),
+    }
+    updated = False
+    for note in notes:
+        if note.get("id") in mapping and not note.get("fileUrl"):
+            note["fileUrl"], note["fileName"] = mapping[note["id"]]
+            updated = True
+        note.setdefault("pointsRequired", 0)
+        note.setdefault("comments", [])
+    return updated
+
+
 @notes_bp.get("/api/notifications")
 def list_notifications():
     user_id = normalize_account_id(request.args.get("userId") or "me")
     notifications = read_json("notifications.json", [])
-    notifications = [item for item in notifications if item.get("userId") in (None, "", user_id, "me")]
-    return jsonify({"success": True, "notifications": notifications})
+    items = [item for item in notifications if item.get("userId") in (None, "", user_id, "me")]
+    return jsonify({"success": True, "notifications": items})
 
 
 @notes_bp.patch("/api/notifications/read")
@@ -39,21 +64,9 @@ def mark_notifications_read():
 @notes_bp.get("/api/notes")
 def list_notes():
     notes = read_json("notes.json", [])
-    mapping = {
-        "calculus-note": ("/uploads/calculus-note.txt", "微积分极限、导数与积分考前笔记.txt"),
-        "linear-note": ("/uploads/linear-note.txt", "线性代数矩阵、秩与方程组笔记.txt"),
-        "mao-outline": ("/uploads/mao-outline.txt", "毛概核心章节框架与时间线.txt"),
-    }
-    updated = False
-    for note in notes:
-        if note.get("id") in mapping and not note.get("fileUrl"):
-            note["fileUrl"], note["fileName"] = mapping[note["id"]]
-            note.setdefault("pointsRequired", 0)
-            note.setdefault("comments", [])
-            updated = True
-    if updated:
+    if ensure_note_defaults(notes):
         write_json("notes.json", notes)
-    return jsonify({"success": True, "notes": notes})
+    return jsonify({"success": True, "notes": [note_summary(note) for note in notes]})
 
 
 @notes_bp.post("/api/notes")
@@ -61,7 +74,7 @@ def create_note():
     title = request.form.get("title", "").strip()
     course = request.form.get("course", "").strip()
     if not title or not course:
-        return jsonify({"success": False, "message": "标题和课程关联为必填项"}), 400
+        return jsonify({"success": False, "message": "标题和课程为必填项"}), 400
 
     file = request.files.get("file")
     file_url, file_name = None, None
@@ -79,11 +92,11 @@ def create_note():
 
 @notes_bp.get("/api/notes/<note_id>")
 def get_note(note_id):
-    note = find_by_id(read_json("notes.json", []), note_id)
+    notes = read_json("notes.json", [])
+    note = find_by_id(notes, note_id)
     if not note:
         return jsonify({"success": False, "message": "笔记不存在"}), 404
-    note.setdefault("pointsRequired", 0)
-    note.setdefault("comments", [])
+    ensure_note_defaults([note])
     return jsonify({"success": True, "note": note})
 
 
@@ -104,8 +117,7 @@ def update_note(note_id):
             return None
         key = "likes" if action == "like" else "downloads"
         note[key] = int(note.get(key) or 0) + 1
-        note.setdefault("comments", [])
-        note.setdefault("pointsRequired", 0)
+        ensure_note_defaults([note])
         return note
 
     note = mutate_json("notes.json", update, [])
@@ -157,5 +169,5 @@ def delete_note(note_id):
     if result == "not_found":
         return jsonify({"success": False, "message": "笔记不存在"}), 404
     if result == "permission_denied":
-        return jsonify({"success": False, "message": "您无权删除此笔记"}), 403
+        return jsonify({"success": False, "message": "无权删除此笔记"}), 403
     return jsonify({"success": True, "message": "笔记已删除"})

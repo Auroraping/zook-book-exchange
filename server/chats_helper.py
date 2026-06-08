@@ -1,4 +1,5 @@
 from flask import request
+from avatar_utils import DEFAULT_AVATAR, local_avatar
 from json_store import read_json, write_json
 
 def request_payload():
@@ -24,7 +25,7 @@ def normalize_user_id(user_id):
 def get_user_info(user_id):
     user_id_str = str(user_id or "").strip()
     if not user_id_str or user_id_str == "me":
-        return {"id": "me", "studentId": "me", "name": "浙大同学", "avatar": "https://api.dicebear.com/7.x/identicon/svg?seed=me"}
+        return {"id": "me", "studentId": "me", "name": "浙大同学", "avatar": DEFAULT_AVATAR}
     users = read_json("users.json", [])
     u = next((item for item in users if primary_account_match(item, user_id_str)), None)
     if u:
@@ -33,14 +34,14 @@ def get_user_info(user_id):
             "email": u.get("email") or u.get("username") or "",
             "studentId": u.get("studentId") or "",
             "name": u.get("name") or u.get("realName") or f"用户_{user_id_str}",
-            "avatar": u.get("avatar") or f"https://api.dicebear.com/7.x/identicon/svg?seed={user_id_str}"
+            "avatar": local_avatar(u.get("avatar"))
         }
     return {
         "id": user_id_str,
         "email": "",
         "studentId": "",
         "name": f"同学_{user_id_str[-4:] if len(user_id_str)>=4 else user_id_str}",
-        "avatar": f"https://api.dicebear.com/7.x/identicon/svg?seed={user_id_str}"
+        "avatar": DEFAULT_AVATAR
     }
 
 def seed_chat_state(user_id="me"):

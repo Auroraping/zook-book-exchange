@@ -1,6 +1,7 @@
 <script setup>
+import { computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { ChevronRight, Heart, Sparkles, Trash2, FileText, CreditCard, Package } from 'lucide-vue-next'
+import { ChevronRight, Sparkles, Trash2, FileText, CreditCard, Package, Star } from 'lucide-vue-next'
 import { useAuth } from '../composables/useAuth.js'
 import { deleteJson, postJson, patchJson } from '../composables/useApi.js'
 import { getStored } from '../composables/useSessionStore.js'
@@ -32,13 +33,15 @@ const statusMap = {
 }
 
 const getStatusStyle = (status) => statusMap[status] || statusMap.cancelled
+const favoritePreview = computed(() => props.favoriteBooks.slice(0, 3))
+const hiddenFavoriteCount = computed(() => Math.max(props.favoriteBooks.length - favoritePreview.value.length, 0))
 
 const handleOrderAction = async (order, action) => {
   try {
     const res = await patchJson(`/api/orders/${order.id}`, { action })
     if (res.success) {
       if (res.order.status === 'completed') {
-        alert('🎉 交易已圆满完成！您与交易对方各获得 5 积分奖励！')
+        alert('交易已完成，双方各获得 5 积分奖励。')
       }
       emit('order-updated')
     } else {
@@ -50,7 +53,7 @@ const handleOrderAction = async (order, action) => {
 }
 
 const handleDeleteWish = async (wish) => {
-  if (confirm(`确定要删除购书心愿《${wish.title}》吗？删除后将无法恢复。`)) {
+  if (confirm(`确定删除购书心愿《${wish.title}》吗？删除后无法恢复。`)) {
     try {
       const res = await deleteJson(`/api/wishes/${wish.id}?userId=${currentUserId}`)
       if (res.success) {
@@ -65,7 +68,7 @@ const handleDeleteWish = async (wish) => {
 }
 
 const handleDeleteNote = async (note) => {
-  if (confirm(`确定要删除您分享的考前复习资料《${note.title}》吗？此操作不可逆。`)) {
+  if (confirm(`确定删除你分享的资料《${note.title}》吗？此操作不可撤销。`)) {
     try {
       const res = await deleteJson(`/api/notes/${note.id}?userId=${currentUserId}`)
       if (res.success) {
@@ -80,7 +83,7 @@ const handleDeleteNote = async (note) => {
 }
 
 const handleRemoveFavorite = async (book) => {
-  if (confirm(`确定要将《${book.title}》移出心仪书籍吗？`)) {
+  if (confirm(`确定将《${book.title}》移出收藏吗？`)) {
     try {
       const res = await postJson('/api/favorites/toggle', { userId: currentUserId, bookId: book.id })
       if (res.success) {
@@ -97,11 +100,13 @@ const handleRemoveFavorite = async (book) => {
 
 <template>
   <div class="flex-1 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-    <div class="p-8 border-b border-gray-100"><h3 class="font-black text-gray-800 text-xl">{{ tabs.find((t) => t.id === activeTab)?.label }}</h3></div>
+    <div class="p-8 border-b border-gray-100">
+      <h3 class="font-black text-gray-800 text-xl">{{ tabs.find((t) => t.id === activeTab)?.label }}</h3>
+    </div>
     <div class="p-8">
       <div v-if="activeTab === 'orders'" class="flex flex-col gap-6">
         <div v-for="order in orders" :key="order.id" class="border border-gray-100 rounded-[28px] p-6 hover:border-blue-200 hover:shadow-lg transition-all duration-300 flex flex-col sm:flex-row gap-6 bg-white relative overflow-hidden">
-          <img :src="order.cover" class="w-20 h-28 bg-gray-50 rounded-2xl object-cover shadow-sm shrink-0" />
+          <img :src="order.cover" loading="lazy" decoding="async" class="w-20 h-28 bg-gray-50 rounded-2xl object-cover shadow-sm shrink-0" />
           <div class="flex-1 flex flex-col justify-between">
             <div>
               <h4 class="font-black text-gray-800 text-lg mb-1 leading-snug">{{ order.title }}</h4>
@@ -111,7 +116,6 @@ const handleRemoveFavorite = async (book) => {
               <span :class="['text-[10px] font-black px-2.5 py-1 rounded-lg border shadow-sm', getStatusStyle(order.status).class]">
                 {{ getStatusStyle(order.status).label }}
               </span>
-              <!-- 买家视图：未支付时显示支付按钮，点击跳转至订单中心待支付选项卡 -->
               <button v-if="order.status === 'unpaid' && order.userId === currentUserId" @click="router.push('/orders?tab=unpaid')" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
                 <CreditCard class="w-3.5 h-3.5" /> 去支付
               </button>
@@ -124,11 +128,12 @@ const handleRemoveFavorite = async (book) => {
             </div>
           </div>
           <div class="text-right flex flex-col justify-between shrink-0">
-            <p class="text-2xl font-black text-gray-800">¥ {{ order.price.toFixed(2) }}</p>
+            <p class="text-2xl font-black text-gray-800">¥ {{ Number(order.price || 0).toFixed(2) }}</p>
             <p class="text-[10px] text-gray-400 font-bold">{{ order.date }}</p>
           </div>
         </div>
       </div>
+
       <div v-else-if="activeTab === 'wishes'" class="flex flex-col gap-4">
         <div v-for="wish in wishes.filter((w) => w.userId === currentUserId || (w.coSeekers && w.coSeekers.includes(currentUserId)))" :key="wish.id" class="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex justify-between items-center">
           <div>
@@ -138,10 +143,16 @@ const handleRemoveFavorite = async (book) => {
               <span v-if="wish.userId !== currentUserId" class="ml-2 px-2 py-0.5 bg-purple-50 text-purple-600 text-[10px] font-bold rounded border border-purple-100 shadow-sm">我已同求</span>
             </p>
           </div>
-          <button @click="handleDeleteWish(wish)" class="p-3 bg-red-50 text-red-500 hover:bg-red-100 hover:scale-105 active:scale-95 rounded-2xl transition-all" :title="wish.userId === currentUserId ? '删除求购心愿' : '取消同求此书'"><Trash2 class="w-5 h-5" /></button>
+          <button @click="handleDeleteWish(wish)" class="p-3 bg-red-50 text-red-500 hover:bg-red-100 hover:scale-105 active:scale-95 rounded-2xl transition-all" :title="wish.userId === currentUserId ? '删除求购心愿' : '取消同求此书'">
+            <Trash2 class="w-5 h-5" />
+          </button>
         </div>
-        <div v-if="wishes.filter((w) => w.userId === currentUserId || (w.coSeekers && w.coSeekers.includes(currentUserId))).length === 0" class="py-24 text-center"><Sparkles class="w-16 h-16 text-gray-100 mx-auto mb-4" /><p class="text-gray-400 font-black">暂无心愿</p></div>
+        <div v-if="wishes.filter((w) => w.userId === currentUserId || (w.coSeekers && w.coSeekers.includes(currentUserId))).length === 0" class="py-24 text-center">
+          <Sparkles class="w-16 h-16 text-gray-100 mx-auto mb-4" />
+          <p class="text-gray-400 font-black">暂无心愿</p>
+        </div>
       </div>
+
       <div v-else-if="activeTab === 'notes'" class="flex flex-col gap-4">
         <div v-for="note in notes.filter((n) => n.userId === currentUserId)" :key="note.id" class="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex justify-between items-center">
           <div>
@@ -150,27 +161,69 @@ const handleRemoveFavorite = async (book) => {
               <span class="bg-slate-100 text-slate-500 text-[10px] font-black px-2.5 py-1 rounded border border-slate-200">{{ note.type }}</span>
             </div>
             <RouterLink :to="`/community/note/${note.id}`" class="text-xl font-black text-gray-800 hover:text-blue-600 transition-colors mb-2 block leading-snug">{{ note.title }}</RouterLink>
-            <p class="text-xs text-gray-400 font-bold">作者：{{ note.author }} · 👍 点赞 {{ note.likes }} · 📥 下载 {{ note.downloads }} · 更新：{{ note.updatedAt }}</p>
+            <p class="text-xs text-gray-400 font-bold">作者：{{ note.author }} · 点赞 {{ note.likes }} · 下载 {{ note.downloads }} · 更新：{{ note.updatedAt }}</p>
           </div>
-          <button @click="handleDeleteNote(note)" class="p-3 bg-red-50 text-red-500 hover:bg-red-100 hover:scale-105 active:scale-95 rounded-2xl transition-all" title="删除笔记"><Trash2 class="w-5 h-5" /></button>
+          <button @click="handleDeleteNote(note)" class="p-3 bg-red-50 text-red-500 hover:bg-red-100 hover:scale-105 active:scale-95 rounded-2xl transition-all" title="删除笔记">
+            <Trash2 class="w-5 h-5" />
+          </button>
         </div>
-        <div v-if="notes.filter((n) => n.userId === currentUserId).length === 0" class="py-24 text-center"><FileText class="w-16 h-16 text-gray-100 mx-auto mb-4" /><p class="text-gray-400 font-black">暂无社区发布</p></div>
+        <div v-if="notes.filter((n) => n.userId === currentUserId).length === 0" class="py-24 text-center">
+          <FileText class="w-16 h-16 text-gray-100 mx-auto mb-4" />
+          <p class="text-gray-400 font-black">暂无社区发布</p>
+        </div>
       </div>
+
       <div v-else-if="activeTab === 'notifications'" class="flex flex-col gap-4">
-        <div v-for="notif in notifications" :key="notif.id" class="p-6 rounded-3xl border bg-white border-blue-100 shadow-sm flex gap-6"><div class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-blue-50 text-blue-600 shadow-sm"><Sparkles class="w-7 h-7" /></div><div class="flex-1"><h4 class="font-black text-gray-800 text-lg">{{ notif.title }}</h4><p class="text-sm text-gray-500 leading-relaxed mt-2 mb-4">{{ notif.content }}</p><RouterLink v-if="notif.bookId" :to="`/book/${notif.bookId}`" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-blue-200">查看书籍<ChevronRight class="w-4 h-4" /></RouterLink></div></div>
-      </div>
-      <div v-else-if="activeTab === 'listings'" class="grid grid-cols-3 gap-6">
-        <RouterLink v-for="book in books.filter((b) => b.sellerId === currentUserId)" :key="book.id" :to="`/book/${book.id}`" class="bg-white rounded-3xl overflow-hidden border border-gray-100 hover:shadow-2xl transition-all group flex flex-col"><div class="h-44 overflow-hidden"><img :src="book.cover" class="w-full h-full object-cover group-hover:scale-110 transition-all duration-700" /></div><div class="p-5 flex-1 flex flex-col"><h4 class="font-bold text-gray-800 text-xs mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">{{ book.title }}</h4><div class="mt-auto flex justify-between items-end"><div class="text-xl font-black text-gray-800">¥ {{ book.price }}</div></div></div></RouterLink>
-      </div>
-      <div v-else-if="activeTab === 'favorites'" class="flex flex-col gap-4">
-        <div v-for="book in favoriteBooks" :key="book.id" class="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex justify-between items-center">
-          <div>
-            <RouterLink :to="`/book/${book.id}`" class="text-xl font-black text-gray-800 hover:text-blue-600 transition-colors mb-2 block leading-snug">{{ book.title }}</RouterLink>
-            <p class="text-xs text-gray-400 font-bold">卖家：{{ book.seller }} · 价格：¥{{ book.price.toFixed(2) }}</p>
+        <div v-for="notif in notifications" :key="notif.id" class="p-6 rounded-3xl border bg-white border-blue-100 shadow-sm flex gap-6">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-blue-50 text-blue-600 shadow-sm">
+            <Sparkles class="w-7 h-7" />
           </div>
-          <button @click="handleRemoveFavorite(book)" class="p-3 bg-red-50 text-red-500 hover:bg-red-100 hover:scale-105 active:scale-95 rounded-2xl transition-all" title="移出心仪书籍"><Trash2 class="w-5 h-5" /></button>
+          <div class="flex-1">
+            <h4 class="font-black text-gray-800 text-lg">{{ notif.title }}</h4>
+            <p class="text-sm text-gray-500 leading-relaxed mt-2 mb-4">{{ notif.content }}</p>
+            <RouterLink v-if="notif.bookId" :to="`/book/${notif.bookId}`" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-blue-200">
+              查看书籍<ChevronRight class="w-4 h-4" />
+            </RouterLink>
+          </div>
         </div>
-        <div v-if="favoriteBooks.length === 0" class="py-24 text-center"><Heart class="w-16 h-16 text-gray-100 mx-auto mb-4" /><p class="text-gray-400 font-black">暂无收藏的心仪书籍</p><RouterLink to="/books" class="mt-4 text-blue-600 font-bold text-sm hover:underline inline-block">去逛广场</RouterLink></div>
+      </div>
+
+      <div v-else-if="activeTab === 'listings' || activeTab === 'books'" class="grid grid-cols-3 gap-6">
+        <RouterLink v-for="book in books.filter((b) => activeTab === 'books' || b.sellerId === currentUserId)" :key="book.id" :to="`/book/${book.id}`" class="bg-white rounded-3xl overflow-hidden border border-gray-100 hover:shadow-2xl transition-all group flex flex-col">
+          <div class="h-44 overflow-hidden">
+            <img :src="book.cover" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-110 transition-all duration-700" />
+          </div>
+          <div class="p-5 flex-1 flex flex-col">
+            <h4 class="font-bold text-gray-800 text-xs mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">{{ book.title }}</h4>
+            <div class="mt-auto flex justify-between items-end">
+              <div class="text-xl font-black text-gray-800">¥ {{ Number(book.price || 0).toFixed(2) }}</div>
+            </div>
+          </div>
+        </RouterLink>
+      </div>
+
+      <div v-else-if="activeTab === 'favorites'" class="flex flex-col gap-4">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-xs font-bold text-gray-400">个人中心仅展示最近 {{ favoritePreview.length }} 条收藏。</p>
+          <RouterLink to="/favorites" class="text-xs font-black text-amber-600 hover:text-amber-700">查看全部 {{ favoriteBooks.length }} 条收藏</RouterLink>
+        </div>
+        <div v-for="book in favoritePreview" :key="book.id" class="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex justify-between items-center">
+          <RouterLink :to="`/book/${book.id}`" class="flex-1 pr-6 group">
+            <h4 class="text-xl font-black text-gray-800 group-hover:text-blue-600 transition-colors mb-2 leading-snug">{{ book.title }}</h4>
+            <p class="text-xs text-gray-400 font-bold">卖家：{{ book.seller }} · 价格：¥{{ Number(book.price || 0).toFixed(2) }}</p>
+          </RouterLink>
+          <button @click="handleRemoveFavorite(book)" class="p-3 bg-red-50 text-red-500 hover:bg-red-100 hover:scale-105 active:scale-95 rounded-2xl transition-all" title="移出收藏">
+            <Trash2 class="w-5 h-5" />
+          </button>
+        </div>
+        <RouterLink v-if="hiddenFavoriteCount > 0" to="/favorites" class="rounded-3xl border border-amber-100 bg-amber-50/60 p-5 text-center text-sm font-black text-amber-700 hover:bg-amber-50 transition-colors">
+          还有 {{ hiddenFavoriteCount }} 条收藏，进入收藏页查看
+        </RouterLink>
+        <div v-if="favoriteBooks.length === 0" class="py-24 text-center">
+          <Star class="w-16 h-16 text-amber-100 mx-auto mb-4" />
+          <p class="text-gray-400 font-black">暂无收藏书籍</p>
+          <RouterLink to="/books" class="mt-4 text-blue-600 font-bold text-sm hover:underline inline-block">去逛广场</RouterLink>
+        </div>
       </div>
     </div>
   </div>

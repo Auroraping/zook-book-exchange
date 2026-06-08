@@ -9,6 +9,7 @@ const routes = [
       { path: 'login', component: () => import('../pages/LoginPage.vue') },
       { path: 'books', component: () => import('../pages/SearchBooksPage.vue') },
       { path: 'book/:id', component: () => import('../pages/BookDetailPage.vue') },
+      { path: 'favorites', component: () => import('../pages/FavoritesPage.vue') },
       { path: 'publish', component: () => import('../pages/PublishPage.vue') },
       { path: 'messages', component: () => import('../pages/MessagesPage.vue') },
       { path: 'notifications', component: () => import('../pages/MessagesPage.vue') },
@@ -22,7 +23,6 @@ const routes = [
       { path: 'community/note/:id', component: () => import('../pages/CommunityNotePage.vue') },
       { path: 'achievements', component: () => import('../pages/AchievementsPage.vue') },
       { path: 'admin', component: () => import('../pages/AdminPage.vue') },
-      { path: 'cart', component: () => import('../pages/CartPage.vue') },
       { path: 'wish-square', component: () => import('../pages/WishSquarePage.vue') },
       { path: 'chat', component: () => import('../pages/ChatPage.vue') },
     ]

@@ -1,10 +1,10 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuth } from '../composables/useAuth.js'
 import { getJson, postJson } from '../composables/useApi.js'
 import { getStored, removeStoredMany, setStored } from '../composables/useSessionStore.js'
-import { Bell, BookMarked, Heart, Package, Sparkles, FileText } from 'lucide-vue-next'
+import { Bell, BookMarked, Heart, Package, Sparkles, FileText, Star } from 'lucide-vue-next'
 import ProfileHeaderCard from '../components/ProfileHeaderCard.vue'
 import ProfileLoginPrompt from '../components/ProfileLoginPrompt.vue'
 import ProfileNicknameForm from '../components/ProfileNicknameForm.vue'
@@ -18,7 +18,8 @@ const targetUserId = route.params.id || 'me'
 const isMe = targetUserId === 'me'
 const currentAccountId = () => getStored('zook_user_uuid') || 'me'
 
-const activeTab = ref(isMe ? 'orders' : 'books')
+const initialTab = () => (isMe && typeof route.query.tab === 'string' ? route.query.tab : (isMe ? 'orders' : 'books'))
+const activeTab = ref(initialTab())
 const orders = ref([])
 const books = ref([])
 const wishes = ref([])
@@ -32,20 +33,16 @@ const nicknameError = ref('')
 const zjuAuthLoading = ref(false)
 const zjuUnbindLoading = ref(false)
 const zjuAuthError = ref('')
-const iconMap = { Package, Heart, Sparkles, Bell, BookMarked, FileText }
-
-// 头像修改弹窗响应式状态
 const showAvatarModal = ref(false)
 const newAvatarUrl = ref('')
 const uploadFile = ref(null)
 const savingAvatar = ref(false)
 const diceRotating = ref(false)
+const iconMap = { Package, Heart, Sparkles, Bell, BookMarked, FileText, Star }
 
 const presetAvatars = [
-  'https://api.dicebear.com/7.x/pixel-art/svg?seed=ZJU_1',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-  'https://api.dicebear.com/7.x/bottts/svg?seed=Bot_1',
-  'https://api.dicebear.com/7.x/lorelei/svg?seed=ZJU_Design'
+  '/user_avatar.png',
+  '/avatar_user_1776602211333.png'
 ]
 
 const openAvatarModal = () => {
@@ -57,13 +54,9 @@ const openAvatarModal = () => {
 const rollDice = () => {
   if (diceRotating.value) return
   diceRotating.value = true
-  setTimeout(() => { diceRotating.value = false }, 800) // 旋转动画持续 800ms
-  
-  const styles = ['avataaars', 'pixel-art', 'bottts', 'identicon', 'lorelei']
-  const randomStyle = styles[Math.floor(Math.random() * styles.length)]
-  const seed = Math.floor(Math.random() * 1000000)
-  
-  newAvatarUrl.value = `https://api.dicebear.com/7.x/${randomStyle}/svg?seed=${seed}`
+  setTimeout(() => { diceRotating.value = false }, 800)
+  const pool = ['/user_avatar.png', '/avatar_user_1776602211333.png']
+  newAvatarUrl.value = pool[Math.floor(Math.random() * pool.length)]
   uploadFile.value = null
 }
 
@@ -78,7 +71,7 @@ const handleFileChange = (e) => {
   uploadFile.value = file
   const reader = new FileReader()
   reader.onload = (event) => {
-    newAvatarUrl.value = event.target.result // Base64 本地预览
+    newAvatarUrl.value = event.target.result
   }
   reader.readAsDataURL(file)
 }
@@ -89,18 +82,13 @@ const saveAvatar = async () => {
   try {
     let finalAvatarUrl = ''
     if (uploadFile.value) {
-      // 1. 本地高清照片 Multipart/form-data 文件上传
       const formData = new FormData()
       formData.append('file', uploadFile.value)
       formData.append('userId', profileUser.value.realId || profileUser.value.id || 'me')
-      const res = await fetch('/api/user/update', {
-        method: 'POST',
-        body: formData
-      }).then((r) => r.json())
+      const res = await fetch('/api/user/update', { method: 'POST', body: formData }).then((r) => r.json())
       if (!res.success) throw new Error(res.message)
       finalAvatarUrl = res.avatar
     } else {
-      // 2. 外部 Dicebear URL 直接 JSON 提交
       const res = await postJson('/api/user/update', {
         userId: profileUser.value.realId || profileUser.value.id || 'me',
         avatar: newAvatarUrl.value
@@ -108,13 +96,8 @@ const saveAvatar = async () => {
       if (!res.success) throw new Error(res.message)
       finalAvatarUrl = res.avatar
     }
-    
-    // 3. 成功后更新个人中心大头像
     profileUser.value.avatar = finalAvatarUrl
-    
-    // 4. 同步更新本地客户端缓存与全站头像展示
     updateUser({ avatar: finalAvatarUrl })
-    
     showAvatarModal.value = false
   } catch (err) {
     alert(err.message || '更新头像失败，请检查文件格式后重试。')
@@ -130,7 +113,7 @@ const hydrateRealProfile = (name, sid, coll, maj, cls) => {
   profileUser.value.major = maj
   profileUser.value.classText = cls
   profileUser.value.zjuAuthenticated = true
-  profileUser.value.bio = `浙江大学${coll || ''}${maj || ''}专业本科生，已完成教务身份同步。`
+  profileUser.value.bio = `浙江大学${coll || ''}${maj || ''}专业用户，已完成教务身份同步。`
 }
 
 const cacheZjuProfile = (raw) => {
@@ -162,25 +145,24 @@ const zjuClearedUser = (baseUser) => ({
 
 onMounted(async () => {
   const accountId = currentAccountId()
-  const [ordersData, booksData, wishesData, noticesData, favoritesData, uiRes, notesData] = await Promise.all([
+  const [ordersData, booksData, wishesData, noticesData, favoritesData, uiRes, notesData, publicUserData] = await Promise.all([
     isMe ? getJson(`/api/orders?userId=${accountId}`) : { orders: [] },
     getJson(isMe ? '/api/books' : `/api/books?sellerId=${targetUserId}`),
     getJson('/api/wishes'),
     isMe ? getJson(`/api/notifications?userId=${accountId}`) : { notifications: [] },
     isMe ? getJson(`/api/favorites?userId=${accountId}`) : { items: [] },
     getJson('/api/ui'),
-    getJson('/api/notes')
+    getJson('/api/notes'),
+    isMe ? { user: null } : getJson(`/api/users/${encodeURIComponent(targetUserId)}`)
   ])
-  const ui = uiRes
   orders.value = ordersData.orders || []
   books.value = booksData.books || []
   wishes.value = wishesData.wishes || []
   notifications.value = noticesData.notifications || []
   favoriteBooks.value = favoritesData.items || []
   notes.value = notesData.notes || []
-  
+
   if (isMe) {
-    // 核心：如果 useAuth 缓存中已有此用户的独立头像和网名，优先采用缓存，绝不被静态默认 defaultUser 污染
     let cachedInfo = {}
     const cachedUser = getStored('user')
     if (cachedUser) {
@@ -188,31 +170,29 @@ onMounted(async () => {
         cachedInfo = JSON.parse(cachedUser) || {}
       } catch {}
     }
-
-    profileUser.value = { 
-      ...(ui.profile?.defaultUser || {}),
+    profileUser.value = {
+      ...(uiRes.profile?.defaultUser || {}),
       ...cachedInfo,
       zjuAuthenticated: !!cachedInfo.zjuAuthenticated
     }
-    tabs.value = ui.profile?.tabs || []
-    
+    tabs.value = uiRes.profile?.tabs || []
     if (cachedInfo.zjuAuthenticated && cachedInfo.realName) {
       hydrateRealProfile(cachedInfo.realName, cachedInfo.studentId, cachedInfo.college, cachedInfo.major, cachedInfo.class)
     }
   } else {
-    // 访问他人主页
-    const sellerName = books.value.length > 0 ? books.value[0].seller : targetUserId
+    const seller = publicUserData.user || books.value[0]?.sellerProfile || {}
+    const sellerName = seller.name || books.value[0]?.seller || targetUserId
     profileUser.value = {
+      ...seller,
       id: targetUserId,
       name: sellerName,
-      avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${targetUserId}`,
-      bio: `Ta在浙里淘书发布了 ${books.value.length} 本闲置书籍`,
-      credit: books.value.length > 0 ? books.value[0].credit : 4.8,
-      studentId: '', college: '', major: '', classText: '', zjuAuthenticated: false
+      avatar: seller.avatar || '/user_avatar.png',
+      bio: seller.bio || `Ta 在浙里淘书发布了 ${books.value.length} 本闲置书籍`,
+      credit: books.value.length > 0 ? books.value[0].credit : (seller.credit || 5.0),
+      classText: seller.classText || seller.class || '',
+      zjuAuthenticated: !!seller.zjuAuthenticated
     }
-    tabs.value = [
-      { id: 'books', label: 'Ta 的闲置', icon: 'Package' }
-    ]
+    tabs.value = [{ id: 'books', label: 'Ta 的闲置', icon: 'Package' }]
   }
 
   if (isMe && ordersData.points !== undefined) {
@@ -220,6 +200,13 @@ onMounted(async () => {
     updateUser({ points: ordersData.points })
   }
 })
+
+watch(
+  () => route.query.tab,
+  (tab) => {
+    if (isMe && typeof tab === 'string') activeTab.value = tab
+  }
+)
 
 const handleWishDeleted = (wishId) => {
   wishes.value = wishes.value.filter((w) => w.id !== wishId)
@@ -241,7 +228,6 @@ const handleOrderUpdated = async () => {
   ])
   orders.value = ordersData.orders || []
   favoriteBooks.value = favoritesData.items || []
-  
   if (ordersData.points !== undefined) {
     profileUser.value.points = ordersData.points
     updateUser({ points: ordersData.points })
@@ -315,39 +301,31 @@ const unbindZju = async () => {
     </div>
   </div>
 
-  <!-- 精致修改头像弹窗 -->
   <transition name="fade">
     <div v-if="showAvatarModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
       <div class="bg-white/90 border border-slate-100/60 shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-[32px] w-full max-w-md overflow-hidden animate-zoom-in backdrop-blur-xl relative p-8">
-        
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-black text-gray-900 tracking-tight">自定义个性头像</h3>
+          <h3 class="text-lg font-black text-gray-900 tracking-tight">自定义头像</h3>
           <button @click="showAvatarModal = false" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-800 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
-        <!-- 骰子旋转在线骰出生成区 -->
         <div class="flex flex-col items-center gap-4 my-6">
           <div class="relative group select-none">
-            <!-- 倾斜微调头像容器 -->
             <div class="w-32 h-32 rounded-[28px] border-4 border-white shadow-xl bg-white overflow-hidden rotate-3 hover:rotate-0 transition-transform duration-300">
               <img :src="newAvatarUrl" class="w-full h-full object-cover" />
             </div>
-            
-            <!-- 极速旋转抖动骰子 -->
             <button @click="rollDice" class="absolute -bottom-2 -right-2 w-11 h-11 bg-gradient-to-tr from-blue-600 to-indigo-600 hover:scale-110 active:scale-95 text-white flex items-center justify-center rounded-2xl shadow-lg shadow-blue-200 border-2 border-white transition-all group" title="点击在线随机生成">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5.5 w-5.5 transition-transform duration-700" :class="{ 'rotate-[360deg] scale-110': diceRotating }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M12 12h.01"/><path d="M16 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/><path d="M8 8h.01"/></svg>
             </button>
           </div>
-          <p class="text-[10px] text-gray-400 font-bold tracking-widest uppercase mt-1">点击小骰子，在线随机骰出独有个性头像</p>
+          <p class="text-[10px] text-gray-400 font-bold tracking-widest uppercase mt-1">点击按钮随机生成头像</p>
         </div>
 
-        <!-- 选项大合集 -->
         <div class="space-y-5">
-          <!-- 预置精品预设 -->
           <div>
-            <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5">精选快捷预设</h4>
+            <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5">精选头像</h4>
             <div class="flex items-center gap-3.5">
               <button v-for="(url, idx) in presetAvatars" :key="idx" @click="selectPreset(url)" class="w-11 h-11 rounded-2xl overflow-hidden border-2 transition-all hover:scale-105" :class="newAvatarUrl === url ? 'border-blue-600 scale-105 shadow-md shadow-blue-100' : 'border-gray-100 hover:border-gray-300'">
                 <img :src="url" class="w-full h-full object-cover" />
@@ -355,20 +333,18 @@ const unbindZju = async () => {
             </div>
           </div>
 
-          <!-- 本地高清照片拖拽上传 -->
           <div>
             <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5">本地照片文件上传</h4>
             <label class="group border-2 border-dashed border-gray-200/80 hover:border-blue-400 rounded-2xl p-4 flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors bg-gray-50/50 hover:bg-blue-50/10">
               <input type="file" accept="image/*" class="hidden" @change="handleFileChange" />
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400 group-hover:text-blue-500 transition-colors" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" /></svg>
               <span class="text-xs font-bold text-gray-400 group-hover:text-blue-600 transition-colors truncate max-w-xs">
-                {{ uploadFile ? `已选：${uploadFile.name}` : '点击或将图片拖拽至此上传' }}
+                {{ uploadFile ? `已选择：${uploadFile.name}` : '点击或将图片拖拽至此上传' }}
               </span>
             </label>
           </div>
         </div>
 
-        <!-- 按钮面板 -->
         <div class="flex gap-4 mt-6">
           <button @click="showAvatarModal = false" class="flex-1 h-11 rounded-2xl border border-gray-100 text-gray-500 font-bold text-xs hover:bg-gray-50 active:scale-95 transition-all">取消</button>
           <button @click="saveAvatar" :disabled="savingAvatar" class="flex-1 h-11 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-md hover:shadow-lg disabled:opacity-50 transition-all flex items-center justify-center gap-1.5">
@@ -376,7 +352,6 @@ const unbindZju = async () => {
             <span>{{ savingAvatar ? '保存中...' : '确认应用新头像' }}</span>
           </button>
         </div>
-
       </div>
     </div>
   </transition>

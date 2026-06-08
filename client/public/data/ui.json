@@ -1,73 +1,241 @@
 {
   "navigation": [
-    { "icon": "Search", "path": "/books", "label": "广场", "color": "blue" },
-    { "icon": "Heart", "path": "/wish-square", "label": "心愿", "color": "purple" },
-    { "icon": "ShoppingCart", "path": "/cart", "label": "清单", "color": "yellow", "hasCount": true },
-    { "icon": "CalendarDays", "path": "/schedule", "label": "课表", "color": "green" },
-    { "icon": "BookOpen", "path": "/community", "label": "社区", "color": "blue" },
-    { "icon": "Bell", "path": "/messages", "label": "消息", "color": "blue" },
-    { "icon": "taosu", "path": "/ai-analysis", "label": "桃酥", "color": "orange" }
+    {
+      "icon": "Search",
+      "path": "/books",
+      "label": "广场",
+      "color": "blue"
+    },
+    {
+      "icon": "Heart",
+      "path": "/wish-square",
+      "label": "心愿",
+      "color": "red"
+    },
+    {
+      "icon": "Star",
+      "path": "/favorites",
+      "label": "收藏",
+      "color": "yellow"
+    },
+    {
+      "icon": "CalendarDays",
+      "path": "/schedule",
+      "label": "课表",
+      "color": "green"
+    },
+    {
+      "icon": "BookOpen",
+      "path": "/community",
+      "label": "社区",
+      "color": "blue"
+    },
+    {
+      "icon": "Bell",
+      "path": "/messages",
+      "label": "消息",
+      "color": "blue"
+    },
+    {
+      "icon": "taosu",
+      "path": "/ai-analysis",
+      "label": "桃酥",
+      "color": "orange"
+    }
   ],
   "featureCards": [
-    { "icon": "ShoppingCart", "title": "购书广场", "desc": "智能课程匹配，精准锁定下期教材", "color": "from-blue-500 to-indigo-600", "path": "/books" },
-    { "icon": "Upload", "title": "极速发布", "desc": "拍照即识别，3秒上架您的闲置", "color": "from-emerald-500 to-teal-600", "path": "/publish" },
-    { "icon": "FileText", "title": "笔记社区", "desc": "学霸笔记加持，高分从未如此简单", "color": "from-orange-500 to-rose-600", "path": "/community" },
-    { "icon": "Zap", "title": "AI 分析", "desc": "桃酥 AI 助你分析价格趋势，买卖不亏", "color": "from-purple-500 to-violet-600", "path": "/ai-analysis" }
+    {
+      "icon": "Search",
+      "title": "购书广场",
+      "desc": "智能课程匹配，精准锁定下期教材",
+      "color": "from-blue-500 to-indigo-600",
+      "path": "/books"
+    },
+    {
+      "icon": "Upload",
+      "title": "极速发布",
+      "desc": "拍照即识别，3秒上架您的闲置",
+      "color": "from-emerald-500 to-teal-600",
+      "path": "/publish"
+    },
+    {
+      "icon": "FileText",
+      "title": "笔记社区",
+      "desc": "学霸笔记加持，高分从未如此简单",
+      "color": "from-orange-500 to-rose-600",
+      "path": "/community"
+    },
+    {
+      "icon": "Zap",
+      "title": "AI 分析",
+      "desc": "桃酥 AI 助你分析价格趋势，买卖不亏",
+      "color": "from-purple-500 to-violet-600",
+      "path": "/ai-analysis"
+    }
   ],
   "floatingAssistant": {
     "messages": [
-      { "role": "ai", "content": "你好！我是桃酥，你的浙大淘书智库。有什么我可以帮你的吗？" }
+      {
+        "role": "ai",
+        "content": "你好！我是桃酥，你的浙大淘书智库。有什么我可以帮你的吗？"
+      }
     ],
     "offlineReply": "抱歉，我的脑子好像断网了...请稍后再试。"
   },
   "aiAnalysis": {
     "messages": [
-      { "id": "hello", "role": "assistant", "content": "嗨，我是桃酥。你可以问我某本教材值不值得买，也可以让我按课表、预算或期末复习目标帮你挑书。" },
-      { "id": "sample", "role": "assistant", "content": "今日高分样本是《{{bookTitle}}》，适合优先关注。" }
+      {
+        "id": "hello",
+        "role": "assistant",
+        "content": "嗨，我是桃酥。你可以问我某本教材值不值得买，也可以让我按课表、预算或期末复习目标帮你挑书。"
+      },
+      {
+        "id": "sample",
+        "role": "assistant",
+        "content": "今日高分样本是《{{bookTitle}}》，适合优先关注。"
+      }
     ],
     "quickPrompts": [
-      { "label": "这本要买吗", "question": "数据结构基础这门课需要买教材吗？" },
-      { "label": "帮我省钱", "question": "预算有限，哪些教材可以先借阅？" },
-      { "label": "按课表推荐", "question": "按我的本学期课表给我排一个购书优先级。" },
-      { "label": "找带笔记的书", "question": "帮我优先找带学长笔记、适合期末复习的书。" }
+      {
+        "label": "这本要买吗",
+        "question": "数据结构基础这门课需要买教材吗？"
+      },
+      {
+        "label": "帮我省钱",
+        "question": "预算有限，哪些教材可以先借阅？"
+      },
+      {
+        "label": "按课表推荐",
+        "question": "按我的本学期课表给我排一个购书优先级。"
+      },
+      {
+        "label": "找带笔记的书",
+        "question": "帮我优先找带学长笔记、适合期末复习的书。"
+      }
     ],
     "decisionCards": [
-      { "title": "优先买", "desc": "AI 分数高、专业硬课、带笔记" },
-      { "title": "先观望", "desc": "公共课、PPT 依赖高、评分中等" },
-      { "title": "可借阅", "desc": "评分偏低、替代资料充足" }
+      {
+        "title": "优先买",
+        "desc": "AI 分数高、专业硬课、带笔记"
+      },
+      {
+        "title": "先观望",
+        "desc": "公共课、PPT 依赖高、评分中等"
+      },
+      {
+        "title": "可借阅",
+        "desc": "评分偏低、替代资料充足"
+      }
     ]
   },
   "search": {
-    "campuses": ["紫金港校区", "玉泉校区", "西溪校区", "华家池校区"],
-    "sortTabs": ["综合", "价格", "最新", "成色"],
-    "categories": ["全部院系", "公共必修与思政类", "计算机科学与技术", "经济与管理", "外语学习"]
+    "campuses": [
+      "紫金港校区",
+      "玉泉校区",
+      "西溪校区",
+      "华家池校区"
+    ],
+    "sortTabs": [
+      "综合",
+      "价格",
+      "最新",
+      "成色"
+    ],
+    "categories": [
+      "全部院系",
+      "公共必修与思政类",
+      "计算机科学与技术",
+      "经济与管理",
+      "外语学习"
+    ]
   },
   "community": {
-    "filters": ["全部课程", "微积分", "线性代数", "微观经济学", "宏观经济学", "概率论与数理统计", "毛概", "大学物理"],
+    "filters": [
+      "全部课程",
+      "微积分",
+      "线性代数",
+      "微观经济学",
+      "宏观经济学",
+      "概率论与数理统计",
+      "毛概",
+      "大学物理"
+    ],
     "courseGroups": {
-      "微积分": ["微积分", "高等数学"],
-      "线性代数": ["线性代数"],
-      "微观经济学": ["微观经济学"],
-      "宏观经济学": ["宏观经济学"],
-      "概率论与数理统计": ["概率论与数理统计", "概率论"],
-      "毛概": ["毛概", "毛泽东思想和中国特色社会主义理论体系概论"],
-      "大学物理": ["大学物理", "大物", "大雾", "物理"]
+      "微积分": [
+        "微积分",
+        "高等数学"
+      ],
+      "线性代数": [
+        "线性代数"
+      ],
+      "微观经济学": [
+        "微观经济学"
+      ],
+      "宏观经济学": [
+        "宏观经济学"
+      ],
+      "概率论与数理统计": [
+        "概率论与数理统计",
+        "概率论"
+      ],
+      "毛概": [
+        "毛概",
+        "毛泽东思想和中国特色社会主义理论体系概论"
+      ],
+      "大学物理": [
+        "大学物理",
+        "大物",
+        "大雾",
+        "物理"
+      ]
     }
   },
   "chat": {
     "contacts": [
-      { "id": 1, "name": "计科王学长", "time": "10分钟前", "unread": 1, "bookIdx": 0 },
-      { "id": 2, "name": "管院小张", "time": "1小时前", "unread": 0, "bookIdx": 3 }
+      {
+        "id": 1,
+        "name": "计科王学长",
+        "time": "10分钟前",
+        "unread": 1,
+        "bookIdx": 0
+      },
+      {
+        "id": 2,
+        "name": "管院小张",
+        "time": "1小时前",
+        "unread": 0,
+        "bookIdx": 3
+      }
     ],
     "messages": {
       "1": [
-        { "id": "m1", "role": "other", "content": "这本高数我确实笔记拉满了，可以再给你便宜 2 块钱。" },
-        { "id": "m2", "role": "me", "content": "太感谢了学长！我现在在西区食堂，方便当面买吗？" },
-        { "id": "m3", "role": "other", "content": "可以呀，我20分钟后到。紫金港二餐门口见？" }
+        {
+          "id": "m1",
+          "role": "other",
+          "content": "这本高数我确实笔记拉满了，可以再给你便宜 2 块钱。"
+        },
+        {
+          "id": "m2",
+          "role": "me",
+          "content": "太感谢了学长！我现在在西区食堂，方便当面买吗？"
+        },
+        {
+          "id": "m3",
+          "role": "other",
+          "content": "可以呀，我20分钟后到。紫金港二餐门口见？"
+        }
       ],
       "2": [
-        { "id": "m4", "role": "other", "content": "还在吗？你要的话我就下楼了，紫金港二餐见。" },
-        { "id": "m5", "role": "me", "content": "在的在的！马上出发。" }
+        {
+          "id": "m4",
+          "role": "other",
+          "content": "还在吗？你要的话我就下楼了，紫金港二餐见。"
+        },
+        {
+          "id": "m5",
+          "role": "me",
+          "content": "在的在的！马上出发。"
+        }
       ]
     },
     "autoReplies": [
@@ -80,30 +248,108 @@
   },
   "messages": {
     "contacts": [
-      { "id": "system", "type": "system", "name": "消息通知", "lastMsg": "心仪教材降价、订单动态和社区公告都在这里。", "time": "刚刚", "unread": 2 },
-      { "id": 1, "type": "chat", "name": "计科王学长", "lastMsg": "这本高数我确实笔记拉满了，可以再给你便宜 2 块钱。", "time": "10分钟前", "unread": 1, "bookIdx": 0 },
-      { "id": 2, "type": "chat", "name": "管院小张", "lastMsg": "还在吗？你要的话我就下楼了，紫金港二餐见。", "time": "1小时前", "unread": 0, "bookIdx": 3 }
+      {
+        "id": "system",
+        "type": "system",
+        "name": "消息通知",
+        "lastMsg": "心仪教材降价、订单动态和社区公告都在这里。",
+        "time": "刚刚",
+        "unread": 2
+      },
+      {
+        "id": 1,
+        "type": "chat",
+        "name": "计科王学长",
+        "lastMsg": "这本高数我确实笔记拉满了，可以再给你便宜 2 块钱。",
+        "time": "10分钟前",
+        "unread": 1,
+        "bookIdx": 0
+      },
+      {
+        "id": 2,
+        "type": "chat",
+        "name": "管院小张",
+        "lastMsg": "还在吗？你要的话我就下楼了，紫金港二餐见。",
+        "time": "1小时前",
+        "unread": 0,
+        "bookIdx": 3
+      }
     ],
     "systemNotifications": [
-      { "id": "wish", "title": "心仪教材降价", "content": "你求购的《离散数学》刚刚有同学大幅降价上架，建议尽快查看。", "tone": "red", "time": "刚刚" },
-      { "id": "order", "title": "交易成功", "content": "系统已确认买家签收了你的书籍，本次流转记录已计入信誉评分。", "tone": "green", "time": "20分钟前" }
+      {
+        "id": "wish",
+        "title": "心仪教材降价",
+        "content": "你求购的《离散数学》刚刚有同学大幅降价上架，建议尽快查看。",
+        "tone": "red",
+        "time": "刚刚"
+      },
+      {
+        "id": "order",
+        "title": "交易成功",
+        "content": "系统已确认买家签收了你的书籍，本次流转记录已计入信誉评分。",
+        "tone": "green",
+        "time": "20分钟前"
+      }
     ]
   },
   "orders": {
     "tabs": [
-      { "id": "all", "label": "全部订单" },
-      { "id": "unpaid", "label": "待支付" },
-      { "id": "paid", "label": "已支付" },
-      { "id": "delivered", "label": "已交付" },
-      { "id": "completed", "label": "已完成" },
-      { "id": "cancelled", "label": "已关闭" }
+      {
+        "id": "all",
+        "label": "全部订单"
+      },
+      {
+        "id": "unpaid",
+        "label": "待支付"
+      },
+      {
+        "id": "paid",
+        "label": "已支付"
+      },
+      {
+        "id": "delivered",
+        "label": "已交付"
+      },
+      {
+        "id": "completed",
+        "label": "已完成"
+      },
+      {
+        "id": "cancelled",
+        "label": "已关闭"
+      }
     ],
     "statusInfo": {
-      "unpaid": { "label": "待支付", "color": "text-orange-500", "bg": "bg-orange-50", "border": "border-orange-100" },
-      "paid": { "label": "已支付", "color": "text-blue-600", "bg": "bg-blue-50", "border": "border-blue-100" },
-      "delivered": { "label": "已交付", "color": "text-purple-600", "bg": "bg-purple-50", "border": "border-purple-100" },
-      "completed": { "label": "交易完成", "color": "text-green-600", "bg": "bg-green-50", "border": "border-green-100" },
-      "cancelled": { "label": "已关闭", "color": "text-gray-400", "bg": "bg-gray-50", "border": "border-gray-100" }
+      "unpaid": {
+        "label": "待支付",
+        "color": "text-orange-500",
+        "bg": "bg-orange-50",
+        "border": "border-orange-100"
+      },
+      "paid": {
+        "label": "已支付",
+        "color": "text-blue-600",
+        "bg": "bg-blue-50",
+        "border": "border-blue-100"
+      },
+      "delivered": {
+        "label": "已交付",
+        "color": "text-purple-600",
+        "bg": "bg-purple-50",
+        "border": "border-purple-100"
+      },
+      "completed": {
+        "label": "交易完成",
+        "color": "text-green-600",
+        "bg": "bg-green-50",
+        "border": "border-green-100"
+      },
+      "cancelled": {
+        "label": "已关闭",
+        "color": "text-gray-400",
+        "bg": "bg-gray-50",
+        "border": "border-gray-100"
+      }
     }
   },
   "profile": {
@@ -122,23 +368,80 @@
       "classText": ""
     },
     "tabs": [
-      { "id": "orders", "label": "我的买卖订单", "icon": "Package" },
-      { "id": "favorites", "label": "我收藏的心仪书籍", "icon": "Heart" },
-      { "id": "wishes", "label": "购书心愿单", "icon": "Sparkles" },
-      { "id": "notifications", "label": "消息通知中心", "icon": "Bell" },
-      { "id": "listings", "label": "我发布的书籍", "icon": "BookMarked" },
-      { "id": "notes", "label": "我的社区", "icon": "FileText" }
+      {
+        "id": "orders",
+        "label": "我的买卖订单",
+        "icon": "Package"
+      },
+      {
+        "id": "favorites",
+        "label": "我收藏的书籍",
+        "icon": "Star"
+      },
+      {
+        "id": "wishes",
+        "label": "购书心愿单",
+        "icon": "Sparkles"
+      },
+      {
+        "id": "notifications",
+        "label": "消息通知中心",
+        "icon": "Bell"
+      },
+      {
+        "id": "listings",
+        "label": "我发布的书籍",
+        "icon": "BookMarked"
+      },
+      {
+        "id": "notes",
+        "label": "我的社区",
+        "icon": "FileText"
+      }
     ]
   },
   "achievements": [
-    { "title": "初出茅庐", "desc": "完成第一笔交易", "icon": "Star", "unlocked": true },
-    { "title": "淘书达人", "desc": "累计交易 5 本书籍", "icon": "BookOpen", "unlocked": true },
-    { "title": "知识传灯人", "desc": "累计出售 10 本书籍", "icon": "Flame", "unlocked": false },
-    { "title": "桃酥好友", "desc": "使用 AI 助手 10 次", "icon": "Star", "unlocked": false }
+    {
+      "title": "初出茅庐",
+      "desc": "完成第一笔交易",
+      "icon": "Star",
+      "unlocked": true
+    },
+    {
+      "title": "淘书达人",
+      "desc": "累计交易 5 本书籍",
+      "icon": "BookOpen",
+      "unlocked": true
+    },
+    {
+      "title": "知识传灯人",
+      "desc": "累计出售 10 本书籍",
+      "icon": "Flame",
+      "unlocked": false
+    },
+    {
+      "title": "桃酥好友",
+      "desc": "使用 AI 助手 10 次",
+      "icon": "Star",
+      "unlocked": false
+    }
   ],
-  "publishTags": ["全新未拆封", "有划线笔记", "9成新", "学霸笔记版"],
+  "publishTags": [
+    "全新未拆封",
+    "有划线笔记",
+    "9成新",
+    "学霸笔记版"
+  ],
   "schedule": {
-    "days": ["一", "二", "三", "四", "五", "六", "日"],
+    "days": [
+      "一",
+      "二",
+      "三",
+      "四",
+      "五",
+      "六",
+      "日"
+    ],
     "periodTimes": {
       "1": "08:00",
       "2": "08:50",
@@ -162,14 +465,37 @@
     },
     "tabs": {
       "秋冬": [
-        { "id": "秋", "name": "秋学期" },
-        { "id": "冬", "name": "冬学期" }
+        {
+          "id": "秋",
+          "name": "秋学期"
+        },
+        {
+          "id": "冬",
+          "name": "冬学期"
+        }
       ],
       "春夏": [
-        { "id": "春", "name": "春学期" },
-        { "id": "夏", "name": "夏学期" }
+        {
+          "id": "春",
+          "name": "春学期"
+        },
+        {
+          "id": "夏",
+          "name": "夏学期"
+        }
       ]
     },
-    "sportsKeywords": ["跆拳道", "定向越野", "体育", "太极", "游泳", "羽毛球", "网球", "乒乓球", "篮球", "足球"]
+    "sportsKeywords": [
+      "跆拳道",
+      "定向越野",
+      "体育",
+      "太极",
+      "游泳",
+      "羽毛球",
+      "网球",
+      "乒乓球",
+      "篮球",
+      "足球"
+    ]
   }
 }

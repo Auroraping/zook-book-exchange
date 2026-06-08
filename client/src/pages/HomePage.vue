@@ -1,19 +1,26 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ShoppingCart, Upload, FileText, Zap, ArrowRight, ChevronRight } from 'lucide-vue-next'
+import { ChevronRight } from 'lucide-vue-next'
 import { useAuth } from '../composables/useAuth.js'
 import BookCard from '../components/BookCard.vue'
 import HeroSection from '../components/HeroSection.vue'
 import FeatureGrid from '../components/FeatureGrid.vue'
 import { getJson } from '../composables/useApi.js'
+import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
 const { isLoggedIn } = useAuth()
+const { accountId } = useCurrentAccount()
 const books = ref([])
+const favoriteIds = ref([])
 
 onMounted(async () => {
-  const data = await getJson('/api/books?status=approved')
+  const [data, favorites] = await Promise.all([
+    getJson('/api/books?status=approved'),
+    getJson(`/api/favorites?userId=${accountId.value}`).catch(() => ({ bookIds: [] }))
+  ])
   books.value = data.books
+  favoriteIds.value = favorites.bookIds || []
 })
 </script>
 
@@ -36,7 +43,7 @@ onMounted(async () => {
         </RouterLink>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-        <BookCard v-for="book in books.slice(0, 4)" :key="book.id" :book="book" />
+        <BookCard v-for="book in books.slice(0, 4)" :key="book.id" :book="book" :favorite-ids="favoriteIds" @favorite-changed="favoriteIds = $event" />
       </div>
     </section>
     <!-- CTA -->

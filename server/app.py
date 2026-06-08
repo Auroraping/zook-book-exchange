@@ -19,7 +19,6 @@ from chats_bp import chats_bp
 from reports_bp import reports_bp
 from auth_bp import auth_bp
 from schedule_bp import schedule_bp
-from cart_bp import cart_bp
 from favorites_bp import favorites_bp
 from chat_messages_bp import chat_messages_bp
 from ai_bp import ai_bp
@@ -42,7 +41,6 @@ app.register_blueprint(chats_bp)
 app.register_blueprint(reports_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(schedule_bp)
-app.register_blueprint(cart_bp)
 app.register_blueprint(favorites_bp)
 app.register_blueprint(chat_messages_bp)
 app.register_blueprint(ai_bp)
@@ -160,4 +158,5 @@ def diagnose_socket():
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "3001"))
-    socketio.run(app, host="0.0.0.0", port=port, allow_unsafe_werkzeug=True, debug=True)
+    debug = os.getenv("FLASK_DEBUG", "0") == "1"
+    socketio.run(app, host="0.0.0.0", port=port, allow_unsafe_werkzeug=True, debug=debug)

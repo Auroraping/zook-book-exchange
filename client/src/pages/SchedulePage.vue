@@ -241,11 +241,6 @@ const filteredCourses = computed(() => {
   return merged
 })
 
-const addToCart = async (bookId) => {
-  const cart = await postJson('/api/cart', { userId: currentAccountId(), bookId })
-  localStorage.setItem('cart', JSON.stringify(cart.bookIds))
-  window.dispatchEvent(new Event('cartUpdated'))
-}
 </script>
 
 <template>
@@ -281,7 +276,6 @@ const addToCart = async (bookId) => {
       <ScheduleBookList
         :selected-course="selectedCourse"
         :matched-books="books.filter((b) => (selectedCourse?.bookIds || []).includes(b.id))"
-        @add-to-cart="addToCart"
         @close="selectedCourse = null"
       />
     </template>

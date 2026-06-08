@@ -11,6 +11,7 @@ def init_db():
     """初始化数据库表结构"""
     print(f"[DB] Initializing database at {DB_PATH}...")
     conn = get_db_conn()
+    conn.execute("PRAGMA journal_mode=WAL;")
     cursor = conn.cursor()
     
     # 循环执行导入的所有建表 SQL
@@ -29,6 +30,8 @@ def init_db():
     conn.close()
     print("[DB] Tables created successfully.")
     seed_tables()
+    from db_migrations import run_startup_migrations
+    run_startup_migrations()
 
 def seed_tables():
     """检测表是否为空，如果为空则从原始 JSON 种子文件读取并导入到数据库中"""

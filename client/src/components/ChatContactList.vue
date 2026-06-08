@@ -20,7 +20,7 @@ const emit = defineEmits(['select'])
         :class="['w-full text-left px-5 py-4 cursor-pointer transition-all flex gap-4 items-center border-b border-gray-100/70', activeChatId === chat.id ? 'bg-white shadow-sm z-10' : 'hover:bg-gray-100/50']"
       >
         <div class="relative shrink-0">
-          <img :src="`https://api.dicebear.com/7.x/identicon/svg?seed=${chat.name}`" class="w-12 h-12 rounded-full border border-gray-100 bg-white" />
+          <img src="/user_avatar.png" class="w-12 h-12 rounded-full border border-gray-100 bg-white" />
           <span v-if="chat.unread > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-full font-bold border-2 border-white">{{ chat.unread }}</span>
         </div>
         <div class="flex-1 min-w-0">

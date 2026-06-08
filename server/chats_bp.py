@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, current_app, request
+from avatar_utils import DEFAULT_AVATAR, local_avatar
 from json_store import mutate_json, new_id, now_text
 from socket_state import online_users
 from chats_helper import normalize_user_id, get_user_info, seed_chat_state, request_payload
@@ -49,7 +50,7 @@ def create_chat():
             new_b_contact = {
                 "id": contact_id,
                 "name": contact_name,
-                "avatar": avatar or f"https://api.dicebear.com/7.x/identicon/svg?seed={contact_name}",
+                "avatar": local_avatar(avatar) or DEFAULT_AVATAR,
                 "time": "刚刚",
                 "unread": 0,
                 "lastMsg": initial_msg or "同学你好，我有这本书。",

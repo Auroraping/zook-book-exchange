@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Package, CheckCircle2, Clock, XCircle, CreditCard, Star, ShieldAlert } from 'lucide-vue-next'
-import { getJson, patchJson, postJson } from '../composables/useApi.js'
+import { getJson, patchJson } from '../composables/useApi.js'
 import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
 const router = useRouter()
@@ -31,10 +31,7 @@ const getStatusInfo = (status) => status === 'paid_unconfirmed'
 const runOrderAction = async (order, action) => {
   if (action === 'review') return router.push(`/evaluate/${order.id}`)
   if (action === 'rebuy') {
-    const cart = await postJson('/api/cart', { userId: accountId.value, bookId: order.bookId })
-    localStorage.setItem('cart', JSON.stringify(cart.bookIds))
-    window.dispatchEvent(new Event('cartUpdated'))
-    return router.push('/cart')
+    return router.push(`/messages?contactId=${encodeURIComponent(order.sellerId || 'me')}&contactName=${encodeURIComponent(order.seller || '浙大同学')}&bookId=${encodeURIComponent(order.bookId)}&bookTitle=${encodeURIComponent(order.title)}`)
   }
   try {
     const data = await patchJson(`/api/orders/${order.id}`, { action })
@@ -69,7 +66,7 @@ const triggerFeedback = (order) => {
           </div>
         </div>
         <div class="p-8 flex flex-col md:flex-row gap-8 items-center">
-          <div class="flex-1 flex gap-6"><img :src="order.cover" class="w-24 h-32 object-cover rounded-2xl border border-gray-100 shadow-md" /><div class="flex flex-col justify-center"><h3 class="font-bold text-gray-800 text-xl mb-2">{{ order.title }}</h3><div class="text-sm text-gray-500">卖家：<span class="font-bold text-gray-700">{{ order.seller }}</span></div><div class="text-xs text-gray-400 mt-2">取货地：{{ order.location || '未约定' }}</div></div></div>
+          <div class="flex-1 flex gap-6"><img :src="order.cover" loading="lazy" decoding="async" class="w-24 h-32 object-cover rounded-2xl border border-gray-100 shadow-md" /><div class="flex flex-col justify-center"><h3 class="font-bold text-gray-800 text-xl mb-2">{{ order.title }}</h3><div class="text-sm text-gray-500">卖家：<span class="font-bold text-gray-700">{{ order.seller }}</span></div><div class="text-xs text-gray-400 mt-2">取货地：{{ order.location || '未约定' }}</div></div></div>
           <div class="flex flex-col items-end gap-4 min-w-[220px]">
             <div class="text-3xl font-black text-gray-800">¥ {{ Number(order.price || 0).toFixed(2) }}</div>
             <div class="flex flex-wrap gap-3 justify-end">

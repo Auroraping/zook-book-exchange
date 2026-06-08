@@ -16,7 +16,6 @@ STORE_LOCK = threading.Lock()
 
 # 缺省空值定义，用于在数据库记录缺失时提供合理的安全降级
 DEFAULTS = {
-    "carts.json": [],
     "favorites.json": [],
     "reviews.json": [],
     "chat.json": {},

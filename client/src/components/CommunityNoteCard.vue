@@ -25,7 +25,7 @@ const emit = defineEmits(['delete-note'])
       <span v-for="tag in note.tags" :key="tag" class="px-2.5 py-1 rounded-full bg-gray-50 border border-gray-100 text-[10px] font-bold text-gray-500">{{ tag }}</span>
     </div>
     <div class="mt-auto pt-5 border-t border-gray-50 flex justify-between items-center gap-4">
-      <div class="flex items-center gap-2 min-w-0"><img :src="`https://api.dicebear.com/7.x/identicon/svg?seed=${note.author}`" :alt="note.author" class="w-8 h-8 rounded-full border border-gray-100 bg-gray-50" /><span class="text-xs text-gray-500 font-bold truncate max-w-[120px]">{{ note.author }}</span></div>
+      <div class="flex items-center gap-2 min-w-0"><img src="/user_avatar.png" :alt="note.author" class="w-8 h-8 rounded-full border border-gray-100 bg-gray-50" /><span class="text-xs text-gray-500 font-bold truncate max-w-[120px]">{{ note.author }}</span></div>
       <div class="flex items-center gap-3 text-gray-400 text-xs font-black whitespace-nowrap"><span>{{ note.difficulty }}</span><span class="flex items-center gap-1"><ThumbsUp class="w-4 h-4" /> {{ note.likes }}</span><span class="flex items-center gap-1"><Download class="w-4 h-4" /> {{ note.downloads }}</span></div>
     </div>
   </RouterLink>

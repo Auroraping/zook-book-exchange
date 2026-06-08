@@ -1,42 +1,28 @@
 <script setup>
 import { RouterLink, useRoute } from 'vue-router'
-import { Search, Heart, ShoppingCart, CalendarDays, BookOpen, Bell, Plus } from 'lucide-vue-next'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { Search, Heart, CalendarDays, BookOpen, Bell, Plus, Star } from 'lucide-vue-next'
 import AppLogo from './AppLogo.vue'
 import { useDataLoader } from '../composables/useDataLoader.js'
-import { getJson } from '../composables/useApi.js'
-import { getStored } from '../composables/useSessionStore.js'
 
 const route = useRoute()
-const cartCount = ref(0)
 const { data: navItems } = useDataLoader('/api/ui', (json) => json.navigation || [])
-const currentAccountId = () => getStored('zook_user_uuid') || 'me'
 
-const updateCart = async () => {
-  const cart = await getJson(`/api/cart?userId=${currentAccountId()}`).catch(() => ({ bookIds: JSON.parse(localStorage.getItem('cart') || '[]') }))
-  cartCount.value = cart.bookIds.length
-  localStorage.setItem('cart', JSON.stringify(cart.bookIds))
-}
-
-onMounted(() => {
-  updateCart()
-  window.addEventListener('cartUpdated', updateCart)
-})
-onUnmounted(() => {
-  window.removeEventListener('cartUpdated', updateCart)
-})
-
-const iconMap = { Search, Heart, ShoppingCart, CalendarDays, BookOpen, Bell }
+const iconMap = { Search, Heart, CalendarDays, BookOpen, Bell, Star }
 
 const colorMap = {
   blue: 'text-blue-600 bg-blue-50',
   purple: 'text-purple-600 bg-purple-50',
+  red: 'text-red-600 bg-red-50',
   yellow: 'text-amber-600 bg-amber-50',
   green: 'text-emerald-600 bg-emerald-50',
   orange: 'text-orange-600 bg-orange-50',
 }
 
-const isActive = (path) => route.path === path || route.path.startsWith(path + '/')
+const isActive = (path) => {
+  const [pathname] = path.split('?')
+  if (path.includes('?')) return route.fullPath === path
+  return route.path === pathname || route.path.startsWith(pathname + '/')
+}
 </script>
 
 <template>
@@ -56,9 +42,6 @@ const isActive = (path) => route.path === path || route.path.startsWith(path + '
           <component v-else :is="iconMap[item.icon]" class="w-6 h-6" />
         </div>
         <span class="text-[10px] font-bold tracking-tighter uppercase">{{ item.label }}</span>
-        <span v-if="item.hasCount && cartCount > 0" class="absolute top-2 right-2 w-4 h-4 bg-rose-500 text-white text-[9px] flex items-center justify-center rounded-full border-2 border-white font-black">
-          {{ cartCount }}
-        </span>
       </RouterLink>
     </nav>
     <div class="flex flex-col gap-3 mt-auto">

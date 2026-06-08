@@ -94,7 +94,7 @@ const clearSearch = () => {
         <div class="flex flex-col gap-2">
           <div v-for="u in searchResults" :key="u.id" class="p-3 bg-white border border-gray-100 rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-all">
             <div class="flex items-center gap-3 min-w-0">
-              <img :src="u.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.name}`" class="w-9 h-9 rounded-full border border-gray-150 bg-white object-cover" />
+              <img :src="u.avatar || '/user_avatar.png'" class="w-9 h-9 rounded-full border border-gray-150 bg-white object-cover" />
               <div class="min-w-0">
                 <h5 class="font-bold text-xs text-gray-800 truncate leading-snug">{{ u.name }}</h5>
                 <p class="text-[9px] text-gray-400 font-bold leading-normal truncate mt-0.5">{{ u.email || u.username }}</p>
@@ -115,7 +115,7 @@ const clearSearch = () => {
       <button v-for="chat in chats" :key="chat.id" @click="emit('select', chat.id)" :class="['w-full text-left px-5 py-4 cursor-pointer transition-all flex gap-4 items-center border-b border-gray-100/70', activeChatId === chat.id ? 'bg-white shadow-sm z-10' : 'hover:bg-gray-100/50']">
         <div class="relative shrink-0">
           <div v-if="chat.type === 'system'" class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shadow-sm"><Bell class="w-6 h-6" /></div>
-          <img v-else :src="chat.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${chat.name}`" class="w-12 h-12 rounded-full border border-gray-150 bg-white object-cover" />
+          <img v-else :src="chat.avatar || '/user_avatar.png'" class="w-12 h-12 rounded-full border border-gray-150 bg-white object-cover" />
           <span v-if="chat.unread > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-full font-bold border-2 border-white">{{ chat.unread }}</span>
         </div>
         <div class="flex-1 min-w-0">

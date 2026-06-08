@@ -5,6 +5,7 @@ import SearchBookFilters from '../components/SearchBookFilters.vue'
 import SearchBookResults from '../components/SearchBookResults.vue'
 import SearchWishModal from '../components/SearchWishModal.vue'
 import { getJson } from '../composables/useApi.js'
+import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
 const activeSort = ref('')
 const sortOrder = ref('desc') // 'asc' or 'desc'
@@ -16,10 +17,17 @@ const books = ref([])
 const campuses = ref([])
 const sortTabs = ref([])
 const categories = ref([])
+const favoriteIds = ref([])
+const { accountId } = useCurrentAccount()
 
 onMounted(async () => {
-  const [booksData, ui] = await Promise.all([getJson('/api/books?status=approved'), getJson('/api/ui')])
+  const [booksData, ui, favorites] = await Promise.all([
+    getJson('/api/books?status=approved'),
+    getJson('/api/ui'),
+    getJson(`/api/favorites?userId=${accountId.value}`).catch(() => ({ bookIds: [] }))
+  ])
   books.value = booksData.books
+  favoriteIds.value = favorites.bookIds || []
   campuses.value = ui.search?.campuses || []
   sortTabs.value = ui.search?.sortTabs || []
   categories.value = ui.search?.categories || []
@@ -113,7 +121,7 @@ const filteredBooks = computed(() => {
 <template>
   <div class="flex gap-16 items-start animate-google-in pt-4">
     <SearchBookFilters v-model:selectedCategory="selectedCategory" :campuses="campuses" :categories="categories" :selected-campuses="selectedCampuses" @reset="resetFilters" @toggle-campus="toggleCampus" @wish="showWishModal = true" />
-    <SearchBookResults :active-sort="activeSort" :sort-order="sortOrder" :books="filteredBooks" :sort-tabs="sortTabs" @sort-change="handleSortChange" />
+    <SearchBookResults :active-sort="activeSort" :sort-order="sortOrder" :books="filteredBooks" :sort-tabs="sortTabs" :favorite-ids="favoriteIds" @sort-change="handleSortChange" @favorite-changed="favoriteIds = $event" />
     <SearchWishModal :show="showWishModal" @close="showWishModal = false" />
   </div>
 </template>

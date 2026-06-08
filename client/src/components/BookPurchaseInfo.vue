@@ -1,13 +1,22 @@
 <script setup>
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { MessageSquare, ShoppingBag } from 'lucide-vue-next'
+import { MessageSquare, Star } from 'lucide-vue-next'
 
 const props = defineProps({
-  book: { type: Object, required: true }
+  book: { type: Object, required: true },
+  isFavorited: { type: Boolean, default: false }
 })
-const emit = defineEmits(['addToCart'])
+const emit = defineEmits(['toggle-favorite'])
+
 const isAvailable = computed(() => props.book.status === 'approved')
+const price = computed(() => Number(props.book.price || 0).toFixed(2))
+const originalPrice = computed(() => Number(props.book.originalPrice || 0))
+const chatLink = computed(() => {
+  const sellerId = props.book.sellerId || 'me'
+  const seller = props.book.seller || '浙大同学'
+  return `/messages?contactId=${encodeURIComponent(sellerId)}&contactName=${encodeURIComponent(seller)}&bookId=${encodeURIComponent(props.book.id)}&bookTitle=${encodeURIComponent(props.book.title)}`
+})
 </script>
 
 <template>
@@ -19,16 +28,28 @@ const isAvailable = computed(() => props.book.status === 'approved')
     <h1 class="text-5xl font-medium text-gray-900 mb-6 leading-tight tracking-tight">{{ book.title }}</h1>
     <p class="text-xl text-gray-500 mb-10">{{ book.author }}</p>
     <div class="flex items-baseline gap-6 mb-12">
-      <span class="text-6xl font-medium text-gray-900">¥{{ book.price }}</span>
-      <span class="text-xl text-gray-400 line-through">原价 ¥{{ book.originalPrice }}</span>
+      <span class="text-6xl font-medium text-gray-900">¥{{ price }}</span>
+      <span v-if="originalPrice > 0" class="text-xl text-gray-400 line-through">原价 ¥{{ originalPrice.toFixed(2) }}</span>
     </div>
     <div class="flex gap-4">
-      <button @click="emit('addToCart')" :disabled="!isAvailable" :class="['flex-[2] m3-btn-filled !rounded-[24px] !py-5 flex items-center justify-center gap-3 text-lg', !isAvailable ? 'opacity-50 cursor-not-allowed' : '']">
-        <ShoppingBag class="w-6 h-6" /> {{ isAvailable ? '加入购书清单' : '暂不可购买' }}
-      </button>
-      <RouterLink :to="`/messages?contactId=${encodeURIComponent(book.sellerId || 'me')}&contactName=${encodeURIComponent(book.seller || '浙大同学')}&bookId=${encodeURIComponent(book.id)}&bookTitle=${encodeURIComponent(book.title)}`" class="flex-1 bg-white border border-gray-200 text-gray-800 !rounded-[24px] flex items-center justify-center gap-3 text-lg hover:bg-gray-50 rounded-3xl py-5">
+      <RouterLink
+        v-if="isAvailable"
+        :to="chatLink"
+        class="m3-btn-filled !rounded-[24px] !py-5 flex-1 flex items-center justify-center gap-3 text-lg"
+      >
         <MessageSquare class="w-6 h-6" /> 聊一聊
       </RouterLink>
+      <button v-else disabled class="m3-btn-filled !rounded-[24px] !py-5 flex-1 flex items-center justify-center gap-3 text-lg opacity-50 cursor-not-allowed">
+        <MessageSquare class="w-6 h-6" /> 暂不可聊
+      </button>
+      <button
+        type="button"
+        @click="emit('toggle-favorite')"
+        :class="['w-20 rounded-[24px] border flex items-center justify-center transition-all active:scale-95', isFavorited ? 'bg-amber-50 text-amber-500 border-amber-200' : 'bg-white text-gray-400 border-gray-100 hover:text-amber-500 hover:border-amber-200']"
+        title="收藏"
+      >
+        <Star :class="['w-7 h-7', isFavorited ? 'fill-current' : '']" />
+      </button>
     </div>
   </section>
 </template>

@@ -6,6 +6,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from auth_repository import active_token, find_user, find_user_by_id, revoke_token, save_token, save_user
 from auth_validators import password_message, valid_email
+from avatar_utils import DEFAULT_AVATAR, public_avatar_user
 from json_store import new_id, now_text
 from jwt_service import create_jwt, decode_jwt, iso_date, timestamp
 from schedule_helper import fetch_schedule
@@ -18,7 +19,7 @@ def request_payload():
 
 
 def public_auth_user(user):
-    return {key: value for key, value in (user or {}).items() if key != "passwordHash"}
+    return public_avatar_user(user)
 
 
 def token_response(user, remember=False):
@@ -40,7 +41,7 @@ def default_user(email, password, display_name=None):
         "realName": "", "studentId": "", "college": "", "major": "",
         "class": "", "credit": 5.0, "tradeCount": 0,
         "points": 0, "level": "Lv.1 新同学", "zjuAuthenticated": False,
-        "avatar": f"https://api.dicebear.com/7.x/identicon/svg?seed={email}",
+        "avatar": DEFAULT_AVATAR,
         "bio": "邮箱注册用户。", "joinDate": now_text(),
         "passwordHash": generate_password_hash(password),
     }

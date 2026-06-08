@@ -9,7 +9,6 @@ def get_db_conn():
     """获取线程安全的 SQLite 数据库连接，并启用 WAL 模式和 Dict Row Factory"""
     conn = sqlite3.connect(str(DB_PATH), timeout=30.0)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL;")
     return conn
 
 def db_read_table(table_name, is_singular=False, fallback=None):
@@ -50,7 +49,7 @@ def db_write_table(table_name, data, is_singular=False):
             pk_map = {
                 "users": "id", "books": "id", "orders": "id", "wishes": "id",
                 "reports": "id", "notifications": "id", "notes": "id", "reviews": "id",
-                "courses": "id", "carts": "userId", "favorites": "userId"
+                "courses": "id", "favorites": "userId"
             }
             cols_map = {
                 "users": ["id", "username", "email", "studentId", "passwordHash"],
@@ -62,7 +61,6 @@ def db_write_table(table_name, data, is_singular=False):
                 "notes": ["id", "title", "likes", "downloads"],
                 "reviews": ["id", "orderId", "userId"],
                 "courses": ["id"],
-                "carts": ["userId"],
                 "favorites": ["userId"]
             }
             

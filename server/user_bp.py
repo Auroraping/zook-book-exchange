@@ -119,3 +119,11 @@ def search_users():
         if name_match or realname_match or username_match or email_match or studentid_match:
             matched.append(public_auth_user(u))
     return jsonify({"success": True, "users": matched})
+
+@user_bp.get("/api/users/<user_id>")
+def get_public_user(user_id):
+    from account_identity import public_account
+    user = public_account(user_id)
+    if not user:
+        return jsonify({"success": False, "message": "User not found"}), 404
+    return jsonify({"success": True, "user": public_auth_user(user)})

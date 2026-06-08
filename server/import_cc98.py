@@ -11,15 +11,12 @@ os.environ["ZOOK_DATA_DIR"] = os.path.join(os.path.dirname(__file__), "..", "cli
 from json_store import read_json, write_json
 
 def clean_data():
-    source_path = os.path.join(os.path.dirname(__file__), "cc98_board68_v9(1).json")
-    if not os.path.exists(source_path):
-        source_path = os.path.join(os.path.dirname(__file__), "..", "cc98_board68_v9(1).json")
-    
+    source_path = os.path.join(os.path.dirname(__file__), "cc98_board68_v9_1.json")
     if not os.path.exists(source_path):
         print("未找到源 CC98 JSON 数据文件")
         return
         
-    with open(source_path, "r", encoding="utf-8") as f:
+    with open(source_path, "r", encoding="utf-8-sig") as f:
         cc98_data = json.load(f)
         
     print(f"成功读取源数据：共 {len(cc98_data)} 条记录")

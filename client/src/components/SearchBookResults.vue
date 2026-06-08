@@ -6,9 +6,10 @@ const props = defineProps({
   books: { type: Array, required: true },
   sortTabs: { type: Array, required: true },
   activeSort: { type: String, required: true },
-  sortOrder: { type: String, required: true }
+  sortOrder: { type: String, required: true },
+  favoriteIds: { type: Array, default: () => [] }
 })
-const emit = defineEmits(['sort-change'])
+const emit = defineEmits(['sort-change', 'favorite-changed'])
 </script>
 
 <template>
@@ -34,7 +35,7 @@ const emit = defineEmits(['sort-change'])
       <div class="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">找到 <span class="text-gray-900">{{ books.length }}</span> 本教材</div>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-      <BookListCard v-for="book in books" :key="book.id" :book="book" />
+      <BookListCard v-for="book in books" :key="book.id" :book="book" :favorite-ids="favoriteIds" @favorite-changed="emit('favorite-changed', $event)" />
     </div>
     <div v-if="books.length === 0" class="py-40 text-center">
       <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-8">

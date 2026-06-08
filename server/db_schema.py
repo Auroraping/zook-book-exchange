@@ -87,35 +87,28 @@ TABLES_SQL = [
         data TEXT
     )
     """,
-    # 10. 购物车/清单表
-    """
-    CREATE TABLE IF NOT EXISTS carts (
-        userId TEXT PRIMARY KEY,
-        data TEXT
-    )
-    """,
-    # 11. 收藏夹表
+    # 10. 收藏夹表
     """
     CREATE TABLE IF NOT EXISTS favorites (
         userId TEXT PRIMARY KEY,
         data TEXT
     )
     """,
-    # 12. 消息会话表
+    # 11. 消息会话表
     """
     CREATE TABLE IF NOT EXISTS chat (
         key TEXT PRIMARY KEY,
         data TEXT
     )
     """,
-    # 13. UI静态/动态配置表
+    # 12. UI 静态/动态配置表
     """
     CREATE TABLE IF NOT EXISTS ui (
         key TEXT PRIMARY KEY,
         data TEXT
     )
     """,
-    # 14. JWT 登录会话表，用于登出后撤销 token
+    # 13. JWT 登录会话表，用于登出后撤销 token
     """
     CREATE TABLE IF NOT EXISTS auth_tokens (
         jti TEXT PRIMARY KEY,

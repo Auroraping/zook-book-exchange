@@ -51,9 +51,9 @@ function generateData(count) {
     return data;
 }
 
-const count = 100005;
+const count = Number(process.env.GENERATED_BOOK_COUNT || 1000);
 const data = generateData(count);
-const outputPath = path.resolve(__dirname, '..', 'public', 'books_data.json');
+const outputPath = path.resolve(__dirname, '..', '..', 'server', 'uploads', 'generated_books_data.json');
 fs.writeFileSync(outputPath, JSON.stringify(data));
 console.log(`Generated ${count} items to ${outputPath}`);
 console.log(`File size: ${(fs.statSync(outputPath).size / 1024 / 1024).toFixed(2)} MB`);
