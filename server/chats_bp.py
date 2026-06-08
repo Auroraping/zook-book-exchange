@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, current_app, request
 from avatar_utils import DEFAULT_AVATAR, local_avatar
+from auth_context import current_request_user_id
 from json_store import mutate_json, new_id, now_text
 from socket_state import online_users
 from chats_helper import normalize_user_id, get_user_info, seed_chat_state, request_payload
@@ -15,7 +16,7 @@ def create_chat():
     initial_msg = payload.get("initialMsg")
     book_title = payload.get("bookTitle", "求购教材")
     book_id = payload.get("bookId")
-    current_user_id = normalize_user_id(payload.get("userId") or "me")
+    current_user_id = normalize_user_id(current_request_user_id(payload.get("userId") or "me"))
     
     if not contact_id or not contact_name:
         return jsonify({"success": False, "message": "联系人参数不完整"}), 400

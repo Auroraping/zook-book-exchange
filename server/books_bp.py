@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from account_identity import normalize_account_id, public_account
+from auth_context import current_request_user
 from book_public import clean_images, enrich_book, enrich_books
 from json_store import find_by_id, mutate_json, new_id, now_text, read_json
 from upload_paths import save_upload
@@ -89,10 +90,11 @@ def get_book(book_id):
 @books_bp.post("/api/books")
 def create_book():
     payload = request_payload()
-    user_id = normalize_account_id(payload.get("sellerId") or "me")
+    auth_user = current_request_user()
+    user_id = auth_user.get("id") if auth_user else normalize_account_id(payload.get("sellerId") or "me")
     if not user_id or user_id == "me":
         return jsonify({"success": False, "message": "请先登录后再发布书籍"}), 401
-    user = public_user(user_id)
+    user = auth_user or public_user(user_id)
     seller_name = str(payload.get("sellerName") or user.get("name") or "浙大同学").strip()
     title = str(payload.get("title") or "").strip()
     price = payload.get("price")
@@ -107,6 +109,11 @@ def create_book():
     except (TypeError, ValueError):
         return jsonify({"success": False, "message": "转卖价格格式不正确"}), 400
 
+    try:
+        original_price = round(float(payload.get("originalPrice") or 0), 2)
+    except (TypeError, ValueError):
+        original_price = 0.0
+
     def add_book(books):
         book = {
             "id": new_id("b"),
@@ -114,7 +121,7 @@ def create_book():
             "author": str(payload.get("author") or "待补充").strip(),
             "condition": str(payload.get("condition") or payload.get("description") or "成色待补充").strip(),
             "price": price_value,
-            "originalPrice": round(float(payload.get("originalPrice") or 0), 2),
+            "originalPrice": original_price,
             "campus": str(payload.get("campus") or "紫金港校区").strip(),
             "seller": seller_name,
             "sellerId": user_id,

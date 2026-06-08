@@ -3,13 +3,13 @@ from json_store import find_by_id, mutate_json, now_text, read_json
 from orders_helper import notify
 
 
-def create_order_record(new_id, payload, book):
+def create_order_record(new_id, payload, book, buyer_id=None):
     price = payload.get("price")
     try:
         price_val = round(float(price or book.get("price")), 2)
     except (TypeError, ValueError):
         price_val = float(book.get("price") or 0)
-    buyer_id = normalize_account_id(payload.get("userId") or "me")
+    buyer_id = normalize_account_id(buyer_id or payload.get("userId") or "me")
     return {
         "id": new_id("o"),
         "userId": buyer_id,

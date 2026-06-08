@@ -18,12 +18,15 @@ def list_orders():
 @orders_bp.post("/api/orders")
 def create_order():
     payload = request_payload()
+    buyer_id = normalize_account_id(current_user_id())
     book = find_by_id(read_json("books.json", []), payload.get("bookId"))
     if not book:
         return jsonify({"success": False, "message": "书籍不存在"}), 404
+    if not buyer_id or buyer_id == "me":
+        return jsonify({"success": False, "message": "请先登录后再发起交易"}), 401
 
     def add_order(orders):
-        order = create_order_record(new_id, payload, book)
+        order = create_order_record(new_id, payload, book, buyer_id)
         orders.insert(0, order)
         return order
 

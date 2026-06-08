@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, current_app
+from auth_context import current_request_user_id
 from json_store import mutate_json, new_id, now_text
 from chats_helper import normalize_user_id, get_user_info, seed_chat_state, request_payload
 
@@ -11,7 +12,7 @@ def create_chat_message(chat_id):
     if not text:
         return jsonify({"success": False, "message": "消息不能为空"}), 400
 
-    sender_id = normalize_user_id(payload.get("userId") or "me")
+    sender_id = normalize_user_id(current_request_user_id(payload.get("userId") or "me"))
     receiver_id = normalize_user_id(chat_id)
     msg_type = payload.get("msgType") or "text"
     proposal_data = payload.get("proposalData")
@@ -120,7 +121,7 @@ def create_chat_message(chat_id):
 
 @chat_messages_bp.patch("/api/chats/<chat_id>/messages/<msg_id>/accept")
 def accept_proposal(chat_id, msg_id):
-    sender_id = normalize_user_id(request_payload().get("userId") or "me")
+    sender_id = normalize_user_id(current_request_user_id(request_payload().get("userId") or "me"))
     receiver_id = normalize_user_id(chat_id)
 
     def update(chat_state):

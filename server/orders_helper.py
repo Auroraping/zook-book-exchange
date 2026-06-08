@@ -1,12 +1,14 @@
 from flask import request
 from account_identity import normalize_account_id
+from auth_context import current_request_user_id
 from json_store import find_by_id, mutate_json, new_id, now_text, read_json
 
 def request_payload():
     return request.get_json(silent=True) or {}
 
 def current_user_id():
-    return normalize_account_id(request.args.get("userId") or request_payload().get("userId") or "me")
+    fallback = normalize_account_id(request.args.get("userId") or request_payload().get("userId") or "me")
+    return current_request_user_id(fallback)
 
 def enrich_order(order):
     # 1. 安全扩充 isPaid、isDelivered 状态

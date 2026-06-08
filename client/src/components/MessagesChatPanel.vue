@@ -25,7 +25,12 @@ const reviewRating = ref(5)
 const submittingReview = ref(false)
 
 const currentBook = computed(() => props.activeChat?.bookId ? props.books.find((b) => String(b.id) === String(props.activeChat.bookId)) : null)
-const isBuyer = computed(() => currentBook.value ? String(currentBook.value.sellerId) !== String(accountId.value) : true)
+const isBookSeller = computed(() => currentBook.value && String(currentBook.value.sellerId) === String(accountId.value))
+const canActAsBuyer = computed(() => !order.value || String(order.value.userId) === String(accountId.value))
+const canActAsSeller = computed(() => {
+  if (!order.value) return !!isBookSeller.value
+  return String(order.value.sellerId) === String(accountId.value)
+})
 
 const fetchOrderForChat = async () => {
   if (!props.activeChat?.bookId) {
@@ -68,6 +73,16 @@ const submitCreateOrder = async () => {
         status: 'pending'
       }
     })
+    if (isBookSeller.value) {
+      const orderRes = await postJson('/api/orders', {
+        bookId: props.activeChat.bookId,
+        price: Number(dealPrice.value),
+        location: dealLocation.value.trim(),
+        userId: accountId.value
+      })
+      order.value = orderRes.order
+      if (res.message?.proposalData) res.message.proposalData.status = 'accepted'
+    }
     showCreateOrderModal.value = false
     emit('send', { type: 'special_proposal', message: res.message })
   } catch (err) {
@@ -79,7 +94,7 @@ const submitCreateOrder = async () => {
 
 const acceptProposal = async (msg) => {
   const proposal = msg.proposalData
-  const buyerId = isBuyer.value ? accountId.value : props.activeChat.id
+  const buyerId = accountId.value
   try {
     const orderRes = await postJson('/api/orders', {
       bookId: proposal.bookId,
@@ -155,11 +170,11 @@ const triggerFeedback = () => {
         </template>
         <template v-else>
           <div class="hidden lg:flex flex-col items-end text-[10px] text-gray-400 font-bold mr-1"><span>实付：¥{{ Number(order.price).toFixed(2) }}</span><span>地点：{{ order.location }}</span></div>
-          <button v-if="order.status === 'unpaid' && isBuyer" @click="runOrderAction('pay')" class="h-9 px-5 bg-blue-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><CreditCard class="w-4 h-4" /> 立即支付</button>
-          <button v-if="order.status === 'paid_unconfirmed' && !isBuyer" @click="runOrderAction('confirm_receipt')" class="h-9 px-5 bg-purple-600 text-white rounded-xl text-xs font-black">我已收款</button>
-          <button v-if="order.status === 'paid' && !isBuyer" @click="runOrderAction('deliver')" class="h-9 px-5 bg-indigo-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><Package class="w-4 h-4" /> 我已发货</button>
-          <button v-if="order.status === 'delivered' && isBuyer" @click="runOrderAction('confirm')" class="h-9 px-5 bg-green-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><CheckCircle2 class="w-4 h-4" /> 已到货</button>
-          <button v-if="order.status === 'completed' && isBuyer && !order.reviewed" @click="showReviewModal = true" class="h-9 px-5 bg-white border border-blue-600 text-blue-600 rounded-xl text-xs font-black flex items-center gap-1.5"><Star class="w-4 h-4" /> 评价</button>
+          <button v-if="order.status === 'unpaid' && canActAsBuyer" @click="runOrderAction('pay')" class="h-9 px-5 bg-blue-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><CreditCard class="w-4 h-4" /> 立即支付</button>
+          <button v-if="order.status === 'paid_unconfirmed' && canActAsSeller" @click="runOrderAction('confirm_receipt')" class="h-9 px-5 bg-purple-600 text-white rounded-xl text-xs font-black">我已收款</button>
+          <button v-if="order.status === 'paid' && canActAsSeller" @click="runOrderAction('deliver')" class="h-9 px-5 bg-indigo-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><Package class="w-4 h-4" /> 我已发货</button>
+          <button v-if="order.status === 'delivered' && canActAsBuyer" @click="runOrderAction('confirm')" class="h-9 px-5 bg-green-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><CheckCircle2 class="w-4 h-4" /> 已到货</button>
+          <button v-if="order.status === 'completed' && canActAsBuyer && !order.reviewed" @click="showReviewModal = true" class="h-9 px-5 bg-white border border-blue-600 text-blue-600 rounded-xl text-xs font-black flex items-center gap-1.5"><Star class="w-4 h-4" /> 评价</button>
         </template>
       </div>
     </div>
