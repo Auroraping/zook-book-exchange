@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { CheckCircle2, CreditCard, Package, Send, ShieldAlert, ShoppingBag, Star, X } from 'lucide-vue-next'
+import { CheckCircle2, CreditCard, Package, Send, ShieldAlert, ShoppingBag, Star, X, ChevronUp, ChevronDown } from 'lucide-vue-next'
 import { getJson, patchJson, postJson } from '../composables/useApi.js'
 import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
@@ -78,7 +78,7 @@ const submitCreateOrder = async () => {
         bookId: props.activeChat.bookId,
         price: Number(dealPrice.value),
         location: dealLocation.value.trim(),
-        userId: accountId.value
+        userId: props.activeChat.id
       })
       order.value = orderRes.order
       if (res.message?.proposalData) res.message.proposalData.status = 'accepted'
@@ -94,7 +94,7 @@ const submitCreateOrder = async () => {
 
 const acceptProposal = async (msg) => {
   const proposal = msg.proposalData
-  const buyerId = accountId.value
+  const buyerId = isBookSeller.value ? props.activeChat.id : accountId.value
   try {
     const orderRes = await postJson('/api/orders', {
       bookId: proposal.bookId,
@@ -211,7 +211,17 @@ const triggerFeedback = () => {
       <div class="bg-white border border-slate-100 shadow-xl rounded-[32px] w-full max-w-sm p-6 relative">
         <div class="flex items-center justify-between mb-4"><h3 class="text-base font-black text-gray-900">发起购书交易</h3><button @click="showCreateOrderModal = false" class="w-7 h-7 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400"><X class="w-4 h-4" /></button></div>
         <div class="space-y-4">
-          <input v-model="dealPrice" type="number" step="0.01" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm outline-none" placeholder="交易金额" />
+          <div class="relative">
+            <input v-model="dealPrice" type="number" step="0.01" class="w-full pl-4 pr-12 py-2.5 rounded-xl border border-gray-200 text-sm outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" placeholder="交易金额" />
+            <div class="absolute right-2 top-0 bottom-0 flex flex-col justify-center gap-0.5">
+              <button type="button" @click="dealPrice = (Number(dealPrice || 0) + 1).toFixed(2)" class="w-6 h-4 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-gray-50 rounded transition-colors">
+                <ChevronUp class="w-3.5 h-3.5" />
+              </button>
+              <button type="button" @click="dealPrice = Math.max(0, Number(dealPrice || 0) - 1).toFixed(2)" class="w-6 h-4 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-gray-50 rounded transition-colors">
+                <ChevronDown class="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
           <input v-model="dealLocation" type="text" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm outline-none" placeholder="约定取货地点" />
         </div>
         <div class="flex gap-3 mt-6"><button @click="showCreateOrderModal = false" class="flex-1 py-2.5 rounded-xl border border-gray-100 text-gray-500 font-bold text-xs">取消</button><button @click="submitCreateOrder" :disabled="creatingOrder" class="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs disabled:opacity-50">{{ creatingOrder ? '发起中...' : '确认发起' }}</button></div>

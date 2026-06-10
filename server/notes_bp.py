@@ -32,7 +32,18 @@ def ensure_note_defaults(notes):
         if note.get("id") in mapping and not note.get("fileUrl"):
             note["fileUrl"], note["fileName"] = mapping[note["id"]]
             updated = True
-        note.setdefault("pointsRequired", 0)
+        
+        if note.get("isPaid"):
+            points = int(note.get("pointsRequired") or 0)
+            if points == 0:
+                note["pointsRequired"] = 3
+                updated = True
+            if not note.get("userId"):
+                note["userId"] = "u2"
+                updated = True
+        else:
+            note.setdefault("pointsRequired", 0)
+            
         note.setdefault("comments", [])
     return updated
 
@@ -90,6 +101,23 @@ def create_note():
     return jsonify({"success": True, "note": mutate_json("notes.json", add_note, [])})
 
 
+def filter_note_content(note, user_id):
+    from copy import deepcopy
+    response_note = deepcopy(note)
+    req_user_id = normalize_account_id(user_id or "me")
+    author_id = normalize_account_id(note.get("userId") or "me")
+    points = int(note.get("pointsRequired") or 0)
+    
+    if points > 0 and req_user_id != author_id:
+        unlocked = note.get("unlockedUsers") or []
+        if req_user_id not in unlocked:
+            response_note["sections"] = [{
+                "heading": "内容已隐藏",
+                "body": f"<div class='p-6 bg-amber-50 rounded-2xl border border-amber-100 text-amber-700 font-bold text-center'>此章节内容已隐藏，需要消耗 {points} 积分兑换解锁查看及下载。</div>"
+            }]
+    return response_note
+
+
 @notes_bp.get("/api/notes/<note_id>")
 def get_note(note_id):
     notes = read_json("notes.json", [])
@@ -97,17 +125,20 @@ def get_note(note_id):
     if not note:
         return jsonify({"success": False, "message": "笔记不存在"}), 404
     ensure_note_defaults([note])
-    return jsonify({"success": True, "note": note})
+    
+    req_user_id = normalize_account_id(request.args.get("userId") or "me")
+    return jsonify({"success": True, "note": filter_note_content(note, req_user_id)})
 
 
 @notes_bp.patch("/api/notes/<note_id>")
 def update_note(note_id):
     payload = request_payload()
     action = payload.get("action")
+    user_id = payload.get("userId") or "me"
     if action not in {"like", "download"}:
         return jsonify({"success": False, "message": "操作不合法"}), 400
     if action == "download":
-        result = handle_download(note_id, payload.get("userId"))
+        result = handle_download(note_id, user_id)
         if result.get("error"):
             return jsonify({"success": False, "message": result["error"]}), result["status"]
 
@@ -123,7 +154,7 @@ def update_note(note_id):
     note = mutate_json("notes.json", update, [])
     if not note:
         return jsonify({"success": False, "message": "笔记不存在"}), 404
-    return jsonify({"success": True, "note": note})
+    return jsonify({"success": True, "note": filter_note_content(note, user_id)})
 
 
 @notes_bp.post("/api/notes/<note_id>/comments")

@@ -25,6 +25,10 @@ def create_order():
     if not buyer_id or buyer_id == "me":
         return jsonify({"success": False, "message": "请先登录后再发起交易"}), 401
 
+    # 如果当前发起订单的人是卖家，那么订单的真正买家应该是传入的 userId (即对方)
+    if buyer_id == normalize_account_id(book.get("sellerId") or "me"):
+        buyer_id = normalize_account_id(payload.get("userId") or buyer_id)
+
     def add_order(orders):
         order = create_order_record(new_id, payload, book, buyer_id)
         orders.insert(0, order)
@@ -47,9 +51,24 @@ def update_order(order_id):
     if action not in {"pay", "confirm_receipt", "deliver", "confirm", "cancel"}:
         return jsonify({"success": False, "message": "订单操作不合法"}), 400
 
+    op_user_id = normalize_account_id(current_user_id())
+
     def update(orders):
         order = find_by_id(orders, order_id)
-        return apply_order_action(order, action) if order else None
+        if not order:
+            return None
+        
+        # 严格区分买卖双方权限
+        buyer = order.get("userId")
+        seller = order.get("sellerId")
+        if action in {"pay", "confirm"} and op_user_id != buyer:
+            return {"error": "仅买家有权执行该操作"}
+        if action in {"confirm_receipt", "deliver"} and op_user_id != seller:
+            return {"error": "仅卖家有权执行该操作"}
+        if action == "cancel" and op_user_id not in (buyer, seller):
+            return {"error": "无权取消此订单"}
+
+        return apply_order_action(order, action)
 
     result = mutate_json("orders.json", update, [])
     if not result:

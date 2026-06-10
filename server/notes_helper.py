@@ -1,7 +1,7 @@
 import json
 
 from account_identity import normalize_account_id, transfer_points
-from json_store import find_by_id, new_id, now_text, read_json
+from json_store import find_by_id, mutate_json, new_id, now_text, read_json
 
 
 def parse_tags(raw):
@@ -43,6 +43,7 @@ def make_note(request, file_url, file_name):
         "fileUrl": file_url,
         "fileName": file_name,
         "comments": [],
+        "unlockedUsers": [],
     }
 
 
@@ -54,8 +55,20 @@ def handle_download(note_id, user_id):
     downloader_id = normalize_account_id(user_id or "me")
     author_id = normalize_account_id(note.get("userId") or "me")
     if points > 0 and downloader_id != author_id:
-        result = transfer_points(downloader_id, author_id, points)
-        if result.get("error"):
-            message = f"您的积分不足！下载本篇资料需要 {points} 积分，您当前仅有 {result.get('points', 0)} 积分。"
-            return {"error": message, "status": 402}
+        unlocked = note.get("unlockedUsers") or []
+        if downloader_id not in unlocked:
+            result = transfer_points(downloader_id, author_id, points)
+            if result.get("error"):
+                message = f"您的积分不足！下载本篇资料需要 {points} 积分，您当前仅有 {result.get('points', 0)} 积分。"
+                return {"error": message, "status": 402}
+            
+            def add_unlocked(notes):
+                n = find_by_id(notes, note_id)
+                if n:
+                    if "unlockedUsers" not in n:
+                        n["unlockedUsers"] = []
+                    if downloader_id not in n["unlockedUsers"]:
+                        n["unlockedUsers"].append(downloader_id)
+                return n
+            mutate_json("notes.json", add_unlocked, [])
     return {"success": True}

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { ArrowLeft, Download, Lock, ThumbsUp } from 'lucide-vue-next'
 import { getJson, patchJson, postJson } from '../composables/useApi.js'
@@ -14,7 +14,17 @@ const { updateUser } = useAuth()
 const { user, accountId } = useCurrentAccount()
 
 onMounted(async () => {
-  note.value = (await getJson(`/api/notes/${route.params.id}`)).note
+  note.value = (await getJson(`/api/notes/${route.params.id}?userId=${accountId.value}`)).note
+})
+
+const isUnlocked = computed(() => {
+  if (!note.value) return false
+  const points = Number(note.value.pointsRequired || 0)
+  if (points === 0) return true
+  const isAuthor = String(note.value.userId || 'me') === String(accountId.value)
+  if (isAuthor) return true
+  const unlocked = note.value.unlockedUsers || []
+  return unlocked.includes(String(accountId.value))
 })
 
 const downloadVirtualNote = () => {
@@ -94,11 +104,36 @@ const submitComment = async () => {
         <h1 class="text-4xl font-black text-gray-900 tracking-tight leading-tight">{{ note.title }}</h1>
         <p class="text-gray-500 mt-4 leading-relaxed">{{ note.desc }}</p>
       </div>
-      <div class="p-10 flex flex-col gap-7">
+      <div v-if="isUnlocked" class="p-10 flex flex-col gap-7">
         <section v-for="section in note.sections" :key="section.heading" class="rounded-3xl border border-gray-100 bg-gray-50/60 p-6">
           <h2 class="text-lg font-black text-gray-900 mb-3">{{ section.heading }}</h2>
           <div class="text-sm text-gray-650 leading-7 rich-content" v-html="section.body"></div>
         </section>
+      </div>
+      <div v-else class="p-10 flex flex-col items-center justify-center text-center py-16 bg-slate-50/30 border-t border-gray-50">
+        <div class="p-4 bg-orange-50 text-orange-600 rounded-full mb-4">
+          <Lock class="w-8 h-8 animate-pulse" />
+        </div>
+        <h3 class="text-lg font-black text-gray-900 mb-2">本篇资料需要消耗积分查看并下载</h3>
+        <p class="text-xs text-gray-400 max-w-md mb-6">
+          这是一份付费资料。兑换后您将能够查看完整笔记正文，并支持随时下载附件。
+        </p>
+        <div class="bg-white px-6 py-4 rounded-2xl border border-gray-150 shadow-sm flex items-center gap-6 mb-6">
+          <div class="text-left border-r pr-6">
+            <p class="text-[10px] font-bold text-gray-400 uppercase">兑换所需</p>
+            <p class="text-xl font-black text-orange-600">{{ note.pointsRequired }} 积分</p>
+          </div>
+          <div class="text-left">
+            <p class="text-[10px] font-bold text-gray-400 uppercase">当前余额</p>
+            <p class="text-xl font-black text-gray-800">{{ user?.points || 0 }} 积分</p>
+          </div>
+        </div>
+        <button 
+          @click="recordAction('download')" 
+          class="px-8 py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl text-sm font-black shadow-lg shadow-orange-100 transition-all flex items-center gap-2 active:scale-95"
+        >
+          <span>立即扣积分解锁</span>
+        </button>
       </div>
       <div class="px-10 py-6 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4 text-xs font-black text-gray-400">
         <span>作者：{{ note.author }} · 更新：{{ note.updatedAt }} · {{ note.difficulty }}</span>

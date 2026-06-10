@@ -13,6 +13,7 @@ const isLogin = ref(true)
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+const remember = ref(true)
 const isLoading = ref(false)
 const error = ref('')
 const router = useRouter()
@@ -54,7 +55,7 @@ const handleSubmit = async () => {
       password: password.value,
       confirmPassword: confirmPassword.value,
       name: email.value.trim().split('@')[0],
-      remember: true
+      remember: remember.value
     })
     if (data.user) {
       cacheRealInfo(data.user)
@@ -84,6 +85,14 @@ const handleSubmit = async () => {
           <AuthTextField v-model="email" autocomplete="email" label="邮箱" />
           <AuthTextField v-model="password" type="password" autocomplete="current-password" label="密码" />
           <AuthTextField v-if="!isLogin" v-model="confirmPassword" type="password" autocomplete="new-password" label="确认密码" />
+          
+          <div class="flex items-center justify-between -mt-2">
+            <label class="flex items-center gap-2 text-sm text-gray-500 cursor-pointer select-none">
+              <input v-model="remember" type="checkbox" class="w-4.5 h-4.5 rounded text-blue-600 focus:ring-blue-500 border-gray-300" />
+              <span>3天免登录</span>
+            </label>
+          </div>
+
           <AuthErrorMessage :message="error" />
           <AuthSubmitActions :is-login="isLogin" :is-loading="isLoading" @toggle-mode="isLogin = !isLogin" />
         </form>

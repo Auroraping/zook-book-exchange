@@ -23,7 +23,7 @@ def public_auth_user(user):
 
 
 def token_response(user, remember=False):
-    hours = 24 * 14 if remember else 12
+    hours = 24 * 3 if remember else 12
     expire_dt = datetime.now(timezone.utc) + timedelta(hours=hours)
     jti = uuid4().hex
     payload = {"sub": user["id"], "jti": jti, "exp": timestamp(expire_dt)}
