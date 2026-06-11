@@ -181,17 +181,19 @@ onMounted(async () => {
   const queryContactName = route.query.contactName || (route.query.activeId ? '浙大同学' : null)
   if (queryContactId && queryContactName) {
     setTimeout(async () => {
-      const exists = chats.value.some((c) => String(c.id) === String(queryContactId))
-      if (exists) {
-        selectChat(queryContactId)
-      } else {
+      const existingChat = chats.value.find((c) => String(c.id) === String(queryContactId))
+      const queryBookId = route.query.bookId
+      
+      if (!existingChat || (queryBookId && String(existingChat.bookId) !== String(queryBookId))) {
         await handleStartChat({
           id: queryContactId,
           name: queryContactName,
-          bookId: route.query.bookId,
+          bookId: queryBookId,
           bookTitle: route.query.bookTitle || '教材沟通',
           initialMsg: route.query.initialMsg
         })
+      } else {
+        selectChat(queryContactId)
       }
     }, 300)
   }

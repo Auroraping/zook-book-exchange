@@ -52,8 +52,8 @@ def apply_order_action(order, action):
     if order.get("status") == "cancelled" and action != "cancel":
         return {"error": "已关闭的订单无法操作"}
     if action == "pay":
-        order.update({"isPaid": True, "status": "paid_unconfirmed", "paidAt": now_text()})
-        effects["notifications"].append((order.get("sellerId"), "买家已付款", f"买家已为《{order.get('title')}》付款，请确认收款。", "blue"))
+        order.update({"isPaid": True, "status": "paid", "paidAt": now_text()})
+        effects["notifications"].append((order.get("sellerId"), "买家已付款", f"买家已为《{order.get('title')}》付款，请尽快发货。", "blue"))
     elif action == "confirm_receipt":
         order.update({"sellerConfirmed": True, "sellerConfirmedAt": now_text(), "status": "paid"})
         effects["notifications"].append((order.get("userId"), "卖家已收款", f"卖家已确认收到《{order.get('title')}》的货款。", "green"))
@@ -79,7 +79,7 @@ def run_order_effects(order, effects):
 
 
 def mark_book_for_action(action, book_id):
-    status = "sold" if action == "confirm_receipt" else "approved" if action == "cancel" else None
+    status = "sold" if action in ("pay", "confirm_receipt") else "approved" if action == "cancel" else None
     if status:
         mutate_json("books.json", lambda books: update_book_status(books, book_id, status), [])
 
