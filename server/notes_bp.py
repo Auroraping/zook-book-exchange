@@ -13,11 +13,7 @@ def request_payload():
 
 
 def note_summary(note):
-    keys = [
-        "id", "title", "course", "type", "difficulty", "author", "likes",
-        "downloads", "updatedAt", "isPaid", "tags", "desc", "pointsRequired",
-        "userId", "fileUrl", "fileName",
-    ]
+    keys = ("id", "title", "course", "type", "difficulty", "author", "likes", "downloads", "updatedAt", "isPaid", "tags", "desc", "pointsRequired", "userId", "fileUrl", "fileName")
     return {key: note.get(key) for key in keys if key in note}
 
 
