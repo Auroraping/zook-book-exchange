@@ -1,6 +1,6 @@
 # Flask backend
 
-`server/` 是浙里淘书的后端目录。当前后端使用 Flask 和 SQLite；可变业务状态都持久化到 `server/zook.db`，`client/public/data/*.json` 只作为首次初始化种子数据。
+`server/` 是浙里淘书的后端目录。当前后端使用 Flask 和 SQLite；运行时业务状态持久化到 `server/zook.db`。多人协作时提交 `server/db_snapshot/zook_seed.db` 作为数据库快照；如果本地 `server/zook.db` 不存在，后端启动会先从该快照恢复。
 
 - `GET /api/health`
 - `POST /api/login`
@@ -70,7 +70,15 @@ JWT_SECRET=replace_with_a_long_random_secret
 
 前端 `桃酥 / AI 分析` 页面提供 DeepSeek 密钥配置入口，提交后会调用 `POST /api/ai/config` 并写入 `server/.env.local`。`GET /api/ai/config` 只返回是否已配置、脱敏后的密钥、模型和接口地址，不返回明文密钥。
 
-`ZOOK_DATA_DIR` 仅用于首次初始化 SQLite 种子数据；不配置时默认使用 `client/public/data`。`ZOOK_ENV_FILE` 可在测试时指向临时 `.env.local`，避免把测试密钥写入真实配置。`JWT_SECRET` 应使用足够长的随机字符串。`DEBUG_CRAWLER=1` 时会在 `server/` 下写出抓取调试文件；这些文件已被仓库忽略。
+`ZOOK_DATA_DIR` 仅用于快照缺失时的首次初始化 SQLite 种子数据；不配置时默认使用 `client/public/data`。`ZOOK_ENV_FILE` 可在测试时指向临时 `.env.local`，避免把测试密钥写入真实配置。`JWT_SECRET` 应使用足够长的随机字符串。`DEBUG_CRAWLER=1` 时会在 `server/` 下写出抓取调试文件；这些文件已被仓库忽略。
+
+## Database Snapshot
+
+- `server/zook.db` 是本机运行时数据库，仍被 `.gitignore` 忽略。
+- `server/db_snapshot/zook_seed.db` 是协作快照，会随 git 同步。
+- 后端启动时若 `server/zook.db` 不存在，会自动复制快照并继续建表/迁移。
+- 需要同步当前真实数据时，先停止后端，再在 `server/` 下运行 `python snapshot_db.py`，然后提交 `server/db_snapshot/zook_seed.db`。
+- CC98 资料已经存入 `notes` 表和快照中；原始 `cc98_board68_v9_1.json` 不再进入仓库。
 
 ## Main Workflows
 

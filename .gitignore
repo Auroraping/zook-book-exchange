@@ -44,4 +44,6 @@ desktop.ini
 *.db
 *.db-wal
 *.db-shm
+!server/db_snapshot/
+!server/db_snapshot/*.db
 
