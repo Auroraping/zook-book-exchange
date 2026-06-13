@@ -24,25 +24,60 @@ def normalize_history(history):
             normalized.append({"role": role, "content": content})
     return normalized
 
+def render_user(user):
+    if not isinstance(user, dict) or not user.get("loggedIn"):
+        return "用户未登录或无法识别。"
+    auth = "已认证" if user.get("zjuAuthenticated") else "未认证"
+    parts = [f"账号：{user.get('email') or '未知'}", f"浙大身份：{auth}"]
+    if user.get("realName") or user.get("studentId") or user.get("major"):
+        parts.append(f"身份资料：{user.get('realName') or ''} {user.get('studentId') or ''} {user.get('major') or ''}".strip())
+    return "；".join(parts)
+
+
 def render_context(context):
     parts = []
-    books = context.get("books") if isinstance(context, dict) else None
-    courses = context.get("courses") if isinstance(context, dict) else None
+    if not isinstance(context, dict):
+        return ""
+    user = context.get("user")
+    books = context.get("books")
+    courses = context.get("courses")
+    notes = context.get("notes")
+    favorites = context.get("favorites")
+    wishes = context.get("wishes")
+
+    parts.append(f"当前用户：{render_user(user)}")
 
     if isinstance(books, list) and books:
         rendered_books = []
         for book in books[:8]:
             title = book.get("title") or book.get("name") or "未命名教材"
             price = f"¥{book.get('price')}" if book.get("price") else "价格未知"
-            score = f"AI必要性{book.get('aiScore')}" if book.get("aiScore") else "无评分"
-            rendered_books.append(f"{title}，{price}，{score}")
-        parts.append(f"平台教材样本：{'；'.join(rendered_books)}")
+            course = f"课程：{book.get('courseName')}" if book.get("courseName") else "未绑定课程"
+            rendered_books.append(f"{book.get('id')}｜{title}｜{price}｜{course}")
+        parts.append(f"在售书籍候选：{'；'.join(rendered_books)}")
 
     if isinstance(courses, list) and courses:
         course_names = [course.get("name") or course.get("courseName") for course in courses[:10]]
         course_names = [name for name in course_names if name]
         if course_names:
             parts.append(f"用户课程：{'、'.join(course_names)}")
+
+    if isinstance(favorites, dict) and favorites.get("bookIds"):
+        parts.append(f"用户收藏书籍ID：{', '.join(map(str, favorites.get('bookIds')[:10]))}")
+
+    if isinstance(wishes, list) and wishes:
+        wish_titles = [wish.get("title") for wish in wishes[:8] if wish.get("title")]
+        if wish_titles:
+            parts.append(f"用户心愿：{'、'.join(wish_titles)}")
+
+    if isinstance(notes, list) and notes:
+        rendered_notes = []
+        for note in notes[:10]:
+            tags = "、".join(note.get("tags") or [])
+            rendered_notes.append(
+                f"{note.get('id')}｜{note.get('title')}｜{note.get('course') or '未标课程'}｜下载{note.get('downloads') or 0}｜{tags}"
+            )
+        parts.append(f"相关资料候选：{'；'.join(rendered_notes)}")
 
     return f"\n\n当前可用上下文：\n{chr(10).join(parts)}" if parts else ""
 
@@ -58,6 +93,7 @@ def ask_taosu(payload):
     model = os.getenv("DEEPSEEK_MODEL", "deepseek-v4-pro")
     api_url = os.getenv("DEEPSEEK_API_URL", "https://api.deepseek.com/chat/completions")
     context = (payload or {}).get("context") or {}
+    agent_prompt = str((payload or {}).get("systemPrompt") or SYSTEM_PROMPT).strip()
 
     try:
         response = requests.post(
@@ -65,7 +101,7 @@ def ask_taosu(payload):
             json={
                 "model": model,
                 "messages": [
-                    {"role": "system", "content": f"{SYSTEM_PROMPT}{render_context(context)}"},
+                    {"role": "system", "content": f"{SYSTEM_PROMPT}\n\n当前桃酥设定：{agent_prompt}{render_context(context)}"},
                     *normalize_history((payload or {}).get("history") or []),
                     {"role": "user", "content": message[:2000]},
                 ],
@@ -87,7 +123,7 @@ def ask_taosu(payload):
     if not reply:
         raise ApiError("DeepSeek 未返回有效回复")
 
-    return {"reply": reply, "model": data.get("model") or model, "usage": data.get("usage")}
+    return {"reply": reply, "model": data.get("model") or model, "usage": data.get("usage"), "references": (payload or {}).get("references") or []}
 
 def get_recommendation_from_ai(courses, books):
     api_key = os.getenv("DEEPSEEK_API_KEY")

@@ -1,10 +1,11 @@
 import os
 from pathlib import Path
 from flask import Blueprint, jsonify, request
-from auth_repository import active_token, find_user_by_id
+from ai_agents import get_agent, public_agent, public_agents
+from ai_context import build_context
 from ai_service import ask_taosu, ApiError, get_recommendation_fallback, get_recommendation_from_ai
+from auth_context import current_request_user
 from json_store import read_json
-from jwt_service import decode_jwt
 
 ai_bp = Blueprint("ai_bp", __name__)
 
@@ -23,16 +24,6 @@ ENV_LOCAL_PATH = resolve_local_env_path()
 
 def request_payload():
     return request.get_json(silent=True) or {}
-
-def current_user():
-    token = str(request.headers.get("Authorization") or "").replace("Bearer ", "", 1)
-    try:
-        payload = decode_jwt(token)
-        if active_token(payload.get("jti")):
-            return find_user_by_id(payload.get("sub"))
-    except Exception:
-        return None
-    return None
 
 def mask_secret(value):
     text = str(value or "")
@@ -92,6 +83,12 @@ def get_ai_config():
         }
     )
 
+
+@ai_bp.get("/api/ai/agents")
+def get_ai_agents():
+    return jsonify({"success": True, "agents": public_agents()})
+
+
 @ai_bp.post("/api/ai/config")
 def save_ai_config():
     payload = request_payload()
@@ -116,9 +113,19 @@ def save_ai_config():
 
 @ai_bp.post("/api/ai/chat")
 def ai_chat():
+    payload = request.get_json(silent=True) or {}
+    agent = get_agent(payload.get("agent"))
+    context, references = build_context(agent["id"], current_request_user(), payload.get("message"))
+    payload = {
+        **payload,
+        "agent": agent["id"],
+        "context": context,
+        "references": references,
+        "systemPrompt": agent["prompt"],
+    }
     try:
-        result = ask_taosu(request.get_json(silent=True) or {})
-        return jsonify({"success": True, **result})
+        result = ask_taosu(payload)
+        return jsonify({"success": True, "agent": public_agent(agent), **result})
     except ApiError as exc:
         return jsonify({"success": False, "message": str(exc)}), exc.status
     except Exception as exc:
@@ -127,7 +134,7 @@ def ai_chat():
 
 @ai_bp.get("/api/ai/recommend")
 def ai_recommend():
-    user = current_user() or {}
+    user = current_request_user() or {}
     courses = ((user.get("scheduleData") or {}).get("courses")) or read_json("courses.json", [])
     books = [book for book in read_json("books.json", []) if book.get("status") == "approved"]
     recs = get_recommendation_from_ai(courses, books) or get_recommendation_fallback(courses, books)
