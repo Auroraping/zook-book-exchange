@@ -117,5 +117,53 @@ TABLES_SQL = [
         revokedAt TEXT,
         createdAt TEXT
     )
+    """,
+    # 14. AI 角色配置表
+    """
+    CREATE TABLE IF NOT EXISTS ai_agents (
+        id TEXT PRIMARY KEY,
+        data TEXT
+    )
+    """,
+    # 15. AI FAQ 缓存表
+    """
+    CREATE TABLE IF NOT EXISTS ai_faq_cache (
+        cacheKey TEXT PRIMARY KEY,
+        agentId TEXT,
+        question TEXT,
+        expiresAt TEXT,
+        hitCount INTEGER DEFAULT 0,
+        updatedAt TEXT,
+        data TEXT
+    )
+    """,
+    # 16. AI 多轮会话表
+    """
+    CREATE TABLE IF NOT EXISTS ai_conversations (
+        id TEXT PRIMARY KEY,
+        userId TEXT,
+        agentId TEXT,
+        summary TEXT,
+        updatedAt TEXT,
+        data TEXT
+    )
+    """,
+    # 17. AI 调用与性能日志表
+    """
+    CREATE TABLE IF NOT EXISTS ai_usage_logs (
+        id TEXT PRIMARY KEY,
+        userId TEXT,
+        agentId TEXT,
+        model TEXT,
+        source TEXT,
+        latencyMs INTEGER,
+        promptTokens INTEGER,
+        completionTokens INTEGER,
+        totalTokens INTEGER,
+        cacheHitTokens INTEGER,
+        cacheMissTokens INTEGER,
+        createdAt TEXT,
+        data TEXT
+    )
     """
 ]

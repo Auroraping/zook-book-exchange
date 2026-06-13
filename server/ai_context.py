@@ -56,8 +56,8 @@ def book_context(user):
     books = [book_item(b) for b in read_json("books.json", []) if b.get("status") == "approved"]
     favorites = next((f for f in read_json("favorites.json", []) if f.get("userId") == user_id), {})
     wishes = [w for w in read_json("wishes.json", []) if user_id and w.get("userId") == user_id]
-    refs = [{"type": "book", "id": b["id"], "title": b["title"], "path": b["path"]} for b in books[:8]]
-    return {"books": books[:20], "courses": course_context(user), "favorites": favorites, "wishes": wishes[:8]}, refs
+    refs = [{"type": "book", "id": b["id"], "title": b["title"], "path": b["path"]} for b in books[:6]]
+    return {"books": books[:12], "courses": course_context(user), "favorites": favorites, "wishes": wishes[:6]}, refs
 
 
 def note_score(note, tokens):
@@ -67,6 +67,9 @@ def note_score(note, tokens):
         str(note.get("desc") or ""),
     ]).lower()
     score = sum(4 for token in tokens if token and token in haystack)
+    exam_query = any(token in {"历年", "年卷", "试卷", "小测", "期末"} for token in tokens)
+    if exam_query and any(word in haystack for word in ("试卷", "小测", "真题", "期末", "卷")):
+        score += 12
     score += min(5, int(note.get("downloads") or 0) // 100)
     score += min(5, int(note.get("likes") or 0) // 300)
     return score
@@ -77,14 +80,14 @@ def note_context(message):
     notes = read_json("notes.json", [])
     ranked = sorted(notes, key=lambda note: note_score(note, tokens), reverse=True)
     items = []
-    for note in ranked[:16]:
+    for note in ranked[:12]:
         items.append({
             "id": note.get("id"), "title": note.get("title"), "course": note.get("course"),
             "type": note.get("type"), "downloads": note.get("downloads"), "likes": note.get("likes"),
             "tags": note.get("tags") or [], "desc": str(note.get("desc") or "")[:180],
             "path": f"/community/note/{note.get('id')}",
         })
-    refs = [{"type": "note", "id": n["id"], "title": n["title"], "path": n["path"]} for n in items[:8]]
+    refs = [{"type": "note", "id": n["id"], "title": n["title"], "path": n["path"]} for n in items[:10]]
     return {"notes": items, "queryTokens": tokens}, refs
 
 

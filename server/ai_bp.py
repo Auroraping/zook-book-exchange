@@ -1,9 +1,10 @@
 import os
+import json
 from pathlib import Path
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, Response, jsonify, request, stream_with_context
 from ai_agents import get_agent, public_agent, public_agents
 from ai_context import build_context
-from ai_service import ask_taosu, ApiError, get_recommendation_fallback, get_recommendation_from_ai
+from ai_service import ask_taosu, ApiError, get_recommendation_fallback, get_recommendation_from_ai, stream_events
 from auth_context import current_request_user
 from json_store import read_json
 
@@ -115,22 +116,36 @@ def save_ai_config():
 def ai_chat():
     payload = request.get_json(silent=True) or {}
     agent = get_agent(payload.get("agent"))
-    context, references = build_context(agent["id"], current_request_user(), payload.get("message"))
-    payload = {
-        **payload,
-        "agent": agent["id"],
-        "context": context,
-        "references": references,
-        "systemPrompt": agent["prompt"],
-    }
+    user = current_request_user()
+    context, references = build_context(agent["id"], user, payload.get("message"))
     try:
-        result = ask_taosu(payload)
+        result = ask_taosu(payload, agent, context, references, user)
         return jsonify({"success": True, "agent": public_agent(agent), **result})
     except ApiError as exc:
         return jsonify({"success": False, "message": str(exc)}), exc.status
     except Exception as exc:
         print("[AI] request failed:", exc)
         return jsonify({"success": False, "message": "小酥暂时无法连接模型服务，请稍后再试"}), 502
+
+
+@ai_bp.post("/api/ai/chat/stream")
+def ai_chat_stream():
+    payload = request.get_json(silent=True) or {}
+    agent = get_agent(payload.get("agent"))
+    user = current_request_user()
+    context, references = build_context(agent["id"], user, payload.get("message"))
+
+    def generate():
+        try:
+            yield from stream_events(payload, agent, context, references, user)
+        except ApiError as exc:
+            yield f"event: error\ndata: {json.dumps({'message': str(exc)}, ensure_ascii=False)}\n\n"
+        except Exception as exc:
+            print("[AI Stream] request failed:", exc)
+            yield "event: error\ndata: {\"message\": \"桃酥暂时无法连接模型服务，请稍后再试\"}\n\n"
+
+    return Response(stream_with_context(generate()), mimetype="text/event-stream")
+
 
 @ai_bp.get("/api/ai/recommend")
 def ai_recommend():

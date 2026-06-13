@@ -64,3 +64,39 @@ export const uploadFile = async (path, formData) => {
   }
   return parseJsonResponse(response)
 }
+
+export const streamJson = async (path, payload, handlers = {}) => {
+  const response = await fetch(apiUrl(path), {
+    method: 'POST',
+    headers: {
+      Accept: 'text/event-stream',
+      ...authHeader(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  }).catch(() => {
+    throw new Error('服务暂时不可用，请确认后端已启动')
+  })
+  if (!response.ok || !response.body) throw new Error('AI 流式服务暂时不可用')
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder('utf-8')
+  let buffer = ''
+  while (true) {
+    const { value, done } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const chunks = buffer.split('\n\n')
+    buffer = chunks.pop() || ''
+    for (const chunk of chunks) handleSseChunk(chunk, handlers)
+  }
+  if (buffer) handleSseChunk(buffer, handlers)
+}
+
+const handleSseChunk = (chunk, handlers) => {
+  const event = (chunk.match(/^event:\s*(.+)$/m) || [])[1]
+  const dataText = chunk.split('\n').filter((line) => line.startsWith('data:')).map((line) => line.slice(5).trim()).join('\n')
+  if (!event || !dataText) return
+  const data = JSON.parse(dataText)
+  if (event === 'error') throw new Error(data.message || 'AI 服务暂时不可用')
+  handlers[event]?.(data)
+}

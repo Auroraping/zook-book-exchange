@@ -7,6 +7,7 @@ const props = defineProps({
   quickPrompts: { type: Array, required: true },
   draft: { type: String, required: true },
   loading: { type: Boolean, default: false },
+  thinkingStage: { type: String, default: '' },
   agents: { type: Array, default: () => [] },
   activeAgent: { type: String, default: 'general' }
 })
@@ -42,7 +43,9 @@ const referenceIcon = (type) => type === 'book' ? BookOpen : FileText
         <div v-for="msg in messages" :key="msg.id" :class="['flex items-start gap-3', msg.role === 'user' ? 'justify-end' : 'justify-start']">
           <img v-if="msg.role !== 'user'" src="/taosu.png" alt="桃酥" class="w-10 h-10 rounded-2xl bg-white object-contain border border-orange-100 shadow-sm" />
           <div :class="['max-w-[78%] rounded-[24px] px-5 py-4 shadow-sm text-sm leading-relaxed', msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-md' : 'bg-white text-gray-700 border border-gray-100 rounded-tl-md']">
-            <div class="whitespace-pre-wrap">{{ msg.content }}</div>
+            <div class="whitespace-pre-wrap">
+              {{ msg.content || (msg.role === 'assistant' && loading ? (thinkingStage || '桃酥正在思考...') : '') }}
+            </div>
             <div v-if="msg.references?.length" class="mt-4 flex flex-col gap-2">
               <RouterLink
                 v-for="ref in msg.references"
@@ -56,9 +59,9 @@ const referenceIcon = (type) => type === 'book' ? BookOpen : FileText
             </div>
           </div>
         </div>
-        <div v-if="loading" class="flex items-start gap-3 justify-start">
+        <div v-if="loading && !messages.some((msg) => msg.role === 'assistant' && !msg.content)" class="flex items-start gap-3 justify-start">
           <img src="/taosu.png" alt="桃酥" class="w-10 h-10 rounded-2xl bg-white object-contain border border-orange-100 shadow-sm" />
-          <div class="bg-white text-gray-500 border border-gray-100 rounded-[24px] rounded-tl-md px-5 py-4 shadow-sm text-sm">桃酥正在思考...</div>
+          <div class="bg-white text-gray-500 border border-gray-100 rounded-[24px] rounded-tl-md px-5 py-4 shadow-sm text-sm">{{ thinkingStage || '桃酥正在思考...' }}</div>
         </div>
       </div>
     </div>

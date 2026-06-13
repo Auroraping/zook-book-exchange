@@ -4,7 +4,7 @@ import AiAssistantSidebar from '../components/AiAssistantSidebar.vue'
 import AiBookRecommendationSection from '../components/AiBookRecommendationSection.vue'
 import AiChatPanel from '../components/AiChatPanel.vue'
 import AiDecisionCards from '../components/AiDecisionCards.vue'
-import { getJson, postJson } from '../composables/useApi.js'
+import { getJson, postJson, streamJson } from '../composables/useApi.js'
 
 const books = ref([])
 const messages = ref([])
@@ -12,6 +12,7 @@ const draft = ref('')
 const fallbackPrompts = ref([])
 const decisionCards = ref([])
 const isThinking = ref(false)
+const thinkingStage = ref('')
 const agents = ref([])
 const activeAgent = ref('general')
 
@@ -82,28 +83,44 @@ const selectAgent = (agentId) => {
 const askTaosu = async (question) => {
   if (!question.trim() || isThinking.value) return
   const userMessage = { id: `user-${Date.now()}`, role: 'user', content: question }
+  const assistantMessage = { id: `ai-${Date.now()}`, role: 'assistant', content: '', references: [] }
   messages.value.push(userMessage)
+  messages.value.push(assistantMessage)
   draft.value = ''
   isThinking.value = true
+  thinkingStage.value = '连接桃酥'
   try {
-    const data = await postJson('/api/ai/chat', {
+    await streamJson('/api/ai/chat/stream', {
       agent: activeAgent.value,
       message: question,
-      history: messages.value.slice(0, -1),
-    })
-    messages.value.push({
-      id: `ai-${Date.now()}`,
-      role: 'assistant',
-      content: data.reply,
-      references: data.references || []
+      history: messages.value.slice(0, -2),
+    }, {
+      stage: (data) => { thinkingStage.value = data.label || '处理中' },
+      delta: (data) => { assistantMessage.content += data.text || '' },
+      done: (data) => {
+        assistantMessage.references = data.references || []
+        assistantMessage.source = data.source
+        thinkingStage.value = ''
+      }
     })
   } catch (err) {
-    messages.value.push({
-      id: `ai-${Date.now()}`,
-      role: 'assistant',
-      content: err.message || '桃酥暂时无法连接模型服务，请稍后再试。',
-    })
+    try {
+      const data = await postJson('/api/ai/chat', {
+        agent: activeAgent.value,
+        message: question,
+        history: messages.value.slice(0, -2),
+      })
+      assistantMessage.content = data.reply
+      assistantMessage.references = data.references || []
+      assistantMessage.source = data.source
+    } catch (fallbackErr) {
+      assistantMessage.content = fallbackErr.message || err.message || '桃酥暂时无法连接模型服务，请稍后再试。'
+    }
   } finally {
+    if (!assistantMessage.content.trim()) {
+      assistantMessage.content = '桃酥暂时没有生成有效回复，请稍后再试。'
+    }
+    thinkingStage.value = ''
     isThinking.value = false
   }
 }
@@ -256,6 +273,7 @@ const saveAiConfig = async () => {
         :messages="messages"
         :quick-prompts="quickPrompts"
         :loading="isThinking"
+        :thinking-stage="thinkingStage"
         :agents="agents"
         :active-agent="activeAgent"
         @select-agent="selectAgent"
