@@ -36,6 +36,18 @@ def usage_info(user, agent, source, result):
     }
 
 
+def public_stats(source, result):
+    usage = result.get("usage") or {}
+    return {
+        "source": source,
+        "model": result.get("model"),
+        "latencyMs": int(result.get("latencyMs") or 0),
+        "totalTokens": usage.get("total_tokens") or 0,
+        "cacheHitTokens": usage.get("prompt_cache_hit_tokens") or 0,
+        "cacheMissTokens": usage.get("prompt_cache_miss_tokens") or 0,
+    }
+
+
 def should_cache(agent, question, reply):
     return agent["id"] == "general" and len(question) <= 80 and len(reply) <= 1200
 
@@ -46,7 +58,7 @@ def ask_taosu(payload, agent, context, references, user):
     if faq:
         result = {"reply": faq["reply"], "references": faq["references"], "model": "faq-cache", "usage": {}, "latencyMs": 0}
         log_usage(usage_info(user, agent, "faq", result))
-        return {**result, "source": "faq"}
+        return {**result, "source": "faq", "stats": public_stats("faq", result)}
 
     conv = get_conversation(user_id(user), agent["id"])
     result = post_chat(build_messages(payload, agent, context, conv), agent)
@@ -56,7 +68,7 @@ def ask_taosu(payload, agent, context, references, user):
     if should_cache(agent, question, result["reply"]):
         save_faq(agent["id"], question, result["reply"], result["references"], auth_state=auth_state(user))
     log_usage(usage_info(user, agent, "model", result))
-    return {**result, "source": "model"}
+    return {**result, "source": "model", "stats": public_stats("model", result)}
 
 
 def stream_events(payload, agent, context, references, user):
@@ -67,7 +79,7 @@ def stream_events(payload, agent, context, references, user):
         yield sse("delta", {"text": faq["reply"]})
         result = {"model": "faq-cache", "usage": {}, "latencyMs": 0}
         log_usage(usage_info(user, agent, "faq", result))
-        yield sse("done", {"references": faq["references"], "source": "faq", **result})
+        yield sse("done", {"references": faq["references"], "stats": public_stats("faq", result), "source": "faq", **result})
         return
 
     conv = get_conversation(user_id(user), agent["id"])
@@ -89,7 +101,7 @@ def stream_events(payload, agent, context, references, user):
     if should_cache(agent, question, reply):
         save_faq(agent["id"], question, reply, references, auth_state=auth_state(user))
     log_usage(usage_info(user, agent, "model-stream", result))
-    yield sse("done", {"references": references or [], "source": "model", **result})
+    yield sse("done", {"references": references or [], "stats": public_stats("model", result), "source": "model", **result})
 
 
 def sse(event, data):

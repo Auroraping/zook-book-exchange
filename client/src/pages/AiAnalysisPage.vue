@@ -83,7 +83,7 @@ const selectAgent = (agentId) => {
 const askTaosu = async (question) => {
   if (!question.trim() || isThinking.value) return
   const userMessage = { id: `user-${Date.now()}`, role: 'user', content: question }
-  const assistantMessage = { id: `ai-${Date.now()}`, role: 'assistant', content: '', references: [] }
+  const assistantMessage = { id: `ai-${Date.now()}`, role: 'assistant', content: '', references: [], stats: null }
   messages.value.push(userMessage)
   messages.value.push(assistantMessage)
   draft.value = ''
@@ -100,6 +100,7 @@ const askTaosu = async (question) => {
       done: (data) => {
         assistantMessage.references = data.references || []
         assistantMessage.source = data.source
+        assistantMessage.stats = data.stats || null
         thinkingStage.value = ''
       }
     })
@@ -113,6 +114,7 @@ const askTaosu = async (question) => {
       assistantMessage.content = data.reply
       assistantMessage.references = data.references || []
       assistantMessage.source = data.source
+      assistantMessage.stats = data.stats || null
     } catch (fallbackErr) {
       assistantMessage.content = fallbackErr.message || err.message || '桃酥暂时无法连接模型服务，请稍后再试。'
     }

@@ -23,13 +23,16 @@ def api_config(agent=None):
 
 
 def request_body(messages, agent=None, stream=False):
-    return {
+    body = {
         "model": api_config(agent)["model"],
         "messages": messages,
         "stream": stream,
         "temperature": 0.5 if (agent or {}).get("id") == "general" else 0.35,
         "max_tokens": 850,
     }
+    if stream:
+        body["stream_options"] = {"include_usage": True}
+    return body
 
 
 def headers(agent=None):

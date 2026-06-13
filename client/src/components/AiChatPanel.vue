@@ -14,6 +14,13 @@ const props = defineProps({
 const emit = defineEmits(['ask', 'update:draft', 'select-agent'])
 
 const referenceIcon = (type) => type === 'book' ? BookOpen : FileText
+const statLabel = (stats) => {
+  if (!stats) return ''
+  if (stats.source === 'faq') return 'FAQ 缓存命中 · 0 token'
+  const hit = stats.cacheHitTokens || 0
+  const miss = stats.cacheMissTokens || 0
+  return `${stats.model || 'model'} · ${stats.totalTokens || 0} token · 缓存 ${hit}/${hit + miss}`
+}
 </script>
 
 <template>
@@ -45,6 +52,9 @@ const referenceIcon = (type) => type === 'book' ? BookOpen : FileText
           <div :class="['max-w-[78%] rounded-[24px] px-5 py-4 shadow-sm text-sm leading-relaxed', msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-md' : 'bg-white text-gray-700 border border-gray-100 rounded-tl-md']">
             <div class="whitespace-pre-wrap">
               {{ msg.content || (msg.role === 'assistant' && loading ? (thinkingStage || '桃酥正在思考...') : '') }}
+            </div>
+            <div v-if="msg.stats" class="mt-3 text-[11px] font-bold text-gray-400">
+              {{ statLabel(msg.stats) }}
             </div>
             <div v-if="msg.references?.length" class="mt-4 flex flex-col gap-2">
               <RouterLink

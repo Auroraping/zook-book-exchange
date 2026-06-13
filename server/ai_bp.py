@@ -4,6 +4,7 @@ from pathlib import Path
 from flask import Blueprint, Response, jsonify, request, stream_with_context
 from ai_agents import get_agent, public_agent, public_agents
 from ai_context import build_context
+from ai_repository import usage_summary
 from ai_service import ask_taosu, ApiError, get_recommendation_fallback, get_recommendation_from_ai, stream_events
 from auth_context import current_request_user
 from json_store import read_json
@@ -88,6 +89,12 @@ def get_ai_config():
 @ai_bp.get("/api/ai/agents")
 def get_ai_agents():
     return jsonify({"success": True, "agents": public_agents()})
+
+
+@ai_bp.get("/api/ai/usage/summary")
+def ai_usage_summary():
+    limit = request.args.get("limit", 20)
+    return jsonify({"success": True, **usage_summary(limit)})
 
 
 @ai_bp.post("/api/ai/config")

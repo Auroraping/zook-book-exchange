@@ -148,3 +148,20 @@ def log_usage(info):
     )
     conn.commit()
     conn.close()
+
+
+def usage_summary(limit=20):
+    conn = get_db_conn()
+    rows = conn.execute(
+        """SELECT source, agentId, model, latencyMs, totalTokens, cacheHitTokens,
+        cacheMissTokens, createdAt FROM ai_usage_logs ORDER BY createdAt DESC LIMIT ?""",
+        (int(limit or 20),),
+    ).fetchall()
+    total = conn.execute("SELECT COUNT(*) FROM ai_usage_logs").fetchone()[0]
+    faq_hits = conn.execute("SELECT SUM(hitCount) FROM ai_faq_cache").fetchone()[0] or 0
+    conn.close()
+    return {
+        "totalCalls": total,
+        "faqHits": faq_hits,
+        "recent": [dict(row) for row in rows],
+    }
