@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { ChevronRight, Sparkles, Trash2, FileText, CreditCard, Package, Star } from 'lucide-vue-next'
+import { ChevronRight, Sparkles, Trash2, FileText, CreditCard, Package, Star, XCircle, CheckCircle2 } from 'lucide-vue-next'
 import { useAuth } from '../composables/useAuth.js'
 import { deleteJson, postJson, patchJson } from '../composables/useApi.js'
 import { getStored } from '../composables/useSessionStore.js'
@@ -24,19 +24,26 @@ const { user } = useAuth()
 const currentUserId = user.value?.realId || getStored('zook_user_uuid') || 'me'
 
 const statusMap = {
-  unpaid: { label: '待支付', class: 'bg-orange-50 text-orange-600 border border-orange-100' },
-  paid_unconfirmed: { label: '已付款待收款', class: 'bg-amber-50 text-amber-600 border border-amber-100' },
-  paid: { label: '卖家已收款', class: 'bg-blue-50 text-blue-600 border border-blue-100' },
-  delivered: { label: '已发货待确认', class: 'bg-purple-50 text-purple-600 border border-purple-100' },
-  completed: { label: '交易完成', class: 'bg-green-50 text-green-600 border border-green-100' },
+  unpaid: { label: '待确认', class: 'bg-orange-50 text-orange-600 border border-orange-100' },
+  paid_unconfirmed: { label: '待确认', class: 'bg-amber-50 text-amber-600 border border-amber-100' },
+  paid: { label: '未放置', class: 'bg-blue-50 text-blue-600 border border-blue-100' },
+  delivered: { label: '未收货', class: 'bg-purple-50 text-purple-600 border border-purple-100' },
+  completed: { label: '已完成', class: 'bg-green-50 text-green-600 border border-green-100' },
   cancelled: { label: '已关闭', class: 'bg-gray-50 text-gray-400 border border-gray-100' }
 }
 
-const getStatusStyle = (status) => statusMap[status] || statusMap.cancelled
+const getStatusStyle = (status, order) => {
+  if (status === 'paid_unconfirmed') {
+    if (order?.buyerPaid && !order?.sellerConfirmed) return { label: '买家已付款', class: 'bg-amber-50 text-amber-600 border border-amber-100' }
+    if (!order?.buyerPaid && order?.sellerConfirmed) return { label: '卖家已收款', class: 'bg-amber-50 text-amber-600 border border-amber-100' }
+  }
+  return statusMap[status] || statusMap.cancelled
+}
 const favoritePreview = computed(() => props.favoriteBooks.slice(0, 3))
 const hiddenFavoriteCount = computed(() => Math.max(props.favoriteBooks.length - favoritePreview.value.length, 0))
 
 const handleOrderAction = async (order, action) => {
+  if (action === 'cancel' && !confirm('确定取消该订单吗？取消后书籍将重新上架到广场。')) return
   try {
     const res = await patchJson(`/api/orders/${order.id}`, { action })
     if (res.success) {
@@ -113,17 +120,27 @@ const handleRemoveFavorite = async (book) => {
               <p class="text-xs text-gray-400 font-bold mb-3">卖家：<span class="text-gray-600">{{ order.seller }}</span></p>
             </div>
             <div class="flex items-center gap-3 flex-wrap">
-              <span :class="['text-[10px] font-black px-2.5 py-1 rounded-lg border shadow-sm', getStatusStyle(order.status).class]">
-                {{ getStatusStyle(order.status).label }}
+              <span :class="['text-[10px] font-black px-2.5 py-1 rounded-lg border shadow-sm', getStatusStyle(order.status, order).class]">
+                {{ getStatusStyle(order.status, order).label }}
               </span>
-              <button v-if="order.status === 'unpaid' && order.userId === currentUserId" @click="router.push('/orders?tab=unpaid')" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
-                <CreditCard class="w-3.5 h-3.5" /> 去支付
+              <!-- 未支付/待确认：买家已付款，卖家已收款 -->
+              <button v-if="(order.status === 'unpaid' || (order.status === 'paid_unconfirmed' && !order.buyerPaid)) && order.userId === currentUserId" @click="handleOrderAction(order, 'pay')" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
+                <CreditCard class="w-3.5 h-3.5" /> 已付款
               </button>
-              <button v-if="order.status === 'paid_unconfirmed' && order.sellerId === currentUserId" @click="handleOrderAction(order, 'confirm_receipt')" class="px-4 py-1.5 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
-                <CreditCard class="w-3.5 h-3.5" /> 我已收款
+              <button v-if="(order.status === 'unpaid' || (order.status === 'paid_unconfirmed' && !order.sellerConfirmed)) && order.sellerId === currentUserId" @click="handleOrderAction(order, 'confirm_receipt')" class="px-4 py-1.5 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
+                <CreditCard class="w-3.5 h-3.5" /> 已收款
               </button>
-              <button v-if="order.status === 'paid' && order.sellerId === currentUserId" @click="handleOrderAction(order, 'deliver')" class="px-4 py-1.5 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
-                <Package class="w-3.5 h-3.5" /> 我已发货
+              <!-- 未放置：卖家放书 -->
+              <button v-if="order.status === 'paid' && order.sellerId === currentUserId" @click="handleOrderAction(order, 'deliver')" class="px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
+                <Package class="w-3.5 h-3.5" /> 已放
+              </button>
+              <!-- 未收货：买家确认收货 -->
+              <button v-if="order.status === 'delivered' && order.userId === currentUserId" @click="handleOrderAction(order, 'confirm')" class="px-4 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
+                <CheckCircle2 class="w-3.5 h-3.5" /> 已收货
+              </button>
+              <!-- 取消订单：买家在未完成阶段可取消 -->
+              <button v-if="['unpaid', 'paid_unconfirmed', 'paid', 'delivered'].includes(order.status) && order.userId === currentUserId" @click="handleOrderAction(order, 'cancel')" class="px-4 py-1.5 bg-white border border-gray-200 text-gray-500 hover:text-red-500 text-xs font-black rounded-xl flex items-center gap-1.5 transition-all active:scale-95">
+                <XCircle class="w-3.5 h-3.5" /> 取消订单
               </button>
             </div>
           </div>

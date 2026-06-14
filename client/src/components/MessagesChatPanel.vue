@@ -112,14 +112,16 @@ const acceptProposal = async (msg) => {
 }
 
 const runOrderAction = async (action) => {
+  if (action === 'cancel' && !confirm('确定取消该订单吗？取消后书籍将重新上架到广场。')) return
   try {
     const res = await patchJson(`/api/orders/${order.value.id}`, { action })
     order.value = res.order
     const logs = {
       pay: `我已付款 ¥${Number(order.value.price).toFixed(2)}，请卖家确认收款。`,
-      confirm_receipt: `我已确认收款，教材将尽快放到约定地点。`,
-      deliver: `教材已放到约定地点：${order.value.location}，请买家取到后确认。`,
-      confirm: `我已确认取到教材，交易完成。`
+      confirm_receipt: `我已确认收款，等待双方确认完成后将放置教材。`,
+      deliver: `教材已放到约定地点：${order.value.location}，请买家前往取书并确认收货。`,
+      confirm: `我已确认取到教材，交易完成。`,
+      cancel: `我已取消订单，书籍已重新上架到广场。`
     }
     if (logs[action]) emit('send', logs[action])
     if (action === 'confirm') alert('交易完成，双方各获得 5 积分奖励。')
@@ -170,10 +172,16 @@ const triggerFeedback = () => {
         </template>
         <template v-else>
           <div class="hidden lg:flex flex-col items-end text-[10px] text-gray-400 font-bold mr-1"><span>实付：¥{{ Number(order.price).toFixed(2) }}</span><span>地点：{{ order.location }}</span></div>
-          <button v-if="order.status === 'unpaid' && canActAsBuyer" @click="runOrderAction('pay')" class="h-9 px-5 bg-blue-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><CreditCard class="w-4 h-4" /> 立即支付</button>
-          <button v-if="order.status === 'paid_unconfirmed' && canActAsSeller" @click="runOrderAction('confirm_receipt')" class="h-9 px-5 bg-purple-600 text-white rounded-xl text-xs font-black">我已收款</button>
-          <button v-if="order.status === 'paid' && canActAsSeller" @click="runOrderAction('deliver')" class="h-9 px-5 bg-indigo-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><Package class="w-4 h-4" /> 我已发货</button>
-          <button v-if="order.status === 'delivered' && canActAsBuyer" @click="runOrderAction('confirm')" class="h-9 px-5 bg-green-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><CheckCircle2 class="w-4 h-4" /> 已到货</button>
+          <!-- 未支付：买家显示已付款，卖家显示已收款 -->
+          <button v-if="(order.status === 'unpaid' || (order.status === 'paid_unconfirmed' && !order.buyerPaid)) && canActAsBuyer" @click="runOrderAction('pay')" class="h-9 px-5 bg-blue-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><CreditCard class="w-4 h-4" /> 已付款</button>
+          <button v-if="(order.status === 'unpaid' || (order.status === 'paid_unconfirmed' && !order.sellerConfirmed)) && canActAsSeller" @click="runOrderAction('confirm_receipt')" class="h-9 px-5 bg-purple-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><CreditCard class="w-4 h-4" /> 已收款</button>
+          <!-- 未放置：卖家放书 -->
+          <button v-if="order.status === 'paid' && canActAsSeller" @click="runOrderAction('deliver')" class="h-9 px-5 bg-indigo-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><Package class="w-4 h-4" /> 已放</button>
+          <!-- 未收货：买家确认收货 -->
+          <button v-if="order.status === 'delivered' && canActAsBuyer" @click="runOrderAction('confirm')" class="h-9 px-5 bg-green-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><CheckCircle2 class="w-4 h-4" /> 已收货</button>
+          <!-- 取消订单：买家在未完成阶段可取消 -->
+          <button v-if="['unpaid', 'paid_unconfirmed', 'paid', 'delivered'].includes(order.status) && canActAsBuyer" @click="runOrderAction('cancel')" class="h-9 px-3.5 bg-white border border-gray-200 text-gray-500 hover:text-red-500 rounded-xl text-xs font-black flex items-center gap-1.5"><X class="w-4 h-4" /> 取消订单</button>
+          <!-- 完成后评价 -->
           <button v-if="order.status === 'completed' && canActAsBuyer && !order.reviewed" @click="showReviewModal = true" class="h-9 px-5 bg-white border border-blue-600 text-blue-600 rounded-xl text-xs font-black flex items-center gap-1.5"><Star class="w-4 h-4" /> 评价</button>
         </template>
       </div>

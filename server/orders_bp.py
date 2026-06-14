@@ -65,8 +65,8 @@ def update_order(order_id):
             return {"error": "仅买家有权执行该操作"}
         if action in {"confirm_receipt", "deliver"} and op_user_id != seller:
             return {"error": "仅卖家有权执行该操作"}
-        if action == "cancel" and op_user_id not in (buyer, seller):
-            return {"error": "无权取消此订单"}
+        if action == "cancel" and op_user_id != buyer:
+            return {"error": "仅买家有权取消订单"}
 
         return apply_order_action(order, action)
 
@@ -78,7 +78,7 @@ def update_order(order_id):
 
     order = result["order"]
     run_order_effects(order, result.get("effects") or {})
-    mark_book_for_action(action, order.get("bookId"))
+    mark_book_for_action(action, order.get("bookId"), order)
     return jsonify({"success": True, "order": enrich_order(order)})
 
 
