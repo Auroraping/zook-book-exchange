@@ -1,10 +1,13 @@
 import os
+import json
 from pathlib import Path
-from flask import Blueprint, jsonify, request
-from auth_repository import active_token, find_user_by_id
-from ai_service import ask_taosu, ApiError, get_recommendation_fallback, get_recommendation_from_ai
+from flask import Blueprint, Response, jsonify, request, stream_with_context
+from ai_agents import get_agent, public_agent, public_agents
+from ai_context import build_context
+from ai_repository import usage_summary
+from ai_service import ask_taosu, ApiError, get_recommendation_fallback, get_recommendation_from_ai, stream_events
+from auth_context import current_request_user
 from json_store import read_json
-from jwt_service import decode_jwt
 
 ai_bp = Blueprint("ai_bp", __name__)
 
@@ -23,16 +26,6 @@ ENV_LOCAL_PATH = resolve_local_env_path()
 
 def request_payload():
     return request.get_json(silent=True) or {}
-
-def current_user():
-    token = str(request.headers.get("Authorization") or "").replace("Bearer ", "", 1)
-    try:
-        payload = decode_jwt(token)
-        if active_token(payload.get("jti")):
-            return find_user_by_id(payload.get("sub"))
-    except Exception:
-        return None
-    return None
 
 def mask_secret(value):
     text = str(value or "")
@@ -92,6 +85,18 @@ def get_ai_config():
         }
     )
 
+
+@ai_bp.get("/api/ai/agents")
+def get_ai_agents():
+    return jsonify({"success": True, "agents": public_agents()})
+
+
+@ai_bp.get("/api/ai/usage/summary")
+def ai_usage_summary():
+    limit = request.args.get("limit", 20)
+    return jsonify({"success": True, **usage_summary(limit)})
+
+
 @ai_bp.post("/api/ai/config")
 def save_ai_config():
     payload = request_payload()
@@ -116,18 +121,42 @@ def save_ai_config():
 
 @ai_bp.post("/api/ai/chat")
 def ai_chat():
+    payload = request.get_json(silent=True) or {}
+    agent = get_agent(payload.get("agent"))
+    user = current_request_user()
+    context, references = build_context(agent["id"], user, payload.get("message"))
     try:
-        result = ask_taosu(request.get_json(silent=True) or {})
-        return jsonify({"success": True, **result})
+        result = ask_taosu(payload, agent, context, references, user)
+        return jsonify({"success": True, "agent": public_agent(agent), **result})
     except ApiError as exc:
         return jsonify({"success": False, "message": str(exc)}), exc.status
     except Exception as exc:
         print("[AI] request failed:", exc)
         return jsonify({"success": False, "message": "小酥暂时无法连接模型服务，请稍后再试"}), 502
 
+
+@ai_bp.post("/api/ai/chat/stream")
+def ai_chat_stream():
+    payload = request.get_json(silent=True) or {}
+    agent = get_agent(payload.get("agent"))
+    user = current_request_user()
+    context, references = build_context(agent["id"], user, payload.get("message"))
+
+    def generate():
+        try:
+            yield from stream_events(payload, agent, context, references, user)
+        except ApiError as exc:
+            yield f"event: error\ndata: {json.dumps({'message': str(exc)}, ensure_ascii=False)}\n\n"
+        except Exception as exc:
+            print("[AI Stream] request failed:", exc)
+            yield "event: error\ndata: {\"message\": \"桃酥暂时无法连接模型服务，请稍后再试\"}\n\n"
+
+    return Response(stream_with_context(generate()), mimetype="text/event-stream")
+
+
 @ai_bp.get("/api/ai/recommend")
 def ai_recommend():
-    user = current_user() or {}
+    user = current_request_user() or {}
     courses = ((user.get("scheduleData") or {}).get("courses")) or read_json("courses.json", [])
     books = [book for book in read_json("books.json", []) if book.get("status") == "approved"]
     recs = get_recommendation_from_ai(courses, books) or get_recommendation_fallback(courses, books)

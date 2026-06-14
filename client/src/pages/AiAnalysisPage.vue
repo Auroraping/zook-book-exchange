@@ -4,14 +4,17 @@ import AiAssistantSidebar from '../components/AiAssistantSidebar.vue'
 import AiBookRecommendationSection from '../components/AiBookRecommendationSection.vue'
 import AiChatPanel from '../components/AiChatPanel.vue'
 import AiDecisionCards from '../components/AiDecisionCards.vue'
-import { getJson, postJson } from '../composables/useApi.js'
+import { getJson, postJson, streamJson } from '../composables/useApi.js'
 
 const books = ref([])
 const messages = ref([])
 const draft = ref('')
-const quickPrompts = ref([])
+const fallbackPrompts = ref([])
 const decisionCards = ref([])
 const isThinking = ref(false)
+const thinkingStage = ref('')
+const agents = ref([])
+const activeAgent = ref('general')
 
 const apiKey = ref('')
 const apiUrl = ref('')
@@ -21,55 +24,105 @@ const configMessage = ref('')
 const savingConfig = ref(false)
 const configSuccess = ref(false)
 
+const fallbackAgents = [
+  {
+    id: 'general',
+    name: '通用桃酥',
+    title: '学习生活与系统使用专家',
+    scope: '系统使用、校园生活、学习规划',
+    welcome: '你好，我是通用桃酥。可以问我系统怎么用、交易流程、学习安排或校园生活问题。',
+    quickPrompts: []
+  }
+]
+
+const activeAgentInfo = computed(() => {
+  return agents.value.find((agent) => agent.id === activeAgent.value) || agents.value[0] || fallbackAgents[0]
+})
+
+const quickPrompts = computed(() => {
+  return activeAgentInfo.value.quickPrompts?.length ? activeAgentInfo.value.quickPrompts : fallbackPrompts.value
+})
+
+const resetAgentMessages = () => {
+  const agent = activeAgentInfo.value
+  messages.value = [{
+    id: `ai-welcome-${agent.id}-${Date.now()}`,
+    role: 'assistant',
+    content: agent.welcome,
+    references: []
+  }]
+}
+
 onMounted(async () => {
-  const [booksData, uiRes, configData] = await Promise.all([
+  const [booksData, uiRes, configData, agentsData] = await Promise.all([
     getJson('/api/ai/recommend'),
     getJson('/api/ui'),
     getJson('/api/ai/config'),
+    getJson('/api/ai/agents').catch(() => ({ agents: fallbackAgents })),
   ])
   const ui = uiRes
   books.value = booksData.books
   aiConfig.value = configData
   apiUrl.value = configData.apiUrl || 'https://api.deepseek.com/chat/completions'
   modelName.value = configData.model || 'deepseek-v4-pro'
-  quickPrompts.value = ui.aiAnalysis?.quickPrompts || []
+  agents.value = agentsData.agents?.length ? agentsData.agents : fallbackAgents
+  fallbackPrompts.value = ui.aiAnalysis?.quickPrompts || []
   decisionCards.value = ui.aiAnalysis?.decisionCards || []
-  messages.value = (ui.aiAnalysis?.messages || []).map((msg) => ({
-    ...msg,
-    content: msg.content.replace('{{bookTitle}}', books.value[2]?.title || '')
-  }))
+  resetAgentMessages()
 })
 
 const strongBooks = computed(() => books.value.filter((b) => b.aiScore > 85).sort((a, b) => b.aiScore - a.aiScore))
 const cautiousBooks = computed(() => books.value.filter((b) => b.aiScore < 70).sort((a, b) => a.aiScore - b.aiScore))
 
+const selectAgent = (agentId) => {
+  if (isThinking.value || activeAgent.value === agentId) return
+  activeAgent.value = agentId
+  resetAgentMessages()
+}
+
 const askTaosu = async (question) => {
   if (!question.trim() || isThinking.value) return
   const userMessage = { id: `user-${Date.now()}`, role: 'user', content: question }
+  const assistantMessage = { id: `ai-${Date.now()}`, role: 'assistant', content: '', references: [], stats: null }
   messages.value.push(userMessage)
+  messages.value.push(assistantMessage)
   draft.value = ''
   isThinking.value = true
+  thinkingStage.value = '连接桃酥'
   try {
-    const data = await postJson('/api/ai/chat', {
+    await streamJson('/api/ai/chat/stream', {
+      agent: activeAgent.value,
       message: question,
-      history: messages.value.slice(0, -1),
-      context: {
-        books: books.value.map((book) => ({
-          title: book.title,
-          price: book.price,
-          aiScore: book.aiScore,
-          aiSummary: book.aiSummary,
-        })),
-      },
+      history: messages.value.slice(0, -2),
+    }, {
+      stage: (data) => { thinkingStage.value = data.label || '处理中' },
+      delta: (data) => { assistantMessage.content += data.text || '' },
+      done: (data) => {
+        assistantMessage.references = data.references || []
+        assistantMessage.source = data.source
+        assistantMessage.stats = data.stats || null
+        thinkingStage.value = ''
+      }
     })
-    messages.value.push({ id: `ai-${Date.now()}`, role: 'assistant', content: data.reply })
   } catch (err) {
-    messages.value.push({
-      id: `ai-${Date.now()}`,
-      role: 'assistant',
-      content: err.message || '桃酥暂时无法连接模型服务，请稍后再试。',
-    })
+    try {
+      const data = await postJson('/api/ai/chat', {
+        agent: activeAgent.value,
+        message: question,
+        history: messages.value.slice(0, -2),
+      })
+      assistantMessage.content = data.reply
+      assistantMessage.references = data.references || []
+      assistantMessage.source = data.source
+      assistantMessage.stats = data.stats || null
+    } catch (fallbackErr) {
+      assistantMessage.content = fallbackErr.message || err.message || '桃酥暂时无法连接模型服务，请稍后再试。'
+    }
   } finally {
+    if (!assistantMessage.content.trim()) {
+      assistantMessage.content = '桃酥暂时没有生成有效回复，请稍后再试。'
+    }
+    thinkingStage.value = ''
     isThinking.value = false
   }
 }
@@ -216,8 +269,18 @@ const saveAiConfig = async () => {
       </div>
     </section>
     <section class="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-8 min-h-[720px]">
-      <AiAssistantSidebar />
-      <AiChatPanel v-model:draft="draft" :messages="messages" :quick-prompts="quickPrompts" :loading="isThinking" @ask="askTaosu" />
+      <AiAssistantSidebar :agent="activeAgentInfo" :configured="aiConfig.configured" />
+      <AiChatPanel
+        v-model:draft="draft"
+        :messages="messages"
+        :quick-prompts="quickPrompts"
+        :loading="isThinking"
+        :thinking-stage="thinkingStage"
+        :agents="agents"
+        :active-agent="activeAgent"
+        @select-agent="selectAgent"
+        @ask="askTaosu"
+      />
     </section>
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <AiBookRecommendationSection title="强烈推荐区" badge="建议优先买" :books="strongBooks.slice(0, 5)" variant="strong" />

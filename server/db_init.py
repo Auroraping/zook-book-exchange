@@ -1,6 +1,7 @@
 import os
 import json
 from pathlib import Path
+from db_snapshot import restore_snapshot_if_missing
 from db_manager import get_db_conn
 from db_schema import TABLES_SQL
 from db_seed_data import MAPPINGS
@@ -9,6 +10,7 @@ DB_PATH = Path(__file__).resolve().parent / "zook.db"
 
 def init_db():
     """初始化数据库表结构"""
+    restore_snapshot_if_missing()
     print(f"[DB] Initializing database at {DB_PATH}...")
     conn = get_db_conn()
     conn.execute("PRAGMA journal_mode=WAL;")

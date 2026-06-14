@@ -1,6 +1,11 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import { ChevronRight, Cpu } from 'lucide-vue-next'
+
+defineProps({
+  agent: { type: Object, default: null },
+  configured: { type: Boolean, default: false }
+})
 </script>
 
 <template>
@@ -11,8 +16,8 @@ import { ChevronRight, Cpu } from 'lucide-vue-next'
         <img src="/taosu.png" alt="桃酥" class="relative w-32 h-32 object-contain drop-shadow-xl" />
       </div>
       <span class="px-3 py-1 rounded-full bg-orange-50 text-orange-600 text-[10px] font-black uppercase tracking-widest border border-orange-100">桃酥对话</span>
-      <h1 class="mt-3 text-3xl font-black text-gray-900 tracking-tight">桃酥</h1>
-      <p class="mt-3 text-sm text-gray-500 leading-relaxed">温暖治愈的 AI 知识小助手。</p>
+      <h1 class="mt-3 text-3xl font-black text-gray-900 tracking-tight">{{ agent?.name || '桃酥' }}</h1>
+      <p class="mt-3 text-sm text-gray-500 leading-relaxed">{{ agent?.title || '温暖治愈的 AI 知识小助手。' }}</p>
     </div>
     <div class="rounded-3xl bg-gray-50 border border-gray-100 p-5">
       <div class="flex items-center gap-2 mb-4">
@@ -21,8 +26,8 @@ import { ChevronRight, Cpu } from 'lucide-vue-next'
       </div>
       <div class="space-y-3">
         <div class="flex items-center justify-between text-xs"><span class="text-gray-500 font-bold">运行模式</span><span class="text-blue-600 font-black">DeepSeek API</span></div>
-        <div class="flex items-center justify-between text-xs"><span class="text-gray-500 font-bold">连接状态</span><span class="text-emerald-600 font-black">后端代理</span></div>
-        <div class="flex items-center justify-between text-xs"><span class="text-gray-500 font-bold">知识增强</span><span class="text-emerald-600 font-black">教材上下文</span></div>
+        <div class="flex items-center justify-between text-xs"><span class="text-gray-500 font-bold">连接状态</span><span :class="[configured ? 'text-emerald-600' : 'text-slate-400', 'font-black']">{{ configured ? '已配置' : '待配置' }}</span></div>
+        <div class="flex items-center justify-between text-xs"><span class="text-gray-500 font-bold">知识增强</span><span class="text-emerald-600 font-black">{{ agent?.scope || '平台上下文' }}</span></div>
       </div>
     </div>
     <RouterLink to="/community" class="mt-auto h-12 rounded-2xl bg-gray-900 text-white flex items-center justify-center gap-2 text-sm font-black hover:bg-blue-600 transition-colors">
