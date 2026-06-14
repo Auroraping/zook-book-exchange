@@ -125,6 +125,16 @@ def handle_send_message(data):
     message_data = append_room_message(data)
     socketio.emit("receive_message", message_data, room=data.get("roomId"))
 
+@app.get("/api/online-status")
+def online_status():
+    """查询指定用户是否在线"""
+    from flask import request
+    user_id = request.args.get("userId")
+    if not user_id:
+        return jsonify({"success": False, "message": "缺少 userId 参数"})
+    is_online = str(user_id) in online_users
+    return jsonify({"success": True, "online": is_online})
+
 @app.post("/api/diagnose/error")
 def diagnose_error():
     from flask import request
