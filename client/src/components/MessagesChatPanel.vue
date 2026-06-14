@@ -1,7 +1,7 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { CheckCircle2, CreditCard, Package, Send, ShieldAlert, ShoppingBag, Star, X, ChevronUp, ChevronDown } from 'lucide-vue-next'
+import { CheckCircle2, CreditCard, Package, Send, ShoppingBag, Star, X, ChevronUp, ChevronDown } from 'lucide-vue-next'
 import { getJson, patchJson, postJson } from '../composables/useApi.js'
 import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
@@ -41,7 +41,25 @@ const fetchOrderForChat = async () => {
   order.value = (res.orders || []).find((item) => String(item.bookId) === String(props.activeChat.bookId) && item.status !== 'cancelled') || null
 }
 
-watch(() => props.activeChat, fetchOrderForChat, { immediate: true })
+const messageContainer = ref(null)
+
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (messageContainer.value) {
+      messageContainer.value.scrollTop = messageContainer.value.scrollHeight
+    }
+  })
+}
+
+watch(() => props.activeChat, () => {
+  fetchOrderForChat()
+  scrollToBottom()
+}, { immediate: true })
+
+watch(() => props.messages, () => {
+  fetchOrderForChat()
+  scrollToBottom()
+}, { deep: true })
 
 const send = () => {
   const text = draft.value.trim()
@@ -147,11 +165,6 @@ const submitReview = async () => {
   }
 }
 
-const triggerFeedback = () => {
-  if (!order.value) return
-  const initialMsg = `你好，我的订单 TRD-${order.value.id.toUpperCase()} 遇到了问题，想发起申诉和反馈。`
-  router.push(`/messages?contactId=customer-service&contactName=官方客服&initialMsg=${encodeURIComponent(initialMsg)}`)
-}
 </script>
 
 <template>
@@ -166,7 +179,6 @@ const triggerFeedback = () => {
       </div>
       <div v-else class="text-xs text-gray-400 font-bold">正在沟通聊天</div>
       <div class="flex items-center gap-3 flex-shrink-0">
-        <button v-if="order" @click="triggerFeedback" class="h-9 px-3.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-black flex items-center gap-1.5"><ShieldAlert class="w-4 h-4" /> 订单反馈</button>
         <template v-if="!order">
           <button v-if="currentBook && currentBook.status === 'approved'" @click="openCreateOrderModal" class="h-9 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-lg shadow-blue-200 flex items-center gap-1.5"><ShoppingBag class="w-4 h-4" /> 发起报价</button>
         </template>
@@ -187,7 +199,7 @@ const triggerFeedback = () => {
       </div>
     </div>
 
-    <div class="flex-1 p-8 overflow-y-auto bg-gray-50/30 flex flex-col gap-6">
+    <div ref="messageContainer" class="flex-1 p-8 overflow-y-auto bg-gray-50/30 flex flex-col gap-6">
       <template v-for="message in messages" :key="message.id">
         <div v-if="message.role === 'other'" class="flex items-start gap-4 max-w-[85%]">
           <img :src="activeChat.avatar || '/user_avatar.png'" class="w-9 h-9 rounded-full border border-gray-100 bg-white shadow-sm object-cover" />

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Package, CheckCircle2, Clock, XCircle, CreditCard, Star, ShieldAlert } from 'lucide-vue-next'
+import { Package, CheckCircle2, Clock, XCircle, CreditCard, Star } from 'lucide-vue-next'
 import { getJson, patchJson } from '../composables/useApi.js'
 import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
@@ -50,10 +50,6 @@ const runOrderAction = async (order, action) => {
   }
 }
 
-const triggerFeedback = (order) => {
-  const initialMsg = `你好，我的订单 TRD-${order.id.toUpperCase()} 遇到了问题，想发起申诉和反馈。`
-  router.push(`/messages?contactId=customer-service&contactName=官方客服&initialMsg=${encodeURIComponent(initialMsg)}`)
-}
 </script>
 
 <template>
@@ -89,7 +85,6 @@ const triggerFeedback = (order) => {
               <button v-if="['unpaid', 'paid_unconfirmed', 'paid', 'delivered'].includes(order.status) && isBuyer(order)" @click="runOrderAction(order, 'cancel')" class="bg-white border border-gray-200 text-gray-500 px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1.5 hover:text-red-500"><XCircle class="w-4 h-4" /> 取消订单</button>
               <!-- 完成后评价 -->
               <button v-if="order.status === 'completed' && !order.reviewed && isBuyer(order)" @click="runOrderAction(order, 'review')" class="bg-white border-2 border-blue-600 text-blue-600 px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1.5"><Star class="w-4 h-4" /> 评价</button>
-              <button @click="triggerFeedback(order)" class="bg-rose-50 text-rose-600 px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1.5 hover:bg-rose-100"><ShieldAlert class="w-4 h-4" /> 反馈</button>
               <button v-if="order.status === 'cancelled'" @click="runOrderAction(order, 'rebuy')" class="text-sm font-bold text-blue-600 hover:underline">再次购买</button>
             </div>
           </div>
