@@ -73,7 +73,7 @@ def stream_chat(messages, agent=None):
     if resp.status_code >= 400:
         raise ApiError("桃酥暂时无法连接模型服务，请稍后再试", status=resp.status_code)
     usage = {}
-    for line in resp.iter_lines(decode_unicode=True):
+    for line in resp.iter_lines(chunk_size=1, decode_unicode=True):
         if not line or not line.startswith("data:"):
             continue
         raw = line[5:].strip()

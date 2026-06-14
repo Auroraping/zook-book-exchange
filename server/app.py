@@ -1,4 +1,5 @@
 import os
+import config
 from pathlib import Path
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS

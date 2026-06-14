@@ -1,4 +1,5 @@
 <script setup>
+import { ref, watch, nextTick } from 'vue'
 import { Bot, BookOpen, FileText, Search, Send } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 
@@ -21,6 +22,30 @@ const statLabel = (stats) => {
   const miss = stats.cacheMissTokens || 0
   return `${stats.model || 'model'} · ${stats.totalTokens || 0} token · 缓存 ${hit}/${hit + miss}`
 }
+
+const messageContainer = ref(null)
+
+const scrollToBottom = async () => {
+  await nextTick()
+  if (messageContainer.value) {
+    messageContainer.value.scrollTop = messageContainer.value.scrollHeight
+  }
+}
+
+watch(
+  () => props.messages,
+  () => {
+    scrollToBottom()
+  },
+  { deep: true }
+)
+
+watch(
+  () => props.activeAgent,
+  () => {
+    scrollToBottom()
+  }
+)
 </script>
 
 <template>
@@ -45,7 +70,7 @@ const statLabel = (stats) => {
         </button>
       </div>
     </div>
-    <div class="flex-1 bg-gray-50/50 p-7 overflow-y-auto">
+    <div ref="messageContainer" class="flex-1 bg-gray-50/50 p-7 overflow-y-auto">
       <div class="flex flex-col gap-5">
         <div v-for="msg in messages" :key="msg.id" :class="['flex items-start gap-3', msg.role === 'user' ? 'justify-end' : 'justify-start']">
           <img v-if="msg.role !== 'user'" src="/taosu.png" alt="桃酥" class="w-10 h-10 rounded-2xl bg-white object-contain border border-orange-100 shadow-sm" />

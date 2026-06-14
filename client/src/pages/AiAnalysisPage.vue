@@ -82,10 +82,10 @@ const selectAgent = (agentId) => {
 
 const askTaosu = async (question) => {
   if (!question.trim() || isThinking.value) return
-  const userMessage = { id: `user-${Date.now()}`, role: 'user', content: question }
-  const assistantMessage = { id: `ai-${Date.now()}`, role: 'assistant', content: '', references: [], stats: null }
-  messages.value.push(userMessage)
-  messages.value.push(assistantMessage)
+  messages.value.push({ id: `user-${Date.now()}`, role: 'user', content: question })
+  messages.value.push({ id: `ai-${Date.now()}`, role: 'assistant', content: '', references: [], stats: null })
+  const assistantMessage = messages.value[messages.value.length - 1]
+  
   draft.value = ''
   isThinking.value = true
   thinkingStage.value = '连接桃酥'
@@ -105,19 +105,7 @@ const askTaosu = async (question) => {
       }
     })
   } catch (err) {
-    try {
-      const data = await postJson('/api/ai/chat', {
-        agent: activeAgent.value,
-        message: question,
-        history: messages.value.slice(0, -2),
-      })
-      assistantMessage.content = data.reply
-      assistantMessage.references = data.references || []
-      assistantMessage.source = data.source
-      assistantMessage.stats = data.stats || null
-    } catch (fallbackErr) {
-      assistantMessage.content = fallbackErr.message || err.message || '桃酥暂时无法连接模型服务，请稍后再试。'
-    }
+    assistantMessage.content = err.message || '桃酥暂时无法连接模型服务，请稍后再试。'
   } finally {
     if (!assistantMessage.content.trim()) {
       assistantMessage.content = '桃酥暂时没有生成有效回复，请稍后再试。'
@@ -268,7 +256,7 @@ const saveAiConfig = async () => {
         </form>
       </div>
     </section>
-    <section class="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-8 min-h-[720px]">
+    <section class="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-8 h-[750px]">
       <AiAssistantSidebar :agent="activeAgentInfo" :configured="aiConfig.configured" />
       <AiChatPanel
         v-model:draft="draft"

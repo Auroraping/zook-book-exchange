@@ -113,6 +113,20 @@ def save_ai_config():
     if not api_url.startswith("https://"):
         return jsonify({"success": False, "message": "API 地址必须使用 HTTPS"}), 400
 
+    # 验证 API Key 的有效性
+    import requests
+    try:
+        resp = requests.post(
+            api_url,
+            json={"model": model, "messages": [{"role": "user", "content": "hi"}], "max_tokens": 1},
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            timeout=10
+        )
+        if resp.status_code >= 400:
+            return jsonify({"success": False, "message": f"验证失败 (错误码 {resp.status_code})，请确认密钥、地址及模型名准确"}), 400
+    except Exception as exc:
+        return jsonify({"success": False, "message": f"网络或配置异常，请检查您的输入（可能包含非法字符或不可访问）：{str(exc)}"}), 400
+
     try:
         config = write_deepseek_env(api_key, model, api_url)
     except ValueError as exc:
@@ -151,7 +165,10 @@ def ai_chat_stream():
             print("[AI Stream] request failed:", exc)
             yield "event: error\ndata: {\"message\": \"桃酥暂时无法连接模型服务，请稍后再试\"}\n\n"
 
-    return Response(stream_with_context(generate()), mimetype="text/event-stream")
+    response = Response(stream_with_context(generate()), mimetype="text/event-stream")
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["X-Accel-Buffering"] = "no"
+    return response
 
 
 @ai_bp.get("/api/ai/recommend")
