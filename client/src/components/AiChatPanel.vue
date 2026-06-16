@@ -1,6 +1,6 @@
 <script setup>
-import { ref, watch, nextTick } from 'vue'
-import { Bot, BookOpen, FileText, Search, Send } from 'lucide-vue-next'
+import { computed, ref, watch, nextTick } from 'vue'
+import { Bot, BookOpen, FileText, Loader2, Search, Send, Sparkles } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 
 const props = defineProps({
@@ -17,11 +17,17 @@ const emit = defineEmits(['ask', 'update:draft', 'select-agent'])
 const referenceIcon = (type) => type === 'book' ? BookOpen : FileText
 const statLabel = (stats) => {
   if (!stats) return ''
-  if (stats.source === 'faq') return 'FAQ 缓存命中 · 0 token'
+  if (stats.source === 'faq') {
+    return `${stats.matchType === 'similar' ? '相似 FAQ 缓存命中' : 'FAQ 缓存命中'} · 0 token`
+  }
   const hit = stats.cacheHitTokens || 0
   const miss = stats.cacheMissTokens || 0
   return `${stats.model || 'model'} · ${stats.totalTokens || 0} token · 缓存 ${hit}/${hit + miss}`
 }
+
+const loadingLabel = computed(() => props.thinkingStage || '桃酥正在思考')
+const isCacheStage = computed(() => loadingLabel.value.includes('缓存'))
+const isGeneratingStage = computed(() => loadingLabel.value.includes('生成') || loadingLabel.value.includes('模型'))
 
 const messageContainer = ref(null)
 
@@ -76,7 +82,24 @@ watch(
           <img v-if="msg.role !== 'user'" src="/taosu.png" alt="桃酥" class="w-10 h-10 rounded-2xl bg-white object-contain border border-orange-100 shadow-sm" />
           <div :class="['max-w-[78%] rounded-[24px] px-5 py-4 shadow-sm text-sm leading-relaxed', msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-md' : 'bg-white text-gray-700 border border-gray-100 rounded-tl-md']">
             <div class="whitespace-pre-wrap">
-              {{ msg.content || (msg.role === 'assistant' && loading ? (thinkingStage || '桃酥正在思考...') : '') }}
+              <template v-if="msg.content">{{ msg.content }}</template>
+              <div v-else-if="msg.role === 'assistant' && loading" class="min-w-[220px]">
+                <div class="flex items-center gap-3 text-gray-600">
+                  <span :class="['w-9 h-9 rounded-2xl flex items-center justify-center', isCacheStage ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600']">
+                    <Sparkles v-if="isCacheStage" class="w-4 h-4" />
+                    <Loader2 v-else class="w-4 h-4 animate-spin" />
+                  </span>
+                  <div>
+                    <p class="text-sm font-black text-gray-800">{{ loadingLabel }}</p>
+                    <p class="text-[11px] font-bold text-gray-400">{{ isGeneratingStage ? '正在流式生成，内容会实时显示' : '正在减少重复请求并整理上下文' }}</p>
+                  </div>
+                </div>
+                <div class="mt-4 flex items-center gap-1.5">
+                  <span class="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                  <span class="h-1.5 w-1.5 rounded-full bg-blue-300 animate-pulse [animation-delay:120ms]"></span>
+                  <span class="h-1.5 w-1.5 rounded-full bg-blue-200 animate-pulse [animation-delay:240ms]"></span>
+                </div>
+              </div>
             </div>
             <div v-if="msg.stats" class="mt-3 text-[11px] font-bold text-gray-400">
               {{ statLabel(msg.stats) }}
@@ -96,7 +119,10 @@ watch(
         </div>
         <div v-if="loading && !messages.some((msg) => msg.role === 'assistant' && !msg.content)" class="flex items-start gap-3 justify-start">
           <img src="/taosu.png" alt="桃酥" class="w-10 h-10 rounded-2xl bg-white object-contain border border-orange-100 shadow-sm" />
-          <div class="bg-white text-gray-500 border border-gray-100 rounded-[24px] rounded-tl-md px-5 py-4 shadow-sm text-sm">{{ thinkingStage || '桃酥正在思考...' }}</div>
+          <div class="bg-white text-gray-500 border border-gray-100 rounded-[24px] rounded-tl-md px-5 py-4 shadow-sm text-sm flex items-center gap-3">
+            <Loader2 class="w-4 h-4 animate-spin text-blue-600" />
+            <span class="font-bold">{{ loadingLabel }}</span>
+          </div>
         </div>
       </div>
     </div>

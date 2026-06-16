@@ -1,7 +1,7 @@
 import json
 
 from ai_prompt import build_messages, next_summary
-from ai_repository import find_faq, get_conversation, log_usage, save_conversation, save_faq
+from ai_repository import find_cached_faq, get_conversation, log_usage, save_conversation, save_faq
 from deepseek_client import ApiError, post_chat, stream_chat
 
 
@@ -45,6 +45,7 @@ def public_stats(source, result):
         "totalTokens": usage.get("total_tokens") or 0,
         "cacheHitTokens": usage.get("prompt_cache_hit_tokens") or 0,
         "cacheMissTokens": usage.get("prompt_cache_miss_tokens") or 0,
+        "matchType": result.get("matchType"),
     }
 
 
@@ -54,9 +55,12 @@ def should_cache(agent, question, reply):
 
 def ask_taosu(payload, agent, context, references, user):
     question = clean_message(payload)
-    faq = find_faq(agent["id"], question, auth_state(user))
+    faq = find_cached_faq(agent["id"], question, auth_state(user))
     if faq:
-        result = {"reply": faq["reply"], "references": faq["references"], "model": "faq-cache", "usage": {}, "latencyMs": 0}
+        result = {
+            "reply": faq["reply"], "references": faq["references"], "model": "faq-cache",
+            "usage": {}, "latencyMs": 0, "matchType": faq.get("matchType"),
+        }
         log_usage(usage_info(user, agent, "faq", result))
         return {**result, "source": "faq", "stats": public_stats("faq", result)}
 
@@ -73,19 +77,21 @@ def ask_taosu(payload, agent, context, references, user):
 
 def stream_events(payload, agent, context, references, user):
     question = clean_message(payload)
-    faq = find_faq(agent["id"], question, auth_state(user))
+    yield sse("stage", {"label": "检查 FAQ 缓存", "step": "cache"})
+    faq = find_cached_faq(agent["id"], question, auth_state(user))
     if faq:
-        yield sse("stage", {"label": "命中 FAQ 缓存"})
+        label = "命中相似 FAQ 缓存" if faq.get("matchType") == "similar" else "命中 FAQ 缓存"
+        yield sse("stage", {"label": label, "step": "cache-hit"})
         yield sse("delta", {"text": faq["reply"]})
-        result = {"model": "faq-cache", "usage": {}, "latencyMs": 0}
+        result = {"model": "faq-cache", "usage": {}, "latencyMs": 0, "matchType": faq.get("matchType")}
         log_usage(usage_info(user, agent, "faq", result))
         yield sse("done", {"references": faq["references"], "stats": public_stats("faq", result), "source": "faq", **result})
         return
 
     conv = get_conversation(user_id(user), agent["id"])
-    yield sse("stage", {"label": "检索上下文"})
+    yield sse("stage", {"label": "整理平台上下文", "step": "context"})
     messages = build_messages(payload, agent, context, conv)
-    yield sse("stage", {"label": "生成回答"})
+    yield sse("stage", {"label": "连接模型生成回答", "step": "model"})
     reply_parts = []
     final = {}
     for event in stream_chat(messages, agent):
