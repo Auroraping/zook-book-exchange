@@ -67,17 +67,15 @@ def apply_order_action(order, action):
             order["status"] = "paid_unconfirmed"
             effects["notifications"].append((order.get("sellerId"), "买家已付款", f"买家已为《{order.get('title')}》付款，请确认收款。", "blue"))
     elif action == "confirm_receipt":
+        # 卖家确认收款前，买家必须先点击"已付款"
+        if not order.get("buyerPaid"):
+            return {"error": "买家尚未确认付款，请等待买家先点击「已付款」后再确认收款"}
         order["sellerConfirmed"] = True
         order["sellerConfirmedAt"] = now_text()
-        if order.get("buyerPaid"):
-            # 双向确认完成 -> 未放置
-            order.update({"isPaid": True, "status": "paid"})
-            effects["bookSold"] = True
-            effects["notifications"].append((order.get("userId"), "收款双向确认完成", f"《{order.get('title')}》的货款已双向确认，卖家将尽快放到约定地点。", "green"))
-        else:
-            # 仅卖家已确认收款，等待买家付款
-            order["status"] = "paid_unconfirmed"
-            effects["notifications"].append((order.get("userId"), "卖家已确认收款", f"卖家已确认收到《{order.get('title')}》的货款，请买家也确认付款。", "blue"))
+        # 买家已付款 + 卖家确认收款 -> 双向确认完成
+        order.update({"isPaid": True, "status": "paid"})
+        effects["bookSold"] = True
+        effects["notifications"].append((order.get("userId"), "收款双向确认完成", f"《{order.get('title')}》的货款已双向确认，卖家将尽快放到约定地点。", "green"))
     elif action == "deliver":
         if order.get("status") != "paid":
             return {"error": "只有双向确认收款后才能放置书籍"}

@@ -26,9 +26,7 @@ const isSeller = (order) => String(order.sellerId) === String(accountId.value)
 
 const getStatusInfo = (status, order) => {
   if (status === 'paid_unconfirmed') {
-    if (order?.buyerPaid && !order?.sellerConfirmed) return { label: '买家已付款', color: 'text-amber-500', bg: 'bg-amber-50/40', border: 'border-amber-100' }
-    if (!order?.buyerPaid && order?.sellerConfirmed) return { label: '卖家已收款', color: 'text-amber-500', bg: 'bg-amber-50/40', border: 'border-amber-100' }
-    return { label: '待确认', color: 'text-amber-500', bg: 'bg-amber-50/40', border: 'border-amber-100' }
+    return { label: '买家已付款，等待卖家确认', color: 'text-amber-500', bg: 'bg-amber-50/40', border: 'border-amber-100' }
   }
   if (status === 'paid') return { label: '未放置', color: 'text-blue-500', bg: 'bg-blue-50/40', border: 'border-blue-100' }
   if (status === 'delivered') return { label: '未收货', color: 'text-purple-500', bg: 'bg-purple-50/40', border: 'border-purple-100' }
@@ -76,7 +74,8 @@ const runOrderAction = async (order, action) => {
             <div class="flex flex-wrap gap-3 justify-end">
               <!-- 未支付/待确认：买家显示已付款，卖家显示已收款 -->
               <button v-if="(order.status === 'unpaid' || (order.status === 'paid_unconfirmed' && !order.buyerPaid)) && isBuyer(order)" @click="runOrderAction(order, 'pay')" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-xl shadow-blue-200 flex items-center gap-2"><CreditCard class="w-4 h-4" /> 已付款</button>
-              <button v-if="(order.status === 'unpaid' || (order.status === 'paid_unconfirmed' && !order.sellerConfirmed)) && isSeller(order)" @click="runOrderAction(order, 'confirm_receipt')" class="bg-purple-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-xl shadow-purple-200 flex items-center gap-2"><CreditCard class="w-4 h-4" /> 已收款</button>
+              <span v-if="order.status === 'unpaid' && isSeller(order)" class="text-gray-400 text-sm font-medium px-4 py-2.5 rounded-xl border border-dashed border-gray-200 flex items-center gap-2"><Clock class="w-4 h-4" /> 等待买家付款</span>
+              <button v-if="order.status === 'paid_unconfirmed' && order.buyerPaid && !order.sellerConfirmed && isSeller(order)" @click="runOrderAction(order, 'confirm_receipt')" class="bg-purple-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-xl shadow-purple-200 flex items-center gap-2"><CreditCard class="w-4 h-4" /> 已收款</button>
               <!-- 未放置：卖家放书 -->
               <button v-if="order.status === 'paid' && isSeller(order)" @click="runOrderAction(order, 'deliver')" class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-xl shadow-indigo-200 flex items-center gap-2"><Package class="w-4 h-4" /> 已放</button>
               <!-- 未收货：买家确认收货 -->

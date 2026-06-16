@@ -32,13 +32,14 @@ const canActAsSeller = computed(() => {
   return String(order.value.sellerId) === String(accountId.value)
 })
 
+const activeOrderStatuses = new Set(['unpaid', 'paid_unconfirmed', 'paid', 'delivered'])
 const fetchOrderForChat = async () => {
   if (!props.activeChat?.bookId) {
     order.value = null
     return
   }
   const res = await getJson(`/api/orders?userId=${accountId.value}`).catch(() => ({ orders: [] }))
-  order.value = (res.orders || []).find((item) => String(item.bookId) === String(props.activeChat.bookId) && item.status !== 'cancelled') || null
+  order.value = (res.orders || []).find((item) => String(item.bookId) === String(props.activeChat.bookId) && activeOrderStatuses.has(item.status)) || null
 }
 
 const messageContainer = ref(null)
@@ -234,7 +235,7 @@ const handleFileSelected = async (e) => {
           <div class="hidden lg:flex flex-col items-end text-[10px] text-gray-400 font-bold mr-1"><span>实付：¥{{ Number(order.price).toFixed(2) }}</span><span>地点：{{ order.location }}</span></div>
           <!-- 未支付：买家显示已付款，卖家显示已收款 -->
           <button v-if="(order.status === 'unpaid' || (order.status === 'paid_unconfirmed' && !order.buyerPaid)) && canActAsBuyer" @click="runOrderAction('pay')" class="h-9 px-5 bg-blue-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><CreditCard class="w-4 h-4" /> 已付款</button>
-          <button v-if="(order.status === 'unpaid' || (order.status === 'paid_unconfirmed' && !order.sellerConfirmed)) && canActAsSeller" @click="runOrderAction('confirm_receipt')" class="h-9 px-5 bg-purple-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><CreditCard class="w-4 h-4" /> 已收款</button>
+          <button v-if="order.status === 'paid_unconfirmed' && order.buyerPaid && !order.sellerConfirmed && canActAsSeller" @click="runOrderAction('confirm_receipt')" class="h-9 px-5 bg-purple-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><CreditCard class="w-4 h-4" /> 已收款</button>
           <!-- 未放置：卖家放书 -->
           <button v-if="order.status === 'paid' && canActAsSeller" @click="runOrderAction('deliver')" class="h-9 px-5 bg-indigo-600 text-white rounded-xl text-xs font-black flex items-center gap-1.5"><Package class="w-4 h-4" /> 已放</button>
           <!-- 未收货：买家确认收货 -->
@@ -256,7 +257,8 @@ const handleFileSelected = async (e) => {
             <div class="text-2xl font-black text-gray-800 mb-1">¥{{ Number(message.proposalData.price).toFixed(2) }}</div>
             <div class="text-xs text-gray-500 font-bold mb-4 flex items-center gap-1"><Package class="w-3.5 h-3.5"/> {{ message.proposalData.location }}</div>
             <button v-if="message.proposalData.status === 'pending' && !order" @click="acceptProposal(message)" class="w-full py-2 bg-blue-600 text-white rounded-xl text-xs font-black">同意报价并生成订单</button>
-            <div v-else class="w-full py-2 bg-green-50 text-green-600 rounded-xl text-xs font-black flex items-center justify-center gap-1"><CheckCircle2 class="w-4 h-4"/> 已处理</div>
+            <div v-else-if="message.proposalData.status !== 'pending'" class="w-full py-2 bg-green-50 text-green-600 rounded-xl text-xs font-black flex items-center justify-center gap-1"><CheckCircle2 class="w-4 h-4"/> 已处理</div>
+            <div v-else class="w-full py-2 bg-amber-50 text-amber-600 rounded-xl text-xs font-black flex items-center justify-center gap-1"><ShoppingBag class="w-4 h-4"/> 请先处理进行中的订单</div>
           </div>
           <div v-else-if="message.msgType === 'image'" class="bg-white border border-gray-100 rounded-2xl rounded-tl-none overflow-hidden shadow-sm">
             <img :src="message.imageUrl" class="max-w-[260px] max-h-[300px] object-cover cursor-pointer hover:opacity-90 transition-opacity" @click="previewImageUrl = message.imageUrl" />
