@@ -1,7 +1,8 @@
-from flask import Blueprint, jsonify, current_app
+from flask import Blueprint, jsonify, current_app, request
 from auth_context import current_request_user_id
 from json_store import mutate_json, new_id, now_text
 from chats_helper import normalize_user_id, get_user_info, seed_chat_state, request_payload
+from upload_paths import save_upload
 
 chat_messages_bp = Blueprint("chat_messages_bp", __name__)
 
@@ -9,7 +10,9 @@ chat_messages_bp = Blueprint("chat_messages_bp", __name__)
 def create_chat_message(chat_id):
     payload = request_payload()
     text = str(payload.get("text") or "").strip()
-    if not text:
+    image_url = payload.get("imageUrl") or ""  # 图片消息的 URL
+    # 允许纯图片消息（text 为空但有图片）
+    if not text and not image_url:
         return jsonify({"success": False, "message": "消息不能为空"}), 400
 
     sender_id = normalize_user_id(current_request_user_id(payload.get("userId") or "me"))
@@ -36,12 +39,16 @@ def create_chat_message(chat_id):
             message["msgType"] = msg_type
         if proposal_data:
             message["proposalData"] = proposal_data
+        if image_url:
+            message["imageUrl"] = image_url
+            message["msgType"] = "image"
         a_room.append(message)
         
         # 更新 A 侧联系人卡片的最后消息
+        display_last = "[图片]" if image_url and not text else text
         for contact in a_contacts:
             if str(contact.get("id")) == receiver_id:
-                contact["lastMsg"] = text
+                contact["lastMsg"] = display_last
                 contact["time"] = "刚刚"
                 
         reply = None
@@ -59,13 +66,16 @@ def create_chat_message(chat_id):
                 b_message["msgType"] = msg_type
             if proposal_data:
                 b_message["proposalData"] = proposal_data
+            if image_url:
+                b_message["imageUrl"] = image_url
+                b_message["msgType"] = "image"
             b_room.append(b_message)
             
             # 更新 B 侧 A 联系人卡片的最后消息与未读数
             found_a = False
             for contact in b_contacts:
                 if str(contact.get("id")) == sender_id:
-                    contact["lastMsg"] = text
+                    contact["lastMsg"] = display_last
                     contact["time"] = "刚刚"
                     contact["unread"] = (contact.get("unread") or 0) + 1
                     found_a = True
@@ -80,7 +90,7 @@ def create_chat_message(chat_id):
                     "avatar": s_info["avatar"],
                     "time": "刚刚",
                     "unread": 1,
-                    "lastMsg": text
+                    "lastMsg": display_last
                 }
                 b_contacts.insert(0, new_contact_for_b)
         else:
@@ -109,7 +119,8 @@ def create_chat_message(chat_id):
                 "content": text,
                 "timestamp": result["message"]["timestamp"],
                 **({"msgType": msg_type} if msg_type != "text" else {}),
-                **({"proposalData": proposal_data} if proposal_data else {})
+                **({"proposalData": proposal_data} if proposal_data else {}),
+                **({"imageUrl": image_url} if image_url else {})
             }
         }
         socketio = current_app.extensions.get("socketio")
@@ -119,7 +130,21 @@ def create_chat_message(chat_id):
         
     return jsonify({"success": True, **result})
 
+
+@chat_messages_bp.post("/api/chats/upload-image")
+def upload_chat_image():
+    """上传聊天图片，返回图片 URL"""
+    if "file" not in request.files:
+        return jsonify({"success": False, "message": "未选择文件"}), 400
+    file = request.files["file"]
+    if not file.filename:
+        return jsonify({"success": False, "message": "文件名为空"}), 400
+    url, filename = save_upload(file, "chat")
+    return jsonify({"success": True, "url": url, "filename": filename})
+
+
 @chat_messages_bp.patch("/api/chats/<chat_id>/messages/<msg_id>/accept")
+
 def accept_proposal(chat_id, msg_id):
     sender_id = normalize_user_id(current_request_user_id(request_payload().get("userId") or "me"))
     receiver_id = normalize_user_id(chat_id)

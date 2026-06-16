@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { CheckCircle2, CreditCard, Package, Send, ShoppingBag, Star, X, ChevronUp, ChevronDown } from 'lucide-vue-next'
-import { getJson, patchJson, postJson } from '../composables/useApi.js'
+import { CheckCircle2, CreditCard, Image, Package, Send, ShieldAlert, ShoppingBag, Star, X, ChevronUp, ChevronDown } from 'lucide-vue-next'
+import { getJson, patchJson, postJson, uploadFile } from '../composables/useApi.js'
 import { useCurrentAccount } from '../composables/useCurrentAccount.js'
 
 const props = defineProps({
@@ -165,6 +165,54 @@ const submitReview = async () => {
   }
 }
 
+const triggerFeedback = () => {
+  if (!order.value) return
+  const initialMsg = `你好，我的订单 TRD-${order.value.id.toUpperCase()} 遇到了问题，想发起申诉和反馈。`
+  router.push(`/messages?contactId=customer-service&contactName=官方客服&initialMsg=${encodeURIComponent(initialMsg)}`)
+}
+
+// 图片发送相关
+const fileInput = ref(null)
+const uploading = ref(false)
+const previewImageUrl = ref('')
+
+const showPreviewModal = computed(() => !!previewImageUrl.value)
+const closePreview = () => { previewImageUrl.value = '' }
+
+const triggerFileSelect = () => {
+  fileInput.value?.click()
+}
+
+const handleFileSelected = async (e) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+  // 只允许图片格式
+  if (!file.type.startsWith('image/')) {
+    alert('请选择图片文件')
+    return
+  }
+  // 限制文件大小 10MB
+  if (file.size > 10 * 1024 * 1024) {
+    alert('图片大小不能超过 10MB')
+    return
+  }
+  uploading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await uploadFile('/api/chats/upload-image', formData)
+    if (res.success && res.url) {
+      // 发送图片消息
+      emit('send', { type: 'image', imageUrl: res.url, text: '' })
+    }
+  } catch (err) {
+    alert(err.message || '图片上传失败')
+  } finally {
+    uploading.value = false
+    // 重置 input 以便重复选择同一文件
+    if (fileInput.value) fileInput.value.value = ''
+  }
+}
 </script>
 
 <template>
@@ -210,6 +258,10 @@ const submitReview = async () => {
             <button v-if="message.proposalData.status === 'pending' && !order" @click="acceptProposal(message)" class="w-full py-2 bg-blue-600 text-white rounded-xl text-xs font-black">同意报价并生成订单</button>
             <div v-else class="w-full py-2 bg-green-50 text-green-600 rounded-xl text-xs font-black flex items-center justify-center gap-1"><CheckCircle2 class="w-4 h-4"/> 已处理</div>
           </div>
+          <div v-else-if="message.msgType === 'image'" class="bg-white border border-gray-100 rounded-2xl rounded-tl-none overflow-hidden shadow-sm">
+            <img :src="message.imageUrl" class="max-w-[260px] max-h-[300px] object-cover cursor-pointer hover:opacity-90 transition-opacity" @click="previewImageUrl = message.imageUrl" />
+            <p v-if="message.content" class="text-sm text-gray-800 px-3 pb-3 leading-relaxed whitespace-pre-wrap break-words">{{ message.content }}</p>
+          </div>
           <div v-else class="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-none text-sm text-gray-800 shadow-sm leading-relaxed whitespace-pre-wrap break-words">{{ message.content }}</div>
         </div>
         <div v-else class="flex items-start justify-end gap-4 max-w-[85%] self-end">
@@ -219,13 +271,24 @@ const submitReview = async () => {
             <div class="text-xs text-blue-100 font-bold mb-3 flex items-center gap-1"><Package class="w-3.5 h-3.5"/> {{ message.proposalData.location }}</div>
             <div class="w-full py-1.5 bg-blue-700/50 rounded-lg text-xs font-black text-center">{{ message.proposalData.status === 'pending' ? '等待对方确认' : '对方已接受' }}</div>
           </div>
+          <div v-else-if="message.msgType === 'image'" class="bg-blue-600 rounded-2xl rounded-tr-none overflow-hidden shadow">
+            <img :src="message.imageUrl" class="max-w-[260px] max-h-[300px] object-cover cursor-pointer hover:opacity-90 transition-opacity" @click="previewImageUrl = message.imageUrl" />
+            <p v-if="message.content" class="text-sm text-white px-3 pb-3 leading-relaxed whitespace-pre-wrap break-words">{{ message.content }}</p>
+          </div>
           <div v-else class="bg-blue-600 text-white p-4 rounded-2xl rounded-tr-none text-sm shadow leading-relaxed whitespace-pre-wrap break-words">{{ message.content }}</div>
           <img :src="user?.avatar || '/user_avatar.png'" class="w-9 h-9 rounded-full border-2 border-white shadow object-cover bg-white shrink-0" />
         </div>
       </template>
     </div>
 
-    <div class="p-6 bg-white border-t border-gray-50 flex gap-4"><textarea v-model="draft" class="flex-1 bg-gray-50 border-none rounded-2xl p-4 text-sm outline-none focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all resize-none h-24" placeholder="发送消息..." @keydown.enter.exact.prevent="send"></textarea><button @click="send" class="w-14 h-24 bg-blue-600 rounded-2xl flex items-center justify-center text-white hover:shadow-lg transition-all active:scale-95"><Send class="w-6 h-6" /></button></div>
+    <div class="p-6 bg-white border-t border-gray-50 flex gap-3 items-end">
+      <button @click="triggerFileSelect" :disabled="uploading" :class="['w-14 h-20 rounded-2xl flex items-center justify-center text-white transition-all active:scale-95 shrink-0', uploading ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:shadow-lg']" title="发送图片">
+        <Image class="w-6 h-6" />
+      </button>
+      <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="handleFileSelected" />
+      <textarea v-model="draft" class="flex-1 bg-gray-50 border-none rounded-2xl p-4 text-sm outline-none focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all resize-none h-20" placeholder="发送消息..." @keydown.enter.exact.prevent="send"></textarea>
+      <button @click="send" :disabled="!draft.trim()" class="w-14 h-20 rounded-2xl flex items-center justify-center text-white transition-all active:scale-95 shrink-0" :class="draft.trim() ? 'bg-blue-600 hover:shadow-lg' : 'bg-gray-300 cursor-not-allowed'"><Send class="w-6 h-6" /></button>
+    </div>
 
     <div v-if="showCreateOrderModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
       <div class="bg-white border border-slate-100 shadow-xl rounded-[32px] w-full max-w-sm p-6 relative">
@@ -253,6 +316,16 @@ const submitReview = async () => {
         <h3 class="text-base font-black text-gray-900 mb-2">为卖家评分</h3>
         <div class="flex items-center justify-center gap-2 mb-6"><button v-for="star in 5" :key="star" @click="reviewRating = star" class="p-1 hover:scale-110 transition-transform"><Star :class="['w-7 h-7', star <= reviewRating ? 'text-yellow-400 fill-current' : 'text-gray-200']" /></button></div>
         <div class="flex gap-3"><button @click="showReviewModal = false" class="flex-1 py-2 rounded-xl border border-gray-100 text-gray-500 font-bold text-xs">暂不评价</button><button @click="submitReview" :disabled="submittingReview" class="flex-1 py-2 rounded-xl bg-yellow-500 text-white font-bold text-xs">提交评分</button></div>
+      </div>
+    </div>
+
+    <!-- 图片预览模态框 -->
+    <div v-if="showPreviewModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click.self="closePreview">
+      <div class="relative max-w-[90vw] max-h-[90vh]">
+        <button @click="closePreview" class="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-white/90 shadow-lg flex items-center justify-center text-gray-600 hover:text-gray-900 transition-colors z-10">
+          <X class="w-4 h-4" />
+        </button>
+        <img :src="previewImageUrl" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl object-contain" />
       </div>
     </div>
   </template>

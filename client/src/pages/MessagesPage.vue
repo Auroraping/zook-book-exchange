@@ -151,7 +151,8 @@ onMounted(async () => {
     }
 
     if (chat) {
-      chat.lastMsg = incomingMsg.content
+      // 图片消息显示 [图片]，否则显示文本内容
+      chat.lastMsg = incomingMsg.imageUrl ? '[图片]' : (incomingMsg.content || '')
       chat.time = '刚刚'
       
       // 2. 强行刷新 chats 的引用，百分之百驱动 Vue 3 同步重绘侧边栏最后一条消息与红点状态！
@@ -242,6 +243,34 @@ const sendMessage = async (payload) => {
     const chat = chats.value.find((c) => c.id === activeChatId.value)
     if (chat) {
       chat.lastMsg = '[交易报价]'
+      chat.time = '刚刚'
+    }
+    return
+  }
+
+  // 处理图片消息
+  if (typeof payload === 'object' && payload.type === 'image') {
+    const currentUserId = currentAccountId()
+    const data = await postJson(`/api/chats/${activeChatId.value}/messages`, {
+      text: payload.text || '',
+      imageUrl: payload.imageUrl,
+      userId: currentUserId
+    })
+    
+    if (!chatMessages.value[activeChatId.value]) {
+      chatMessages.value[activeChatId.value] = []
+    }
+    
+    let updatedList = [...chatMessages.value[activeChatId.value], data.message]
+    if (data.reply) {
+      updatedList = [...updatedList, data.reply]
+    }
+    chatMessages.value[activeChatId.value] = updatedList
+    chatMessages.value = { ...chatMessages.value }
+
+    const chat = chats.value.find((c) => c.id === activeChatId.value)
+    if (chat) {
+      chat.lastMsg = '[图片]'
       chat.time = '刚刚'
     }
     return
