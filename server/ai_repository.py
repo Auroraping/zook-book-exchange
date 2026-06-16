@@ -1,9 +1,8 @@
-import hashlib
 import json
-import re
 from datetime import datetime, timedelta
 
 from ai_defaults import DEFAULT_AGENTS, DEFAULT_FAQS
+from ai_faq_matcher import cache_key, is_similar_question
 from db_manager import get_db_conn
 from json_store import new_id
 
@@ -12,18 +11,16 @@ def now_text():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
-def normalize_question(text):
-    cleaned = re.sub(r"\s+", "", str(text or "").lower())
-    return re.sub(r"[，。！？、,.!?；;：:]+", "", cleaned)
-
-
-def cache_key(agent_id, question, auth_state="any"):
-    raw = f"{agent_id}|{auth_state}|{normalize_question(question)}"
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]
-
-
 def row_data(row):
     return json.loads(row["data"]) if row and row["data"] else {}
+
+
+def faq_result(row, source):
+    data = row_data(row)
+    return {
+        "reply": data.get("reply"), "references": data.get("references") or [],
+        "cacheKey": row["cacheKey"], "matchedQuestion": row["question"], "matchType": source,
+    }
 
 
 def ensure_ai_seed():
@@ -84,11 +81,43 @@ def find_faq(agent_id, question, auth_state="any"):
     if row["expiresAt"] and row["expiresAt"] < now_text():
         conn.close()
         return None
+    result = faq_result(row, "exact")
     conn.execute("UPDATE ai_faq_cache SET hitCount = hitCount + 1 WHERE cacheKey = ?", (row["cacheKey"],))
     conn.commit()
     conn.close()
-    data = row_data(row)
-    return {"reply": data.get("reply"), "references": data.get("references") or [], "cacheKey": row["cacheKey"]}
+    return result
+
+
+def find_similar_faq(agent_id, question, auth_state="any"):
+    if len(str(question or "").strip()) > 120:
+        return None
+    conn = get_db_conn()
+    rows = conn.execute(
+        """SELECT * FROM ai_faq_cache
+        WHERE agentId = ? AND (expiresAt IS NULL OR expiresAt >= ?)
+        ORDER BY updatedAt DESC LIMIT 80""",
+        (agent_id, now_text()),
+    ).fetchall()
+    best = None
+    for row in rows:
+        key = row["cacheKey"]
+        if not (key == cache_key(agent_id, row["question"], auth_state) or key == cache_key(agent_id, row["question"])):
+            continue
+        if is_similar_question(question, row["question"]):
+            best = row
+            break
+    if not best:
+        conn.close()
+        return None
+    result = faq_result(best, "similar")
+    conn.execute("UPDATE ai_faq_cache SET hitCount = hitCount + 1 WHERE cacheKey = ?", (best["cacheKey"],))
+    conn.commit()
+    conn.close()
+    return result
+
+
+def find_cached_faq(agent_id, question, auth_state="any"):
+    return find_faq(agent_id, question, auth_state) or find_similar_faq(agent_id, question, auth_state)
 
 
 def save_faq(agent_id, question, reply, references=None, ttl_days=14, auth_state="any"):
