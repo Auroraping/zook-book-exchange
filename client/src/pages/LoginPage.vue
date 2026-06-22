@@ -13,6 +13,10 @@ const isLogin = ref(true)
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+const verificationCode = ref('')
+const countdown = ref(0)
+const isSendingCode = ref(false)
+let timer = null
 const remember = ref(true)
 const isLoading = ref(false)
 const error = ref('')
@@ -40,8 +44,38 @@ const cacheRealInfo = (userData) => {
 const validateBeforeSubmit = () => {
   if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email.value)) return '邮箱格式不正确'
   if (!password.value) return '请输入密码'
+  if (!isLogin.value && !verificationCode.value) return '请输入验证码'
   if (!isLogin.value && password.value !== confirmPassword.value) return '两次输入的密码不一致'
   return ''
+}
+
+const sendCode = async () => {
+  if (!email.value) {
+    error.value = '请先输入邮箱'
+    return
+  }
+  if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email.value)) {
+    error.value = '邮箱格式不正确'
+    return
+  }
+  error.value = ''
+  isSendingCode.value = true
+  try {
+    const data = await postJson('/api/auth/send-code', { email: email.value.trim() })
+    if (data.success) {
+      countdown.value = 60
+      timer = setInterval(() => {
+        countdown.value--
+        if (countdown.value <= 0) clearInterval(timer)
+      }, 1000)
+    } else {
+      error.value = data.message || '验证码发送失败'
+    }
+  } catch (err) {
+    error.value = err.message || '无法连接到服务器'
+  } finally {
+    isSendingCode.value = false
+  }
 }
 
 const handleSubmit = async () => {
@@ -54,6 +88,7 @@ const handleSubmit = async () => {
       email: email.value.trim(),
       password: password.value,
       confirmPassword: confirmPassword.value,
+      code: verificationCode.value.trim(),
       name: email.value.trim().split('@')[0],
       remember: remember.value
     })
@@ -83,6 +118,17 @@ const handleSubmit = async () => {
       <div class="w-full p-8 border border-gray-200 rounded-[32px] bg-white shadow-sm">
         <form class="flex flex-col gap-6" @submit.prevent="handleSubmit">
           <AuthTextField v-model="email" autocomplete="email" label="邮箱" />
+          <div v-if="!isLogin" class="flex gap-2 items-end">
+            <AuthTextField v-model="verificationCode" label="验证码" class="flex-1" />
+            <button 
+              type="button" 
+              @click="sendCode" 
+              :disabled="countdown > 0 || isSendingCode"
+              class="h-[52px] px-5 bg-gray-100 text-gray-700 rounded-[16px] text-sm font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-colors"
+            >
+              {{ isSendingCode ? '发送中...' : (countdown > 0 ? `${countdown}s 后重试` : '获取验证码') }}
+            </button>
+          </div>
           <AuthTextField v-model="password" type="password" autocomplete="current-password" label="密码" />
           <AuthTextField v-if="!isLogin" v-model="confirmPassword" type="password" autocomplete="new-password" label="确认密码" />
           

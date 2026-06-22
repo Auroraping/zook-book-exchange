@@ -16,9 +16,9 @@ const thinkingStage = ref('')
 const agents = ref([])
 const activeAgent = ref('general')
 
-const apiKey = ref('')
-const apiUrl = ref('')
-const modelName = ref('')
+const apiKey = ref('sk-e30a39880b3540be9c73ada2f1f63d19')
+const apiUrl = ref('https://api.deepseek.com/chat/completions')
+const modelName = ref('deepseek-v4-pro')
 const aiConfig = ref({ configured: false, model: 'deepseek-v4-pro', apiUrl: 'https://api.deepseek.com/chat/completions' })
 const configMessage = ref('')
 const savingConfig = ref(false)
@@ -53,22 +53,32 @@ const resetAgentMessages = () => {
   }]
 }
 
-onMounted(async () => {
-  const [booksData, uiRes, configData, agentsData] = await Promise.all([
-    getJson('/api/ai/recommend'),
-    getJson('/api/ui'),
-    getJson('/api/ai/config'),
-    getJson('/api/ai/agents').catch(() => ({ agents: fallbackAgents })),
-  ])
-  const ui = uiRes
-  books.value = booksData.books
-  aiConfig.value = configData
-  apiUrl.value = configData.apiUrl || 'https://api.deepseek.com/chat/completions'
-  modelName.value = configData.model || 'deepseek-v4-pro'
-  agents.value = agentsData.agents?.length ? agentsData.agents : fallbackAgents
-  fallbackPrompts.value = ui.aiAnalysis?.quickPrompts || []
-  decisionCards.value = ui.aiAnalysis?.decisionCards || []
-  resetAgentMessages()
+onMounted(() => {
+  // 1. 加载快速响应的 UI 静态配置
+  getJson('/api/ui').then(ui => {
+    fallbackPrompts.value = ui.aiAnalysis?.quickPrompts || []
+    decisionCards.value = ui.aiAnalysis?.decisionCards || []
+  })
+  
+  // 2. 加载 AI 引擎配置
+  getJson('/api/ai/config').then(configData => {
+    aiConfig.value = configData
+    apiUrl.value = configData.apiUrl || 'https://api.deepseek.com/chat/completions'
+    modelName.value = configData.model || 'deepseek-v4-pro'
+  })
+  
+  // 3. 加载智能体列表并重置欢迎语
+  getJson('/api/ai/agents').catch(() => ({ agents: fallbackAgents })).then(agentsData => {
+    agents.value = agentsData.agents?.length ? agentsData.agents : fallbackAgents
+    resetAgentMessages()
+  })
+
+  // 4. 独立加载最耗时的 AI 书籍推荐接口（不阻塞主界面渲染）
+  getJson('/api/ai/recommend').then(booksData => {
+    books.value = booksData.books
+  }).catch(err => {
+    console.error('Failed to load AI recommendations:', err)
+  })
 })
 
 const strongBooks = computed(() => books.value.filter((b) => b.aiScore > 85).sort((a, b) => b.aiScore - a.aiScore))
@@ -89,6 +99,23 @@ const askTaosu = async (question) => {
   draft.value = ''
   isThinking.value = true
   thinkingStage.value = '连接桃酥'
+
+  let typingQueue = []
+  let typingInterval = null
+  let isStreamDone = false
+
+  const startTyping = () => {
+    if (typingInterval) return
+    typingInterval = setInterval(() => {
+      if (typingQueue.length > 0) {
+        assistantMessage.content += typingQueue.shift()
+      } else if (isStreamDone) {
+        clearInterval(typingInterval)
+        typingInterval = null
+      }
+    }, 25)
+  }
+
   try {
     await streamJson('/api/ai/chat/stream', {
       agent: activeAgent.value,
@@ -96,22 +123,48 @@ const askTaosu = async (question) => {
       history: messages.value.slice(0, -2),
     }, {
       stage: (data) => { thinkingStage.value = data.label || '处理中' },
-      delta: (data) => { assistantMessage.content += data.text || '' },
+      delta: (data) => {
+        const textChunk = data.text || ''
+        for (const char of textChunk) {
+          typingQueue.push(char)
+        }
+        startTyping()
+      },
       done: (data) => {
-        assistantMessage.references = data.references || []
-        assistantMessage.source = data.source
-        assistantMessage.stats = data.stats || null
-        thinkingStage.value = ''
+        isStreamDone = true
+        const checkDoneInterval = setInterval(() => {
+          if (typingQueue.length === 0) {
+            clearInterval(checkDoneInterval)
+            if (typingInterval) {
+              clearInterval(typingInterval)
+              typingInterval = null
+            }
+            assistantMessage.references = data.references || []
+            assistantMessage.source = data.source
+            assistantMessage.stats = data.stats || null
+            thinkingStage.value = ''
+          }
+        }, 50)
       }
     })
   } catch (err) {
+    isStreamDone = true
+    if (typingInterval) {
+      clearInterval(typingInterval)
+      typingInterval = null
+    }
     assistantMessage.content = err.message || '桃酥暂时无法连接模型服务，请稍后再试。'
   } finally {
-    if (!assistantMessage.content.trim()) {
-      assistantMessage.content = '桃酥暂时没有生成有效回复，请稍后再试。'
-    }
-    thinkingStage.value = ''
-    isThinking.value = false
+    const checkFinally = setInterval(() => {
+      if (isStreamDone && typingQueue.length === 0) {
+        clearInterval(checkFinally)
+        if (!assistantMessage.content.trim()) {
+          assistantMessage.content = '桃酥暂时没有生成有效回复，请稍后再试。'
+        }
+        thinkingStage.value = ''
+        isThinking.value = false
+      }
+    }, 50)
   }
 }
 

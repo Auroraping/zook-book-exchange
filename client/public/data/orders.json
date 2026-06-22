@@ -1,5 +1,24 @@
 [
   {
+    "id": "o_test_completed_1",
+    "userId": "u20260617142302d0c3",
+    "bookId": "b1",
+    "title": "计算机系统基础",
+    "price": 25.0,
+    "location": "翠柏4舍",
+    "status": "completed",
+    "isPaid": true,
+    "isDelivered": true,
+    "sellerConfirmed": true,
+    "pointsAwarded": true,
+    "seller": "计科王学长",
+    "sellerId": "u1",
+    "date": "2026-06-17 14:00",
+    "cover": "/uploads/book_1780889602_f7e5fe.png",
+    "paidAt": "2026-06-17 14:01",
+    "reviewed": false
+  },
+  {
     "id": "o2026060811341206b4",
     "userId": "u202606062023320968",
     "bookId": "b202606081133222d95",

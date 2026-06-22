@@ -78,7 +78,27 @@ def note_score(note, tokens):
 def note_context(message):
     tokens = text_tokens(message)
     notes = read_json("notes.json", [])
-    ranked = sorted(notes, key=lambda note: note_score(note, tokens), reverse=True)
+    
+    try:
+        from ai_vector_store import search_notes
+        vector_results = search_notes(message, n_results=20)
+        distance_map = {str(res["id"]): res["distance"] for res in vector_results}
+    except Exception as e:
+        print(f"Vector search failed: {e}")
+        distance_map = {}
+
+    def hybrid_score(note, tokens):
+        score = note_score(note, tokens)
+        note_id = str(note.get("id"))
+        if note_id in distance_map:
+            # ChromaDB cosine distance: 0 is exact match, 1 is orthogonal, 2 is opposite
+            # We want smaller distance -> higher boost.
+            dist = distance_map[note_id]
+            # Add up to 20 points for very close vectors
+            score += max(0, (1.0 - dist) * 20)
+        return score
+
+    ranked = sorted(notes, key=lambda note: hybrid_score(note, tokens), reverse=True)
     items = []
     for note in ranked[:12]:
         items.append({

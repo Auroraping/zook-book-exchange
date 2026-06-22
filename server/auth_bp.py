@@ -1,4 +1,8 @@
 from datetime import datetime, timedelta, timezone
+import os
+import random
+import smtplib
+from email.message import EmailMessage
 from uuid import uuid4
 
 from flask import Blueprint, jsonify, request
@@ -12,6 +16,33 @@ from jwt_service import create_jwt, decode_jwt, iso_date, timestamp
 from schedule_helper import fetch_schedule
 
 auth_bp = Blueprint("auth_bp", __name__)
+
+OTP_STORE = {}
+
+def send_email_code(to_email, code):
+    server = os.getenv("SMTP_SERVER")
+    port = os.getenv("SMTP_PORT")
+    user = os.getenv("SMTP_USER")
+    password = os.getenv("SMTP_PASSWORD")
+    
+    if not (server and port and user and password):
+        print(f"[TEST EMAIL] To: {to_email}, Code: {code}")
+        return True
+
+    try:
+        msg = EmailMessage()
+        msg.set_content(f"您的注册验证码是：{code}，5分钟内有效。如非本人操作请忽略。")
+        msg["Subject"] = "浙里淘书 - 注册验证码"
+        msg["From"] = user
+        msg["To"] = to_email
+
+        with smtplib.SMTP_SSL(server, int(port)) as smtp:
+            smtp.login(user, password)
+            smtp.send_message(msg)
+        return True
+    except Exception as e:
+        print("[Email Error]:", e)
+        return False
 
 
 def request_payload():
@@ -95,16 +126,45 @@ def login():
     return jsonify(data)
 
 
+@auth_bp.post("/api/auth/send-code")
+def send_code():
+    payload = request_payload()
+    email_addr = str(payload.get("email") or "").strip().lower()
+    if not valid_email(email_addr):
+        return jsonify({"success": False, "message": "邮箱格式不正确"}), 400
+    if find_user(email_addr):
+        return jsonify({"success": False, "message": "邮箱已注册，请直接登录"}), 409
+    
+    now = datetime.now(timezone.utc)
+    if email_addr in OTP_STORE:
+        existing = OTP_STORE[email_addr]
+        if existing["expires_at"] > now and (existing["expires_at"] - now).total_seconds() > 240:
+            return jsonify({"success": False, "message": "发送过于频繁，请稍后再试"}), 429
+            
+    code = f"{random.randint(0, 999999):06d}"
+    if send_email_code(email_addr, code):
+        OTP_STORE[email_addr] = {
+            "code": code,
+            "expires_at": now + timedelta(minutes=5)
+        }
+        return jsonify({"success": True, "message": "验证码已发送"})
+    else:
+        return jsonify({"success": False, "message": "验证码发送失败，请检查邮件配置"}), 500
+
+
 @auth_bp.post("/api/register")
 def register():
     payload = request_payload()
     email = str(payload.get("email") or "").strip().lower()
     password = str(payload.get("password") or "")
     confirm_password = str(payload.get("confirmPassword") or "")
+    code = str(payload.get("code") or "").strip()
     display_name = str(payload.get("name") or email.split("@", 1)[0] or "浙大同学").strip()
     remember = bool(payload.get("remember"))
     if not valid_email(email):
         return jsonify({"success": False, "message": "邮箱格式不正确"}), 400
+    if not code:
+        return jsonify({"success": False, "message": "请输入验证码"}), 400
     if password != confirm_password:
         return jsonify({"success": False, "message": "两次输入的密码不一致"}), 400
     pass_msg = password_message(password)
@@ -112,6 +172,15 @@ def register():
         return jsonify({"success": False, "message": pass_msg}), 400
     if find_user(email):
         return jsonify({"success": False, "message": "邮箱已注册，请直接登录"}), 409
+
+    now = datetime.now(timezone.utc)
+    stored = OTP_STORE.get(email)
+    if not stored or stored["expires_at"] < now:
+        return jsonify({"success": False, "message": "验证码不存在或已过期"}), 400
+    if stored["code"] != code:
+        return jsonify({"success": False, "message": "验证码不正确"}), 400
+    
+    del OTP_STORE[email]
 
     user = default_user(email, password, display_name=display_name)
     save_user(user)

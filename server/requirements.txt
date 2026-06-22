@@ -4,4 +4,5 @@ flask-socketio==5.3.6
 Pillow==12.2.0
 requests==2.32.3
 simple-websocket==1.1.0
-
+chromadb==0.5.0
+numpy<2.0.0

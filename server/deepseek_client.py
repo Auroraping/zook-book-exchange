@@ -12,13 +12,13 @@ class ApiError(RuntimeError):
 
 
 def api_config(agent=None):
-    key = os.getenv("DEEPSEEK_API_KEY")
+    key = os.getenv("DEEPSEEK_API_KEY", "")
     if not key:
         raise ApiError("后端尚未配置 DEEPSEEK_API_KEY", status=503)
     return {
         "apiKey": key,
         "apiUrl": os.getenv("DEEPSEEK_API_URL", "https://api.deepseek.com/chat/completions"),
-        "model": os.getenv("DEEPSEEK_MODEL") or (agent or {}).get("model") or "deepseek-v4-flash",
+        "model": os.getenv("DEEPSEEK_MODEL") or (agent or {}).get("model") or "deepseek-v4-pro",
     }
 
 
@@ -73,7 +73,7 @@ def stream_chat(messages, agent=None):
     if resp.status_code >= 400:
         raise ApiError("桃酥暂时无法连接模型服务，请稍后再试", status=resp.status_code)
     usage = {}
-    for line in resp.iter_lines(chunk_size=1, decode_unicode=True):
+    for line in resp.iter_lines(decode_unicode=True):
         if not line or not line.startswith("data:"):
             continue
         raw = line[5:].strip()
@@ -87,5 +87,7 @@ def stream_chat(messages, agent=None):
             usage = data["usage"]
         delta = ((data.get("choices") or [{}])[0].get("delta") or {}).get("content")
         if delta:
+            print(delta, end="", flush=True)
             yield {"type": "delta", "text": delta}
+    print() # 换行
     yield {"type": "done", "model": config["model"], "usage": usage, "latencyMs": int((time.time() - started) * 1000)}

@@ -55,6 +55,23 @@ const handleSend = async () => {
   stage.value = '检查 FAQ 缓存'
   scrollToBottom()
 
+  let typingQueue = []
+  let typingInterval = null
+  let isStreamDone = false
+
+  const startTyping = () => {
+    if (typingInterval) return
+    typingInterval = setInterval(() => {
+      if (typingQueue.length > 0) {
+        assistant.content += typingQueue.shift()
+        scrollToBottom()
+      } else if (isStreamDone) {
+        clearInterval(typingInterval)
+        typingInterval = null
+      }
+    }, 25)
+  }
+
   try {
     await streamJson('/api/ai/chat/stream', {
       agent: 'general',
@@ -66,26 +83,50 @@ const handleSend = async () => {
         state.value = String(data.step || '').includes('cache-hit') ? 'faq' : 'thinking'
       },
       delta: (data) => {
-        assistant.content += data.text || ''
+        const textChunk = data.text || ''
+        for (const char of textChunk) {
+          typingQueue.push(char)
+        }
         state.value = state.value === 'faq' ? 'faq' : 'answering'
-        scrollToBottom()
+        startTyping()
       },
       done: (data) => {
-        assistant.stats = data.stats || null
-        state.value = data.source === 'faq' ? 'faq' : 'idle'
-        stage.value = data.source === 'faq' ? 'FAQ 缓存命中' : '回答完成'
+        isStreamDone = true
+        const checkDoneInterval = setInterval(() => {
+          if (typingQueue.length === 0) {
+            clearInterval(checkDoneInterval)
+            if (typingInterval) {
+              clearInterval(typingInterval)
+              typingInterval = null
+            }
+            assistant.stats = data.stats || null
+            state.value = data.source === 'faq' ? 'faq' : 'idle'
+            stage.value = data.source === 'faq' ? 'FAQ 缓存命中' : '回答完成'
+            scrollToBottom()
+          }
+        }, 50)
       },
     })
   } catch {
+    isStreamDone = true
+    if (typingInterval) {
+      clearInterval(typingInterval)
+      typingInterval = null
+    }
     assistant.content = offlineReply.value
     state.value = 'error'
     stage.value = '连接异常'
   } finally {
-    if (!assistant.content.trim()) assistant.content = offlineReply.value
-    setTimeout(() => {
-      if (state.value === 'faq' || state.value === 'error') state.value = 'idle'
-    }, 1800)
-    scrollToBottom()
+    const checkFinally = setInterval(() => {
+      if (isStreamDone && typingQueue.length === 0) {
+        clearInterval(checkFinally)
+        if (!assistant.content.trim()) assistant.content = offlineReply.value
+        setTimeout(() => {
+          if (state.value === 'faq' || state.value === 'error') state.value = 'idle'
+        }, 1800)
+        scrollToBottom()
+      }
+    }, 50)
   }
 }
 </script>

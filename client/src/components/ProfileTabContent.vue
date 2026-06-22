@@ -1,7 +1,7 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { ChevronRight, Sparkles, Trash2, FileText, CreditCard, Package, Star, XCircle, CheckCircle2 } from 'lucide-vue-next'
+import { ChevronRight, Sparkles, Trash2, FileText, CreditCard, Package, Star, XCircle, CheckCircle2, Heart } from 'lucide-vue-next'
 import { useAuth } from '../composables/useAuth.js'
 import { deleteJson, postJson, patchJson } from '../composables/useApi.js'
 import { getStored } from '../composables/useSessionStore.js'
@@ -103,6 +103,51 @@ const handleRemoveFavorite = async (book) => {
     }
   }
 }
+
+// 评价功能相关状态
+const showReviewModal = ref(false)
+const selectedOrder = ref(null)
+const reviewRating = ref(5)
+const hoverRating = ref(0)
+const reviewContent = ref('')
+const reviewSubmitting = ref(false)
+
+const openReviewModal = (order) => {
+  selectedOrder.value = order
+  reviewRating.value = 5
+  hoverRating.value = 0
+  reviewContent.value = ''
+  showReviewModal.value = true
+}
+
+const closeReviewModal = () => {
+  showReviewModal.value = false
+  selectedOrder.value = null
+}
+
+const submitReview = async () => {
+  if (!selectedOrder.value) return
+  if (reviewSubmitting.value) return
+  reviewSubmitting.value = true
+  try {
+    const res = await postJson(`/api/orders/${selectedOrder.value.id}/review`, {
+      rating: reviewRating.value,
+      content: reviewContent.value,
+      userId: currentUserId
+    })
+    if (res.success) {
+      alert('评价成功！')
+      emit('order-updated')
+      closeReviewModal()
+    } else {
+      alert(res.message || '评价失败，请重试')
+    }
+  } catch (err) {
+    alert(err.message || '网络连接失败，请检查服务状态后重试。')
+  } finally {
+    reviewSubmitting.value = false
+  }
+}
 </script>
 
 <template>
@@ -137,6 +182,13 @@ const handleRemoveFavorite = async (book) => {
               <!-- 未收货：买家确认收货 -->
               <button v-if="order.status === 'delivered' && order.userId === currentUserId" @click="handleOrderAction(order, 'confirm')" class="px-4 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
                 <CheckCircle2 class="w-3.5 h-3.5" /> 已收货
+              </button>
+              <!-- 评价订单：已完成且为买家 -->
+              <span v-if="order.status === 'completed' && order.userId === currentUserId && order.reviewed" class="inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-lg border border-amber-100 bg-amber-50 text-amber-600 shadow-sm">
+                <Star class="w-3 h-3 fill-amber-500 stroke-amber-500" /> 已评价
+              </span>
+              <button v-if="order.status === 'completed' && order.userId === currentUserId && !order.reviewed" @click="openReviewModal(order)" class="px-4 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
+                <Star class="w-3.5 h-3.5" /> 评价订单
               </button>
               <!-- 取消订单：买家在未完成阶段可取消 -->
               <button v-if="['unpaid', 'paid_unconfirmed', 'paid', 'delivered'].includes(order.status) && order.userId === currentUserId" @click="handleOrderAction(order, 'cancel')" class="px-4 py-1.5 bg-white border border-gray-200 text-gray-500 hover:text-red-500 text-xs font-black rounded-xl flex items-center gap-1.5 transition-all active:scale-95">
@@ -240,6 +292,79 @@ const handleRemoveFavorite = async (book) => {
           <Star class="w-16 h-16 text-amber-100 mx-auto mb-4" />
           <p class="text-gray-400 font-black">暂无收藏书籍</p>
           <RouterLink to="/books" class="mt-4 text-blue-600 font-bold text-sm hover:underline inline-block">去逛广场</RouterLink>
+        </div>
+      </div>
+    </div>
+
+    <!-- 评价 Modal 弹窗 -->
+    <div v-if="showReviewModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <!-- 遮罩背景 -->
+      <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" @click="closeReviewModal"></div>
+      
+      <!-- 弹窗主体 -->
+      <div class="bg-white rounded-[32px] shadow-2xl border border-slate-100 max-w-md w-full p-8 relative z-10 transform transition-all duration-300 scale-100 flex flex-col gap-6">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-black text-slate-800">评价《{{ selectedOrder?.title }}》</h3>
+          <button @click="closeReviewModal" class="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-50 transition-colors">
+            <XCircle class="w-6 h-6" />
+          </button>
+        </div>
+
+        <!-- 评分 -->
+        <div class="flex flex-col gap-2 items-center py-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+          <p class="text-xs font-bold text-slate-400">请为本次交易评分</p>
+          <div class="flex gap-2">
+            <button 
+              v-for="star in 5" 
+              :key="star" 
+              type="button"
+              @click="reviewRating = star"
+              @mouseenter="hoverRating = star"
+              @mouseleave="hoverRating = 0"
+              class="p-1 focus:outline-none transition-transform hover:scale-125"
+            >
+              <Star 
+                class="w-8 h-8 transition-colors duration-200"
+                :class="[
+                  star <= (hoverRating || reviewRating)
+                    ? 'text-amber-400 fill-amber-400' 
+                    : 'text-slate-200 fill-transparent'
+                ]"
+              />
+            </button>
+          </div>
+          <p class="text-sm font-black text-amber-500 mt-1">
+            {{ ['极差', '失望', '一般', '满意', '非常满意'][ (hoverRating || reviewRating) - 1 ] }}
+          </p>
+        </div>
+
+        <!-- 评语 -->
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-bold text-slate-400">写下您的评价内容</label>
+          <textarea 
+            v-model="reviewContent"
+            rows="4" 
+            placeholder="这本书符合您的预期吗？交易取货顺利吗？分享您的想法吧..." 
+            class="w-full rounded-2xl border border-slate-200 p-4 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all resize-none text-slate-700"
+          ></textarea>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="flex gap-4">
+          <button 
+            @click="closeReviewModal" 
+            class="flex-1 py-3 border border-slate-200 hover:bg-slate-50 text-slate-500 font-bold rounded-2xl transition-all active:scale-95"
+          >
+            取消
+          </button>
+          <button 
+            @click="submitReview" 
+            :disabled="reviewSubmitting"
+            class="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-lg shadow-blue-100 hover:shadow-xl active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+          >
+            <span v-if="reviewSubmitting">提交中...</span>
+            <span v-else>提交评价</span>
+          </button>
         </div>
       </div>
     </div>
