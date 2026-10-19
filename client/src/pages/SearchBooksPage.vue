@@ -21,19 +21,24 @@ const favoriteIds = ref([])
 const { accountId } = useCurrentAccount()
 
 onMounted(async () => {
-  const [booksData, ui, favorites] = await Promise.all([
-    getJson('/api/books?status=approved'),
-    getJson('/api/ui'),
-    getJson(`/api/favorites?userId=${accountId.value}`).catch(() => ({ bookIds: [] }))
-  ])
-  books.value = booksData.books
-  favoriteIds.value = favorites.bookIds || []
-  campuses.value = ui.search?.campuses || []
-  sortTabs.value = ui.search?.sortTabs || []
-  categories.value = ui.search?.categories || []
-  activeSort.value = sortTabs.value[0] || ''
-  selectedCategory.value = categories.value[0] || ''
-  sortOrder.value = 'desc' // "综合" 默认降序
+  try {
+    const [booksData, ui, favorites] = await Promise.all([
+      getJson('/api/books?status=approved').catch(() => ({ books: [] })),
+      getJson('/api/ui').catch(() => ({})),
+      getJson(`/api/favorites?userId=${accountId.value}`).catch(() => ({ bookIds: [] }))
+    ])
+    books.value = Array.isArray(booksData?.books) ? booksData.books : (Array.isArray(booksData) ? booksData : [])
+    favoriteIds.value = favorites?.bookIds || []
+    campuses.value = ui?.search?.campuses || []
+    sortTabs.value = ui?.search?.sortTabs || []
+    categories.value = ui?.search?.categories || []
+    activeSort.value = sortTabs.value[0] || ''
+    selectedCategory.value = categories.value[0] || ''
+    sortOrder.value = 'desc' // "综合" 默认降序
+  } catch (err) {
+    books.value = []
+    favoriteIds.value = []
+  }
 })
 
 const query = computed(() => route.query.q || '')

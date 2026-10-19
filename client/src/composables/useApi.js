@@ -24,7 +24,36 @@ const authHeader = (overrideToken) => {
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
+const FALLBACK_DATA_MAP = {
+  '/api/books': async () => {
+    const list = await fetch('/data/books.json').then((r) => r.json()).catch(() => [])
+    return { success: true, books: list }
+  },
+  '/api/ui': async () => {
+    const data = await fetch('/data/ui.json').then((r) => r.json()).catch(() => ({}))
+    return data
+  },
+  '/api/wishes': async () => {
+    const list = await fetch('/data/wishes.json').then((r) => r.json()).catch(() => [])
+    return { success: true, wishes: list }
+  },
+  '/api/notes': async () => {
+    const list = await fetch('/data/notes.json').then((r) => r.json()).catch(() => [])
+    return { success: true, notes: list }
+  },
+  '/api/favorites': async () => {
+    return { success: true, bookIds: [] }
+  },
+  '/api/notifications': async () => {
+    const list = await fetch('/data/notifications.json').then((r) => r.json()).catch(() => [])
+    return { success: true, notifications: list }
+  },
+}
+
 const requestJson = async (path, options = {}) => {
+  const isGet = !options.method || options.method === 'GET'
+  const cleanPath = path.split('?')[0]
+
   let response
   try {
     response = await fetch(apiUrl(path), {
@@ -37,7 +66,14 @@ const requestJson = async (path, options = {}) => {
       ...(options.body ? { body: JSON.stringify(options.body) } : {}),
     })
   } catch {
+    if (isGet && FALLBACK_DATA_MAP[cleanPath]) {
+      return await FALLBACK_DATA_MAP[cleanPath]()
+    }
     throw new Error('服务暂时不可用，请确认后端已启动')
+  }
+
+  if (response.status === 404 && isGet && FALLBACK_DATA_MAP[cleanPath]) {
+    return await FALLBACK_DATA_MAP[cleanPath]()
   }
 
   return parseJsonResponse(response)

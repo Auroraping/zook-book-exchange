@@ -15,12 +15,17 @@ const books = ref([])
 const favoriteIds = ref([])
 
 onMounted(async () => {
-  const [data, favorites] = await Promise.all([
-    getJson('/api/books?status=approved'),
-    getJson(`/api/favorites?userId=${accountId.value}`).catch(() => ({ bookIds: [] }))
-  ])
-  books.value = data.books
-  favoriteIds.value = favorites.bookIds || []
+  try {
+    const [data, favorites] = await Promise.all([
+      getJson('/api/books?status=approved').catch(() => ({ books: [] })),
+      getJson(`/api/favorites?userId=${accountId.value}`).catch(() => ({ bookIds: [] }))
+    ])
+    books.value = Array.isArray(data?.books) ? data.books : (Array.isArray(data) ? data : [])
+    favoriteIds.value = favorites?.bookIds || []
+  } catch (err) {
+    books.value = []
+    favoriteIds.value = []
+  }
 })
 </script>
 
