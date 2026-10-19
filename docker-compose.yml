@@ -1,0 +1,21 @@
+services:
+  zook-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zook-book-exchange
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - FLASK_DEBUG=0
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - DEEPSEEK_MODEL=${DEEPSEEK_MODEL:-deepseek-chat}
+      - DEEPSEEK_API_URL=${DEEPSEEK_API_URL:-https://api.deepseek.com/chat/completions}
+    volumes:
+      # 持久化用户上传的图片与文件
+      - ./server/uploads:/app/server/uploads
+      # 持久化 SQLite 数据快照与向量库
+      - ./server/db_snapshot:/app/server/db_snapshot
+      - ./server/chroma_db:/app/server/chroma_db

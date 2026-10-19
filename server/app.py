@@ -46,8 +46,20 @@ app.register_blueprint(favorites_bp)
 app.register_blueprint(chat_messages_bp)
 app.register_blueprint(ai_bp)
 
+# 前端构建产物静态托管支持（支持全栈一体化生产部署）
+dist_env = os.getenv("FRONTEND_DIST_DIR")
+if dist_env:
+    CLIENT_DIST_DIR = Path(dist_env).resolve()
+else:
+    possible_dist = Path(__file__).resolve().parent.parent / "client" / "dist"
+    if not possible_dist.exists():
+        possible_dist = Path(__file__).resolve().parent / "client_dist"
+    CLIENT_DIST_DIR = possible_dist
+
 @app.get("/")
 def index():
+    if CLIENT_DIST_DIR.exists() and (CLIENT_DIST_DIR / "index.html").exists():
+        return send_from_directory(CLIENT_DIST_DIR, "index.html")
     return jsonify(
         {
             "success": True,
@@ -56,6 +68,19 @@ def index():
             "endpoints": ["/api/health", "/api/login", "/api/books", "/api/wishes", "/api/notes"],
         }
     )
+
+@app.get("/<path:path>")
+def serve_static_or_spa(path):
+    if CLIENT_DIST_DIR.exists():
+        target_file = CLIENT_DIST_DIR / path
+        if target_file.is_file():
+            return send_from_directory(CLIENT_DIST_DIR, path)
+        # SPA Fallback（排除 api 和 uploads 路由）
+        if not path.startswith("api/") and not path.startswith("uploads/"):
+            index_file = CLIENT_DIST_DIR / "index.html"
+            if index_file.exists():
+                return send_from_directory(CLIENT_DIST_DIR, "index.html")
+    return jsonify({"success": False, "message": "资源不存在", "status": 404}), 404
 
 @app.get("/api/health")
 def health():

@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { Bell, Search, X, MessageSquare } from 'lucide-vue-next'
-import { getJson } from '../composables/useApi.js'
+import { getJson, apiUrl } from '../composables/useApi.js'
 import { useAuth } from '../composables/useAuth.js'
 import { getStored } from '../composables/useSessionStore.js'
 
@@ -28,7 +28,7 @@ const handleSearch = async () => {
   // 发送工业级原生 fetch 触发诊断，无视 getJson 本身可能被 catch 阻断的影响
   try {
     const currentUserId = currentAccountId()
-    fetch('http://localhost:3001/api/diagnose/search_trigger', {
+    fetch(apiUrl('/api/diagnose/search_trigger'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: q, userId: currentUserId })

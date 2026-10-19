@@ -7,7 +7,7 @@ import MessagesChatPanel from '../components/MessagesChatPanel.vue'
 import MessagesContactList from '../components/MessagesContactList.vue'
 import MessagesHeader from '../components/MessagesHeader.vue'
 import MessagesSystemPanel from '../components/MessagesSystemPanel.vue'
-import { getJson, patchJson, postJson } from '../composables/useApi.js'
+import { getJson, patchJson, postJson, apiUrl } from '../composables/useApi.js'
 import { getStored } from '../composables/useSessionStore.js'
 
 const route = useRoute()
@@ -21,7 +21,7 @@ const activeChat = ref(null)
 
 // 注入工业级前端崩溃捕获系统
 window.onerror = function (message, url, line, col, error) {
-  fetch('http://localhost:3001/api/diagnose/error', {
+  fetch(apiUrl('/api/diagnose/error'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -60,13 +60,14 @@ onMounted(async () => {
     }
   }
 
-  // 1. 初始化 Socket.IO 长连接，指向后端服务端口
-  socket = io('http://localhost:3001')
+  // 1. 初始化 Socket.IO 长连接，自适应生产环境或本地开发
+  const socketUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_BASE || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:3001' : undefined)
+  socket = socketUrl ? io(socketUrl) : io()
 
   const reportSocketDiagnose = (event, details) => {
     const currentUserId = currentAccountId()
     const currentUserName = user.value?.name || '浙大同学'
-    fetch('http://localhost:3001/api/diagnose/socket', {
+    fetch(apiUrl('/api/diagnose/socket'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

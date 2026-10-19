@@ -1,0 +1,31 @@
+# Nginx 反向代理配置示例（支持单页应用、后端 API 与 WebSocket 实时通信）
+server {
+    listen 80;
+    server_name your-domain.com; # 替换为你的服务器域名或公网 IP
+
+    # 客户端上传文件大小限制（支持图片上传）
+    client_max_body_size 20M;
+
+    # 静态资源与主站请求转发到后端容器/服务
+    location / {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Socket.IO 实时通信长连接转发（支持 WebSocket upgrade）
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:3001/socket.io/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+    }
+}

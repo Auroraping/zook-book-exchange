@@ -1,0 +1,14 @@
+.git
+.github
+.gitignore
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env.local
+node_modules
+client/node_modules
+client/dist
+prototype
+*.docx
