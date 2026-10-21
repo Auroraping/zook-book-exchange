@@ -16,8 +16,11 @@
 5. Zeabur 会自动识别根目录下的 `Dockerfile`，自动执行多阶段构建（前端打包 + 后端打包）。
 6. 构建完成后，在服务的 **Networking**（网络）页面点击 **Generate Domain** 生成免费的公网二级域名（如 `zook.zeabur.app`）。
 7. 如需启用 AI 助手，在服务的 **Variables**（环境变量）中添加：
-   - `DEEPSEEK_API_KEY`: 你的 DeepSeek 密钥
-   - `DEEPSEEK_MODEL`: `deepseek-chat`
+  - `DEEPSEEK_API_KEY`: 你的 DeepSeek 密钥
+  - `DEEPSEEK_MODEL`: `deepseek-chat`
+  - `AI_CONFIG_WRITABLE`: 保持 `0`（默认）。设为 `1` 会让任何访客都能通过网页改写你的密钥
+  - `AI_DAILY_QUOTA`: 每个用户（匿名按 IP）每天可调用 AI 的次数，默认 `40`，`0` 表示不限制
+  - `AI_REQUIRE_LOGIN`: 设为 `1` 时，未登录用户不能使用 AI 助手
 8. 访问生成的公网域名，即可正常使用完整功能（包括 WebSocket 聊天与 AI 分析）。
 
 ---

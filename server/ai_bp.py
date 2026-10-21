@@ -4,7 +4,7 @@ from pathlib import Path
 from flask import Blueprint, Response, jsonify, request, stream_with_context
 from ai_agents import get_agent, public_agent, public_agents
 from ai_context import build_context
-from ai_repository import usage_summary
+from ai_repository import consume_quota, usage_summary
 from ai_service import ask_taosu, ApiError, get_recommendation_fallback, get_recommendation_from_ai, stream_events
 from auth_context import current_request_user
 from json_store import read_json
@@ -35,6 +35,48 @@ def mask_secret(value):
         return f"{text[:2]}***"
     return f"{text[:6]}***{text[-4:]}"
 
+def config_writable():
+    """是否允许通过 HTTP 在线改写服务端的密钥/接口地址。
+
+    默认关闭：公网部署时一旦开放，任何访客都能把站点的 key 换成自己的，或者把 key 改坏。
+    只有本机开发、或部署在自己可控的机器上时，才设 AI_CONFIG_WRITABLE=1。
+    """
+    return os.getenv("AI_CONFIG_WRITABLE", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def daily_quota():
+    """每个 key（登录用户 / 匿名 IP）每天允许的 AI 调用次数，<=0 表示不限制。"""
+    try:
+        return int(str(os.getenv("AI_DAILY_QUOTA", "40")).strip() or 40)
+    except ValueError:
+        return 40
+
+
+def require_login_for_ai():
+    return os.getenv("AI_REQUIRE_LOGIN", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def quota_key(user):
+    uid = str((user or {}).get("id") or "").strip()
+    if uid:
+        return f"user:{uid}"
+    forwarded = str(request.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+    return f"ip:{forwarded or request.remote_addr or 'unknown'}"
+
+
+def ai_guard():
+    """AI 接口统一门禁：登录校验（可选）+ 每日调用配额。返回错误响应，或 None 表示放行。"""
+    user = current_request_user()
+    if require_login_for_ai() and not user:
+        return jsonify({"success": False, "message": "请先登录后再使用 AI 助手"}), 401
+    limit = daily_quota()
+    if limit > 0 and not consume_quota(quota_key(user), limit):
+        return jsonify(
+            {"success": False, "message": f"今日 AI 调用次数已用完（每人每天 {limit} 次），请明天再来"}
+        ), 429
+    return None
+
+
 def read_env_lines():
     if not ENV_LOCAL_PATH.exists():
         return []
@@ -50,6 +92,7 @@ def single_line_env_value(value):
     return text
 
 def write_deepseek_env(api_key, model=None, api_url=None):
+    """仅在本机开发、且 AI_CONFIG_WRITABLE=1 时使用，负责把配置写进 .env.local。"""
     secret = single_line_env_value(api_key)
     model_name = single_line_env_value(model or DEFAULT_DEEPSEEK_MODEL)
     endpoint = single_line_env_value(api_url or DEFAULT_DEEPSEEK_API_URL)
@@ -81,7 +124,7 @@ def get_ai_config():
             "maskedKey": mask_secret(api_key),
             "model": os.getenv("DEEPSEEK_MODEL", DEFAULT_DEEPSEEK_MODEL),
             "apiUrl": os.getenv("DEEPSEEK_API_URL", DEFAULT_DEEPSEEK_API_URL),
-            "configPath": str(ENV_LOCAL_PATH),
+            "writable": config_writable(),
         }
     )
 
@@ -99,6 +142,10 @@ def ai_usage_summary():
 
 @ai_bp.post("/api/ai/config")
 def save_ai_config():
+    if not config_writable():
+        return jsonify(
+            {"success": False, "message": "站点已关闭在线配置，如需更换密钥请在服务端设置 DEEPSEEK_API_KEY 环境变量"}
+        ), 403
     payload = request_payload()
     api_key = str(payload.get("apiKey") or "").strip()
     model = str(payload.get("model") or DEFAULT_DEEPSEEK_MODEL).strip()
@@ -135,6 +182,9 @@ def save_ai_config():
 
 @ai_bp.post("/api/ai/chat")
 def ai_chat():
+    blocked = ai_guard()
+    if blocked:
+        return blocked
     payload = request.get_json(silent=True) or {}
     agent = get_agent(payload.get("agent"))
     user = current_request_user()
@@ -151,6 +201,9 @@ def ai_chat():
 
 @ai_bp.post("/api/ai/chat/stream")
 def ai_chat_stream():
+    blocked = ai_guard()
+    if blocked:
+        return blocked
     payload = request.get_json(silent=True) or {}
     agent = get_agent(payload.get("agent"))
     user = current_request_user()

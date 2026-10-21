@@ -179,6 +179,42 @@ def log_usage(info):
     conn.close()
 
 
+def consume_quota(key, limit):
+    """按 (key, 当天) 累加调用次数，超过 limit 返回 False。
+
+    key 形如 user:<id> 或 ip:<地址>，让登录用户和匿名访客分别计数，
+    避免一个访客把全站额度刷光。
+    """
+    if limit <= 0:
+        return True
+    day = datetime.now().strftime("%Y-%m-%d")
+    conn = get_db_conn()
+    try:
+        conn.execute(
+            """CREATE TABLE IF NOT EXISTS ai_quota (
+                key TEXT NOT NULL,
+                day TEXT NOT NULL,
+                count INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (key, day)
+            )"""
+        )
+        row = conn.execute(
+            "SELECT count FROM ai_quota WHERE key = ? AND day = ?", (key, day)
+        ).fetchone()
+        used = int(row["count"]) if row else 0
+        if used >= limit:
+            return False
+        conn.execute(
+            "INSERT INTO ai_quota (key, day, count) VALUES (?, ?, 1) "
+            "ON CONFLICT(key, day) DO UPDATE SET count = count + 1",
+            (key, day),
+        )
+        conn.commit()
+        return True
+    finally:
+        conn.close()
+
+
 def usage_summary(limit=20):
     conn = get_db_conn()
     rows = conn.execute(

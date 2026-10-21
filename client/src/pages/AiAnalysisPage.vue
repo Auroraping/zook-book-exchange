@@ -16,10 +16,12 @@ const thinkingStage = ref('')
 const agents = ref([])
 const activeAgent = ref('general')
 
-const apiKey = ref('sk-e30a39880b3540be9c73ada2f1f63d19')
+// 空字符串：密钥只能由后端环境变量持有，任何情况下都不写进前端源码（前端代码会打包进 dist，
+// 任何访客 F12 都能看到，等同于公开密钥）。
+const apiKey = ref('')
 const apiUrl = ref('https://api.deepseek.com/chat/completions')
 const modelName = ref('deepseek-v4-pro')
-const aiConfig = ref({ configured: false, model: 'deepseek-v4-pro', apiUrl: 'https://api.deepseek.com/chat/completions' })
+const aiConfig = ref({ configured: false, writable: false, model: 'deepseek-v4-pro', apiUrl: 'https://api.deepseek.com/chat/completions' })
 const configMessage = ref('')
 const savingConfig = ref(false)
 const configSuccess = ref(false)
@@ -244,8 +246,8 @@ const saveAiConfig = async () => {
           </div>
         </div>
 
-        <!-- 右侧：表单配置区域 -->
-        <form class="flex-1 flex flex-col justify-between gap-5" @submit.prevent="saveAiConfig">
+        <!-- 右侧：表单配置区域（仅在服务端允许在线配置时显示） -->
+        <form v-if="aiConfig.writable" class="flex-1 flex flex-col justify-between gap-5" @submit.prevent="saveAiConfig">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- 接口地址 (URL) -->
             <div class="md:col-span-2 flex flex-col gap-1.5">
@@ -307,6 +309,14 @@ const saveAiConfig = async () => {
             </button>
           </div>
         </form>
+
+        <div v-else class="flex-1 flex flex-col justify-center gap-3 p-6 rounded-2xl bg-slate-50 border border-slate-100">
+          <p class="text-sm font-black text-slate-700">AI 引擎由站点统一配置</p>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            本站已关闭在线填写密钥，避免密钥被复制到站外使用。直接和小酥对话即可，无需任何配置；
+            若提示额度用尽，请次日再试。
+          </p>
+        </div>
       </div>
     </section>
     <section class="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-8 h-[750px]">
